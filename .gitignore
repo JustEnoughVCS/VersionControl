@@ -3,3 +3,6 @@
 
 # Idea directory (RustRover)
 /.idea/
+
+# Obsidian directory
+/.obsidian/
