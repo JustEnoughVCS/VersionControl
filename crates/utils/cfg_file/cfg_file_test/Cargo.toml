@@ -1,10 +1,9 @@
 [package]
-name = "cfg_file_example"
+name = "cfg_file_test"
+version = "0.1.0"
 edition = "2024"
-version.workspace = true
 
 [dependencies]
-cfg_file = { path = "../../cfg_file" }
-cfg_file_derive = { path = "../cfg_file_derive" }
+cfg_file = { path = "../../cfg_file", features = ["default"] }
 tokio = { version = "1.46.1", features = ["full"] }
 serde = { version = "1.0.219", features = ["derive"] }
