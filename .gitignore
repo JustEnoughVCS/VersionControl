@@ -1,5 +1,5 @@
-# Temp directory
-/.temp/
+# All temp directory
+**/.temp/
 
 # Idea directory (RustRover)
 /.idea/
