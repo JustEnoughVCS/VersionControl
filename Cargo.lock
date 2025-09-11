@@ -99,11 +99,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "cfg_file_example"
+name = "cfg_file_test"
 version = "0.1.0"
 dependencies = [
  "cfg_file",
- "cfg_file_derive",
  "serde",
  "tokio",
 ]
