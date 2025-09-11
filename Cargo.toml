@@ -2,10 +2,12 @@
 name = "just_enough_vcs"
 version = "0.1.0"
 edition = "2024"
-
 license-file = "LICENSE-MIT.md"
-
 authors = [ "Weicao-CatilGrass (GitHub)" ]
+
+[features]
+default = ["cfg_file"]
+cfg_file = []
 
 [workspace]
 members = [
@@ -41,3 +43,4 @@ panic = "abort"
 strip = "symbols"
 
 [dependencies]
+cfg_file = { path = "crates/utils/cfg_file" }

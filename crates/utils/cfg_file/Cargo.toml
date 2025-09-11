@@ -3,7 +3,12 @@ name = "cfg_file"
 edition = "2024"
 version.workspace = true
 
+[features]
+default = ["derive"]
+derive = []
+
 [dependencies]
+cfg_file_derive = { path = "cfg_file_derive" }
 
 # Async
 tokio = { version = "1.46.1", features = ["full"] }

@@ -81,6 +81,7 @@ name = "cfg_file"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "cfg_file_derive",
  "ron",
  "serde",
  "serde_json",
@@ -155,6 +156,9 @@ checksum = "4a5f13b858c8d314ee3e8f639011f7ccefe71f97f96e50151fb991f267928e2c"
 [[package]]
 name = "just_enough_vcs"
 version = "0.1.0"
+dependencies = [
+ "cfg_file",
+]
 
 [[package]]
 name = "libc"
