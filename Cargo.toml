@@ -1,0 +1,43 @@
+[package]
+name = "just_enough_vcs"
+version = "0.1.0"
+edition = "2024"
+
+license-file = "LICENSE-MIT.md"
+
+authors = [ "Weicao-CatilGrass (GitHub)" ]
+
+[workspace]
+members = [
+
+    # Utility
+
+    ## Config File
+    "crates/utils/cfg_file",
+    "crates/utils/cfg_file/cfg_file_derive",
+    "crates/utils/cfg_file/cfg_file_example"
+]
+
+[workspace.package]
+version = "0.1.0"
+
+[profile.dev]
+opt-level = 0
+debug = true
+split-debuginfo = "unpacked"
+codegen-units = 16
+incremental = true
+lto = false
+panic = "unwind"
+
+[profile.release]
+opt-level = 3
+debug = false
+split-debuginfo = "off"
+codegen-units = 1
+incremental = false
+lto = "fat"
+panic = "abort"
+strip = "symbols"
+
+[dependencies]

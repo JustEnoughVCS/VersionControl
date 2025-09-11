@@ -1,0 +1,10 @@
+[package]
+name = "cfg_file_example"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
+cfg_file = { path = "../../cfg_file" }
+cfg_file_derive = { path = "../cfg_file_derive" }
+tokio = { version = "1.46.1", features = ["full"] }
+serde = { version = "1.0.219", features = ["derive"] }

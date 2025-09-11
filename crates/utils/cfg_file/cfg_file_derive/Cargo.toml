@@ -1,0 +1,11 @@
+[package]
+name = "cfg_file_derive"
+edition = "2024"
+version.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "2.0", features = ["full", "extra-traits"] }
+quote = "1.0"
