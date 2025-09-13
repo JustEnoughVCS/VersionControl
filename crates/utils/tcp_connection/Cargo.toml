@@ -1,0 +1,7 @@
+[package]
+name = "tcp_connection"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
+tokio = { version = "1.46.1", features = ["full"] }
