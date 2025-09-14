@@ -405,6 +405,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "tcp_connection_test"
+version = "0.1.0"
+dependencies = [
+ "tcp_connection",
+ "tokio",
+]
+
+[[package]]
 name = "tokio"
 version = "1.47.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

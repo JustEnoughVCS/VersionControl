@@ -15,8 +15,10 @@ members = [
     "crates/utils/cfg_file/cfg_file_derive",
     "crates/utils/cfg_file/cfg_file_test",
 
+    "crates/utils/tcp_connection",
+    "crates/utils/tcp_connection/tcp_connection_test",
+
     "crates/utils/member_verify",
-    "crates/utils/tcp_connection"
 ]
 
 [workspace.package]
