@@ -17,8 +17,7 @@ pub fn derive_config_file(input: TokenStream) -> TokenStream {
     // Process 'cfg_file'
     let path_expr = match find_cfg_file_path(&input.attrs) {
         Some(path) => {
-            if path.starts_with("./") {
-                let path_str = &path[2..];
+            if let Some(path_str) = path.strip_prefix("./") {
                 quote! {
                     std::env::current_dir()?.join(#path_str)
                 }
@@ -55,11 +54,10 @@ fn find_cfg_file_path(attrs: &[Attribute]) -> Option<String> {
         if attr.path().is_ident("cfg_file") {
             let parser = |meta: ParseStream| {
                 let path_meta: syn::MetaNameValue = meta.parse()?;
-                if path_meta.path.is_ident("path") {
-                    if let syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(lit), .. }) = path_meta.value {
+                if path_meta.path.is_ident("path")
+                    && let syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(lit), .. }) = path_meta.value {
                         return Ok(lit.value());
                     }
-                }
                 Err(meta.error("expected `path = \"...\"`"))
             };
 

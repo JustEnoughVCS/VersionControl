@@ -58,7 +58,7 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
     {
         let path = path.as_ref();
         let file_path = match current_dir() {
-            Ok(cwd) => cwd.join(&path),
+            Ok(cwd) => cwd.join(path),
             Err(e) => {
                 eprintln!("Failed to get current directory: {}", e);
                 return Self::DataType::default();
@@ -135,14 +135,13 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
     {
         let path = path.as_ref();
 
-        if let Some(parent) = path.parent() {
-            if ! parent.exists() {
+        if let Some(parent) = path.parent()
+            && ! parent.exists() {
                 let _ = tokio::fs::create_dir_all(parent).await;
             }
-        }
 
         let file_path = match current_dir() {
-            Ok(cwd) => cwd.join(&path),
+            Ok(cwd) => cwd.join(path),
             Err(e) => {
                 eprintln!("Failed to get current directory: {}", e);
                 return;

@@ -51,13 +51,13 @@ where Client: ClientHandle<Server>,
     }
 }
 
-impl<Client, Server> Into<SocketAddr> for TcpServerTarget<Client, Server>
+impl<Client, Server> From<TcpServerTarget<Client, Server>> for SocketAddr
 where Client: ClientHandle<Server>,
       Server: ServerHandle<Client> {
 
     /// Convert TcpServerTarget to SocketAddr
-    fn into(self) -> SocketAddr {
-        SocketAddr::new(self.bind_addr, self.port)
+    fn from(val: TcpServerTarget<Client, Server>) -> Self {
+        SocketAddr::new(val.bind_addr, val.port)
     }
 }
 
@@ -123,7 +123,7 @@ async fn domain_to_addr<'a>(domain: impl Into<&'a str>) -> Result<SocketAddr, st
     let (host, port_str) = if let Some((host, port)) = domain.rsplit_once(':') {
         (host.trim_matches(|c| c == '[' || c == ']'), Some(port))
     } else {
-        (&domain[..], None)
+        (domain, None)
     };
 
     let port = port_str
