@@ -1,15 +1,12 @@
 use async_trait::async_trait;
-use serde::{ Deserialize, Serialize };
+use serde::{Deserialize, Serialize};
 use std::{
     borrow::Cow,
     env::current_dir,
     io::Error,
-    path:: { PathBuf, Path },
+    path::{Path, PathBuf},
 };
-use tokio::{
-    fs,
-    io::AsyncReadExt
-};
+use tokio::{fs, io::AsyncReadExt};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ConfigFormat {
@@ -46,7 +43,7 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
         Self: Sized + Send + Sync,
     {
         let Ok(path) = Self::default_path() else {
-            return Self::DataType::default()
+            return Self::DataType::default();
         };
 
         Self::read_from(path).await
@@ -86,7 +83,8 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
                 }
 
                 // Determine file format
-                let format = file_path.file_name()
+                let format = file_path
+                    .file_name()
                     .and_then(|name| name.to_str())
                     .and_then(ConfigFormat::from_filename)
                     .unwrap_or(ConfigFormat::Json); // Default to JSON
@@ -136,9 +134,10 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
         let path = path.as_ref();
 
         if let Some(parent) = path.parent()
-            && ! parent.exists() {
-                let _ = tokio::fs::create_dir_all(parent).await;
-            }
+            && !parent.exists()
+        {
+            let _ = tokio::fs::create_dir_all(parent).await;
+        }
 
         let file_path = match current_dir() {
             Ok(cwd) => cwd.join(path),
@@ -149,7 +148,8 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
         };
 
         // Determine file format
-        let format = file_path.file_name()
+        let format = file_path
+            .file_name()
             .and_then(|name| name.to_str())
             .and_then(ConfigFormat::from_filename)
             .unwrap_or(ConfigFormat::Json); // Default to JSON
@@ -181,7 +181,10 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
 
         // Don't write if serialization failed
         if contents.is_empty() {
-            eprintln!("Serialization failed for file {}, not writing", path.display());
+            eprintln!(
+                "Serialization failed for file {}, not writing",
+                path.display()
+            );
             return;
         }
 

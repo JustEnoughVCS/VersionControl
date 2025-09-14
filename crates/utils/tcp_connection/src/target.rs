@@ -1,16 +1,17 @@
+use crate::handle::{ClientHandle, ServerHandle};
 use std::fmt::{Display, Formatter};
 use std::net::{AddrParseError, IpAddr, Ipv4Addr, SocketAddr};
 use std::str::FromStr;
 use tokio::net::lookup_host;
-use crate::handle::{ClientHandle, ServerHandle};
 
 const DEFAULT_PORT: u16 = 8080;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct TcpServerTarget<Client, Server>
-where Client: ClientHandle<Server>,
-      Server: ServerHandle<Client> {
-
+where
+    Client: ClientHandle<Server>,
+    Server: ServerHandle<Client>,
+{
     /// Client Handle
     client_handle: Option<Client>,
 
@@ -25,8 +26,10 @@ where Client: ClientHandle<Server>,
 }
 
 impl<Client, Server> Default for TcpServerTarget<Client, Server>
-where Client: ClientHandle<Server>,
-      Server: ServerHandle<Client> {
+where
+    Client: ClientHandle<Server>,
+    Server: ServerHandle<Client>,
+{
     fn default() -> Self {
         Self {
             client_handle: None,
@@ -38,23 +41,25 @@ where Client: ClientHandle<Server>,
 }
 
 impl<Client, Server> From<SocketAddr> for TcpServerTarget<Client, Server>
-where Client: ClientHandle<Server>,
-      Server: ServerHandle<Client> {
-
+where
+    Client: ClientHandle<Server>,
+    Server: ServerHandle<Client>,
+{
     /// Convert SocketAddr to TcpServerTarget
     fn from(value: SocketAddr) -> Self {
         Self {
             port: value.port(),
             bind_addr: value.ip(),
-            .. Self::default()
+            ..Self::default()
         }
     }
 }
 
 impl<Client, Server> From<TcpServerTarget<Client, Server>> for SocketAddr
-where Client: ClientHandle<Server>,
-      Server: ServerHandle<Client> {
-
+where
+    Client: ClientHandle<Server>,
+    Server: ServerHandle<Client>,
+{
     /// Convert TcpServerTarget to SocketAddr
     fn from(val: TcpServerTarget<Client, Server>) -> Self {
         SocketAddr::new(val.bind_addr, val.port)
@@ -62,23 +67,26 @@ where Client: ClientHandle<Server>,
 }
 
 impl<Client, Server> Display for TcpServerTarget<Client, Server>
-where Client: ClientHandle<Server>,
-      Server: ServerHandle<Client> {
+where
+    Client: ClientHandle<Server>,
+    Server: ServerHandle<Client>,
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}:{}", self.bind_addr, self.port)
     }
 }
 
 impl<Client, Server> TcpServerTarget<Client, Server>
-where Client: ClientHandle<Server>,
-      Server: ServerHandle<Client> {
-
+where
+    Client: ClientHandle<Server>,
+    Server: ServerHandle<Client>,
+{
     /// Create target by address
     pub fn from_addr(addr: impl Into<IpAddr>, port: impl Into<u16>) -> Self {
         Self {
             port: port.into(),
             bind_addr: addr.into(),
-            .. Self::default()
+            ..Self::default()
         }
     }
 
@@ -86,12 +94,8 @@ where Client: ClientHandle<Server>,
     pub fn from_str<'a>(addr_str: impl Into<&'a str>) -> Result<Self, AddrParseError> {
         let socket_addr = SocketAddr::from_str(addr_str.into());
         match socket_addr {
-            Ok(socket_addr) => {
-                Ok(Self::from_addr(socket_addr.ip(), socket_addr.port()))
-            }
-            Err(err) => {
-                Err(err)
-            }
+            Ok(socket_addr) => Ok(Self::from_addr(socket_addr.ip(), socket_addr.port())),
+            Err(err) => Err(err),
         }
     }
 
@@ -117,7 +121,10 @@ async fn domain_to_addr<'a>(domain: impl Into<&'a str>) -> Result<SocketAddr, st
     }
 
     if let Ok(_v6_addr) = domain.parse::<std::net::Ipv6Addr>() {
-        return Ok(SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), default_port));
+        return Ok(SocketAddr::new(
+            IpAddr::V4(Ipv4Addr::LOCALHOST),
+            default_port,
+        ));
     }
 
     let (host, port_str) = if let Some((host, port)) = domain.rsplit_once(':') {

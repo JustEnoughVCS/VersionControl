@@ -3,11 +3,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::parse::ParseStream;
-use syn::{
-    parse_macro_input,
-    DeriveInput,
-    Attribute
-};
+use syn::{Attribute, DeriveInput, parse_macro_input};
 
 #[proc_macro_derive(ConfigFile, attributes(cfg_file))]
 pub fn derive_config_file(input: TokenStream) -> TokenStream {
@@ -55,9 +51,13 @@ fn find_cfg_file_path(attrs: &[Attribute]) -> Option<String> {
             let parser = |meta: ParseStream| {
                 let path_meta: syn::MetaNameValue = meta.parse()?;
                 if path_meta.path.is_ident("path")
-                    && let syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(lit), .. }) = path_meta.value {
-                        return Ok(lit.value());
-                    }
+                    && let syn::Expr::Lit(syn::ExprLit {
+                        lit: syn::Lit::Str(lit),
+                        ..
+                    }) = path_meta.value
+                {
+                    return Ok(lit.value());
+                }
                 Err(meta.error("expected `path = \"...\"`"))
             };
 
