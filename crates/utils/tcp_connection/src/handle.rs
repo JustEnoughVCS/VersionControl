@@ -1,9 +1,10 @@
-use tokio::net::TcpStream;
+use crate::instance::ConnectionInstance;
+use std::future::Future;
 
 pub trait ClientHandle<RequestServer> {
-    fn process(stream: TcpStream);
+    fn process(instance: ConnectionInstance) -> impl Future<Output = ()> + Send + Sync;
 }
 
 pub trait ServerHandle<RequestClient> {
-    fn process(stream: TcpStream);
+    fn process(instance: ConnectionInstance) -> impl Future<Output = ()> + Send + Sync;
 }

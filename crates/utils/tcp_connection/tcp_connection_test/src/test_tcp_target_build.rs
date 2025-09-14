@@ -26,4 +26,4 @@ async fn test_tcp_test_target_build_domain() {
 
     // Test into string
     assert_eq!(target.to_string(), "127.0.0.1:8080");
-}            default_port,
+}
