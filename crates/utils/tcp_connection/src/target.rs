@@ -1,4 +1,5 @@
 use crate::handle::{ClientHandle, ServerHandle};
+use crate::target_configure::{ClientTargetConfig, ServerTargetConfig};
 use std::fmt::{Display, Formatter};
 use std::net::{AddrParseError, IpAddr, Ipv4Addr, SocketAddr};
 use std::str::FromStr;
@@ -6,7 +7,7 @@ use tokio::net::lookup_host;
 
 const DEFAULT_PORT: u16 = 8080;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug)]
 pub struct TcpServerTarget<Client, Server>
 where
     Client: ClientHandle<Server>,
@@ -17,6 +18,12 @@ where
 
     /// Server Handle
     server_handle: Option<Server>,
+
+    /// Client Config
+    client_cfg: Option<ClientTargetConfig>,
+
+    /// Server Config
+    server_cfg: Option<ServerTargetConfig>,
 
     /// Server port
     port: u16,
@@ -34,6 +41,8 @@ where
         Self {
             client_handle: None,
             server_handle: None,
+            client_cfg: None,
+            server_cfg: None,
             port: DEFAULT_PORT,
             bind_addr: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
         }
@@ -105,6 +114,75 @@ where
             Ok(domain_addr) => Ok(Self::from(domain_addr)),
             Err(e) => Err(e),
         }
+    }
+
+    /// Set client handle
+    pub fn client(mut self, handle: Client) -> Self {
+        self.client_handle = Some(handle);
+        self
+    }
+
+    /// Set server handle
+    pub fn server(mut self, handle: Server) -> Self {
+        self.server_handle = Some(handle);
+        self
+    }
+
+    /// Set client config
+    pub fn client_cfg(mut self, config: ClientTargetConfig) -> Self {
+        self.client_cfg = Some(config);
+        self
+    }
+
+    /// Set server config
+    pub fn server_cfg(mut self, config: ServerTargetConfig) -> Self {
+        self.server_cfg = Some(config);
+        self
+    }
+
+    /// Add client handle
+    pub fn add_client_handle(&mut self, client: Client) {
+        self.client_handle = Some(client);
+    }
+
+    /// Add server handle
+    pub fn add_server_handle(&mut self, server: Server) {
+        self.server_handle = Some(server);
+    }
+
+    /// Add client config
+    pub fn add_client_cfg(&mut self, config: ClientTargetConfig) {
+        self.client_cfg = Some(config);
+    }
+
+    /// Add server config
+    pub fn add_server_cfg(&mut self, config: ServerTargetConfig) {
+        self.server_cfg = Some(config);
+    }
+
+    /// Get client handle ref
+    pub fn get_client(&self) -> Option<&Client> {
+        self.client_handle.as_ref()
+    }
+
+    /// Get server handle ref
+    pub fn get_server(&self) -> Option<&Server> {
+        self.server_handle.as_ref()
+    }
+
+    /// Get client config ref
+    pub fn get_client_cfg(&self) -> Option<&ClientTargetConfig> {
+        self.client_cfg.as_ref()
+    }
+
+    /// Get server config ref
+    pub fn get_server_cfg(&self) -> Option<&ServerTargetConfig> {
+        self.server_cfg.as_ref()
+    }
+
+    /// Get SocketAddr of TcpServerTarget
+    pub fn get_addr(&self) -> SocketAddr {
+        SocketAddr::new(self.bind_addr, self.port)
     }
 }
 
