@@ -1,5 +1,6 @@
-use crate::example_handle::{ExampleClientHandle, ExampleServerHandle};
 use tcp_connection::target::TcpServerTarget;
+
+use crate::test_connection::{ExampleClientHandle, ExampleServerHandle};
 
 #[test]
 fn test_tcp_test_target_build() {
@@ -8,7 +9,7 @@ fn test_tcp_test_target_build() {
     // Test build target by string
     let Ok(target) = TcpServerTarget::<ExampleClientHandle, ExampleServerHandle>::from_str(host)
     else {
-        panic!("Test target built from a target addr `{}`", host);
+        panic!("Test target built failed from a target addr `{}`", host);
     };
     assert_eq!(target.to_string(), "127.0.0.1:8080");
 }
@@ -21,7 +22,7 @@ async fn test_tcp_test_target_build_domain() {
     let Ok(target) =
         TcpServerTarget::<ExampleClientHandle, ExampleServerHandle>::from_domain(host).await
     else {
-        panic!("Test target built from a domain named `{}`", host);
+        panic!("Test target built failed from a domain named `{}`", host);
     };
 
     // Test into string
