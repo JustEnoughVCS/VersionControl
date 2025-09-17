@@ -4,5 +4,5 @@ edition = "2024"
 version.workspace = true
 
 [dependencies]
-tcp_connection = { path="../../tcp_connection" }
+tcp_connection = { path = "../../tcp_connection" }
 tokio = { version = "1.46.1", features = ["full"] }
