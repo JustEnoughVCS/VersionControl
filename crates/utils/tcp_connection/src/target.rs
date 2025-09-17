@@ -1,8 +1,11 @@
 use crate::handle::{ClientHandle, ServerHandle};
 use crate::target_configure::{ClientTargetConfig, ServerTargetConfig};
-use std::fmt::{Display, Formatter};
-use std::net::{AddrParseError, IpAddr, Ipv4Addr, SocketAddr};
-use std::str::FromStr;
+use std::{
+    fmt::{Display, Formatter},
+    marker::PhantomData,
+    net::{AddrParseError, IpAddr, Ipv4Addr, SocketAddr},
+    str::FromStr,
+};
 use tokio::net::lookup_host;
 
 const DEFAULT_PORT: u16 = 8080;
@@ -13,12 +16,6 @@ where
     Client: ClientHandle<Server>,
     Server: ServerHandle<Client>,
 {
-    /// Client Handle
-    client_handle: Option<Client>,
-
-    /// Server Handle
-    server_handle: Option<Server>,
-
     /// Client Config
     client_cfg: Option<ClientTargetConfig>,
 
@@ -30,6 +27,12 @@ where
 
     /// Bind addr
     bind_addr: IpAddr,
+
+    /// Client Phantom Data
+    _client: PhantomData<Client>,
+
+    /// Server Phantom Data
+    _server: PhantomData<Server>,
 }
 
 impl<Client, Server> Default for TcpServerTarget<Client, Server>
@@ -39,12 +42,12 @@ where
 {
     fn default() -> Self {
         Self {
-            client_handle: None,
-            server_handle: None,
             client_cfg: None,
             server_cfg: None,
             port: DEFAULT_PORT,
             bind_addr: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+            _client: PhantomData,
+            _server: PhantomData,
         }
     }
 }
@@ -116,18 +119,6 @@ where
         }
     }
 
-    /// Set client handle
-    pub fn client(mut self, handle: Client) -> Self {
-        self.client_handle = Some(handle);
-        self
-    }
-
-    /// Set server handle
-    pub fn server(mut self, handle: Server) -> Self {
-        self.server_handle = Some(handle);
-        self
-    }
-
     /// Set client config
     pub fn client_cfg(mut self, config: ClientTargetConfig) -> Self {
         self.client_cfg = Some(config);
@@ -140,16 +131,6 @@ where
         self
     }
 
-    /// Add client handle
-    pub fn add_client_handle(&mut self, client: Client) {
-        self.client_handle = Some(client);
-    }
-
-    /// Add server handle
-    pub fn add_server_handle(&mut self, server: Server) {
-        self.server_handle = Some(server);
-    }
-
     /// Add client config
     pub fn add_client_cfg(&mut self, config: ClientTargetConfig) {
         self.client_cfg = Some(config);
@@ -158,16 +139,6 @@ where
     /// Add server config
     pub fn add_server_cfg(&mut self, config: ServerTargetConfig) {
         self.server_cfg = Some(config);
-    }
-
-    /// Get client handle ref
-    pub fn get_client(&self) -> Option<&Client> {
-        self.client_handle.as_ref()
-    }
-
-    /// Get server handle ref
-    pub fn get_server(&self) -> Option<&Server> {
-        self.server_handle.as_ref()
     }
 
     /// Get client config ref
