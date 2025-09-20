@@ -1,0 +1,11 @@
+[package]
+name = "env"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
+cfg_file = { path = "../utils/cfg_file", features = ["default"] }
+string_proc = { path = "../utils/string_proc" }
+
+uuid = { version = "1.18.1", features = ["v4", "serde"] }
+serde = { version = "1.0.219", features = ["derive"] }
