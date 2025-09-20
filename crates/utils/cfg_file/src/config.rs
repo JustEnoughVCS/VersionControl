@@ -193,4 +193,15 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
             eprintln!("Failed to write file {}: {}", path.display(), e);
         }
     }
+
+    /// Check if the file returned by `default_path` exists
+    fn exist() -> bool
+    where
+        Self: Sized + Send + Sync,
+    {
+        let Ok(path) = Self::default_path() else {
+            return false;
+        };
+        path.exists()
+    }
 }
