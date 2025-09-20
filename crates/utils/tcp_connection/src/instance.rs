@@ -1,6 +1,6 @@
 use std::{path::Path, time::Duration};
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use tokio::{
     fs::{File, OpenOptions},
     io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader, BufWriter},
