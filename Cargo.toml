@@ -3,11 +3,14 @@ name = "just_enough_vcs"
 version = "0.1.0"
 edition = "2024"
 license-file = "LICENSE-MIT.md"
-authors = [ "Weicao-CatilGrass (GitHub)" ]
+authors = ["Weicao-CatilGrass (GitHub)"]
 
 [features]
-default = ["cfg_file"]
+all = ["cfg_file", "tcp_connection", "string_proc", "env"]
 cfg_file = []
+tcp_connection = []
+string_proc = []
+env = []
 
 [workspace]
 members = [
@@ -18,7 +21,9 @@ members = [
     "crates/utils/tcp_connection",
     "crates/utils/tcp_connection/tcp_connection_test",
 
-    "crates/utils/member_verify",
+    "crates/utils/string_proc",
+
+    "crates/env",
 ]
 
 [workspace.package]
@@ -45,3 +50,7 @@ strip = "symbols"
 
 [dependencies]
 cfg_file = { path = "crates/utils/cfg_file" }
+tcp_connection = { path = "crates/utils/tcp_connection" }
+string_proc = { path = "crates/utils/string_proc" }
+
+env = { path = "crates/env" }

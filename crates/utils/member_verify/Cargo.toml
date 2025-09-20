@@ -1,6 +1,0 @@
-[package]
-name = "member_verify"
-edition = "2024"
-version.workspace = true
-
-[dependencies]
