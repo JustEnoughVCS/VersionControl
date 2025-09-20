@@ -1,5 +1,6 @@
 use crate::handle::{ClientHandle, ServerHandle};
 use crate::target_configure::{ClientTargetConfig, ServerTargetConfig};
+use serde::{Deserialize, Serialize};
 use std::{
     fmt::{Display, Formatter},
     marker::PhantomData,
@@ -10,7 +11,7 @@ use tokio::net::lookup_host;
 
 const DEFAULT_PORT: u16 = 8080;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TcpServerTarget<Client, Server>
 where
     Client: ClientHandle<Server>,
