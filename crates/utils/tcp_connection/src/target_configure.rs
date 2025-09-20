@@ -1,4 +1,6 @@
-#[derive(Default, Debug, Clone, Copy)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Default, Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct ServerTargetConfig {
     /// Only process a single connection, then shut down the server.
     once: bool,
@@ -47,5 +49,5 @@ impl ServerTargetConfig {
     }
 }
 
-#[derive(Default, Debug, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct ClientTargetConfig {}
