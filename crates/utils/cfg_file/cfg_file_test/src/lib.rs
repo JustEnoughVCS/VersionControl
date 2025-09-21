@@ -1,7 +1,3 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
-
 #[cfg(test)]
 mod test_cfg_file {
     use cfg_file::ConfigFile;
@@ -42,10 +38,10 @@ mod test_cfg_file {
             .entry("Peek".to_string())
             .insert_entry(secret_peek.to_string());
 
-        ExampleConfig::write(&example).await; // Write to default path.
+        ExampleConfig::write(&example).await.unwrap(); // Write to default path.
 
         // Read from default path.
-        let read_cfg = ExampleConfig::read().await;
+        let read_cfg = ExampleConfig::read().await.unwrap();
         assert_eq!(read_cfg.name, "Weicao");
         assert_eq!(read_cfg.age, 22);
         assert_eq!(read_cfg.hobby, vec!["Programming", "Painting"]);

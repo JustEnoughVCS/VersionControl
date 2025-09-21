@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use ron;
 use serde::{Deserialize, Serialize};
 use std::{
     borrow::Cow,
@@ -38,96 +39,67 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
 
     fn default_path() -> Result<PathBuf, Error>;
 
-    async fn read() -> Self::DataType
+    async fn read() -> Result<Self::DataType, std::io::Error>
     where
         Self: Sized + Send + Sync,
     {
-        let Ok(path) = Self::default_path() else {
-            return Self::DataType::default();
-        };
-
+        let path = Self::default_path()?;
         Self::read_from(path).await
     }
 
-    async fn read_from(path: impl AsRef<Path> + Send) -> Self::DataType
+    async fn read_from(path: impl AsRef<Path> + Send) -> Result<Self::DataType, std::io::Error>
     where
         Self: Sized + Send + Sync,
     {
         let path = path.as_ref();
-        let file_path = match current_dir() {
-            Ok(cwd) => cwd.join(path),
-            Err(e) => {
-                eprintln!("Failed to get current directory: {}", e);
-                return Self::DataType::default();
-            }
-        };
+        let cwd = current_dir()?;
+        let file_path = cwd.join(path);
 
         // Check if file exists
-        match fs::metadata(&file_path).await {
-            Ok(_) => {
-                // Open file
-                let mut file = match fs::File::open(&file_path).await {
-                    Ok(file) => file,
-                    Err(e) => {
-                        eprintln!("Failed to open file {}: {}", path.display(), e);
-                        return Self::DataType::default();
-                    }
-                };
-
-                let mut contents = String::new();
-
-                // Read contents
-                if let Err(e) = file.read_to_string(&mut contents).await {
-                    eprintln!("Failed to read file {}: {}", path.display(), e);
-                    return Self::DataType::default();
-                }
-
-                // Determine file format
-                let format = file_path
-                    .file_name()
-                    .and_then(|name| name.to_str())
-                    .and_then(ConfigFormat::from_filename)
-                    .unwrap_or(ConfigFormat::Json); // Default to JSON
-
-                // Deserialize based on format
-                match format {
-                    ConfigFormat::Yaml => serde_yaml::from_str(&contents).unwrap_or_else(|e| {
-                        eprintln!("Failed to parse YAML file {}: {}", path.display(), e);
-                        Self::DataType::default()
-                    }),
-                    ConfigFormat::Toml => toml::from_str(&contents).unwrap_or_else(|e| {
-                        eprintln!("Failed to parse TOML file {}: {}", path.display(), e);
-                        Self::DataType::default()
-                    }),
-                    ConfigFormat::Ron => ron::from_str(&contents).unwrap_or_else(|e| {
-                        eprintln!("Failed to parse RON file {}: {}", path.display(), e);
-                        Self::DataType::default()
-                    }),
-                    ConfigFormat::Json => serde_json::from_str(&contents).unwrap_or_else(|e| {
-                        eprintln!("Failed to parse JSON file {}: {}", path.display(), e);
-                        Self::DataType::default()
-                    }),
-                }
-            }
-            Err(_) => {
-                // Return default value when file doesn't exist
-                Self::DataType::default()
-            }
+        if !fs::metadata(&file_path).await.is_ok() {
+            return Ok(Self::DataType::default());
         }
+
+        // Open file
+        let mut file = fs::File::open(&file_path).await?;
+
+        let mut contents = String::new();
+        file.read_to_string(&mut contents).await?;
+
+        // Determine file format
+        let format = file_path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .and_then(ConfigFormat::from_filename)
+            .unwrap_or(ConfigFormat::Json); // Default to JSON
+
+        // Deserialize based on format
+        let result = match format {
+            ConfigFormat::Yaml => serde_yaml::from_str(&contents)
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?,
+            ConfigFormat::Toml => toml::from_str(&contents)
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?,
+            ConfigFormat::Ron => ron::from_str(&contents)
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?,
+            ConfigFormat::Json => serde_json::from_str(&contents)
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?,
+        };
+
+        Ok(result)
     }
 
-    async fn write(val: &Self::DataType)
+    async fn write(val: &Self::DataType) -> Result<(), std::io::Error>
     where
         Self: Sized + Send + Sync,
     {
-        let Ok(path) = Self::default_path() else {
-            return;
-        };
-
-        Self::write_to(val, path).await;
+        let path = Self::default_path()?;
+        Self::write_to(val, path).await
     }
 
-    async fn write_to(val: &Self::DataType, path: impl AsRef<Path> + Send)
+    async fn write_to(
+        val: &Self::DataType,
+        path: impl AsRef<Path> + Send,
+    ) -> Result<(), std::io::Error>
     where
         Self: Sized + Send + Sync,
     {
@@ -136,16 +108,11 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
         if let Some(parent) = path.parent()
             && !parent.exists()
         {
-            let _ = tokio::fs::create_dir_all(parent).await;
+            tokio::fs::create_dir_all(parent).await?;
         }
 
-        let file_path = match current_dir() {
-            Ok(cwd) => cwd.join(path),
-            Err(e) => {
-                eprintln!("Failed to get current directory: {}", e);
-                return;
-            }
-        };
+        let cwd = current_dir()?;
+        let file_path = cwd.join(path);
 
         // Determine file format
         let format = file_path
@@ -155,43 +122,25 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
             .unwrap_or(ConfigFormat::Json); // Default to JSON
 
         let contents = match format {
-            ConfigFormat::Yaml => serde_yaml::to_string(val).unwrap_or_else(|e| {
-                eprintln!("Failed to serialize to YAML: {}", e);
-                String::new()
-            }),
-            ConfigFormat::Toml => toml::to_string(val).unwrap_or_else(|e| {
-                eprintln!("Failed to serialize to TOML: {}", e);
-                String::new()
-            }),
+            ConfigFormat::Yaml => serde_yaml::to_string(val)
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?,
+            ConfigFormat::Toml => toml::to_string(val)
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?,
             ConfigFormat::Ron => {
                 let mut pretty_config = ron::ser::PrettyConfig::new();
                 pretty_config.new_line = Cow::from("\n");
                 pretty_config.indentor = Cow::from("  ");
 
-                ron::ser::to_string_pretty(val, pretty_config).unwrap_or_else(|e| {
-                    eprintln!("Failed to serialize to RON: {}", e);
-                    String::new()
-                })
+                ron::ser::to_string_pretty(val, pretty_config)
+                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?
             }
-            ConfigFormat::Json => serde_json::to_string(val).unwrap_or_else(|e| {
-                eprintln!("Failed to serialize to JSON: {}", e);
-                String::new()
-            }),
+            ConfigFormat::Json => serde_json::to_string(val)
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?,
         };
 
-        // Don't write if serialization failed
-        if contents.is_empty() {
-            eprintln!(
-                "Serialization failed for file {}, not writing",
-                path.display()
-            );
-            return;
-        }
-
         // Write to file
-        if let Err(e) = fs::write(&file_path, contents).await {
-            eprintln!("Failed to write file {}: {}", path.display(), e);
-        }
+        fs::write(&file_path, contents).await?;
+        Ok(())
     }
 
     /// Check if the file returned by `default_path` exists
