@@ -1,6 +1,6 @@
 use std::{path::Path, time::Duration};
 
-use rand::{Rng, TryRngCore};
+use rand::TryRngCore;
 use rsa::{
     RsaPrivateKey, RsaPublicKey,
     pkcs1::{DecodeRsaPrivateKey, DecodeRsaPublicKey},
@@ -12,7 +12,6 @@ use tokio::{
     io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader, BufWriter},
     net::TcpStream,
 };
-use uuid::Uuid;
 
 use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
 use ring::rand::SystemRandom;
@@ -232,7 +231,6 @@ impl ConnectionInstance {
         // Open file and get metadata
         let mut file = File::open(path).await?;
         let file_size = file.metadata().await?.len();
-        // Allow empty files - just send the header with size 0
 
         // Send file header (version + size + crc)
         self.stream.write_all(&1u64.to_be_bytes()).await?;
@@ -443,6 +441,7 @@ impl ConnectionInstance {
 
         // Send challenge to target
         self.stream.write_all(&challenge).await?;
+        self.stream.flush().await?;
 
         // Read signature from target
         let mut signature = Vec::new();
@@ -453,13 +452,18 @@ impl ConnectionInstance {
         signature.resize(signature_len, 0);
         self.stream.read_exact(&mut signature).await?;
 
-        // Read UUID from target to identify which public key to use
-        let mut uuid_buf = [0u8; 16];
-        self.stream.read_exact(&mut uuid_buf).await?;
-        let user_uuid = Uuid::from_bytes(uuid_buf);
+        // Read key identifier from target to identify which public key to use
+        let mut key_id_len_buf = [0u8; 4];
+        self.stream.read_exact(&mut key_id_len_buf).await?;
+        let key_id_len = u32::from_be_bytes(key_id_len_buf) as usize;
+
+        let mut key_id_buf = vec![0u8; key_id_len];
+        self.stream.read_exact(&mut key_id_buf).await?;
+        let key_id = String::from_utf8(key_id_buf)
+            .map_err(|e| TcpTargetError::Crypto(format!("Invalid key identifier: {}", e)))?;
 
         // Load appropriate public key
-        let public_key_path = public_key_dir.as_ref().join(format!("{}.pub", user_uuid));
+        let public_key_path = public_key_dir.as_ref().join(format!("{}.pem", key_id));
         if !public_key_path.exists() {
             return Ok(false);
         }
@@ -518,16 +522,21 @@ impl ConnectionInstance {
         // Send signature length and signature
         let signature_len = signature.len() as u32;
         self.stream.write_all(&signature_len.to_be_bytes()).await?;
+        self.stream.flush().await?;
         self.stream.write_all(&signature).await?;
+        self.stream.flush().await?;
 
-        // Send UUID for public key identification
-        self.stream.write_all(verify_public_key.as_bytes()).await?;
+        // Send key identifier for public key identification
+        let key_id_bytes = verify_public_key.as_bytes();
+        let key_id_len = key_id_bytes.len() as u32;
+        self.stream.write_all(&key_id_len.to_be_bytes()).await?;
+        self.stream.flush().await?;
+        self.stream.write_all(key_id_bytes).await?;
+        self.stream.flush().await?;
 
         Ok(true)
     }
 }
-
-// Helper functions for Ed25519 support
 
 /// Parse Ed25519 public key from PEM format
 fn parse_ed25519_public_key(pem: &str) -> [u8; 32] {
@@ -557,8 +566,6 @@ fn parse_ed25519_private_key(pem: &str) -> Result<SigningKey, TcpTargetError> {
         "Invalid Ed25519 private key format".to_string(),
     ))
 }
-
-// Helper functions for DSA support
 
 /// Parse DSA public key information from PEM
 fn parse_dsa_public_key(
@@ -609,7 +616,7 @@ fn verify_dsa_signature(
     public_key.verify(message, signature).is_ok()
 }
 
-/// Sign with DSA (simplified - in practice this would use proper private key operations)
+/// Sign with DSA
 fn sign_with_dsa(
     algorithm_and_key: &(&'static dyn signature::VerificationAlgorithm, Vec<u8>),
     message: &[u8],

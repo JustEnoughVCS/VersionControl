@@ -49,7 +49,7 @@ impl ServerHandle<ExampleClientHandle> for ExampleServerHandle {
 
 #[tokio::test]
 async fn test_connection_with_example_handle() {
-    let host = "localhost";
+    let host = "localhost:5012";
 
     // Server setup
     let Ok(server_target) =

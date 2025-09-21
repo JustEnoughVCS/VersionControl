@@ -6,7 +6,10 @@ use tcp_connection::{
     target::TcpServerTarget,
     target_configure::ServerTargetConfig,
 };
-use tokio::{join, time::sleep};
+use tokio::{
+    join,
+    time::{sleep, timeout},
+};
 
 pub(crate) struct ExampleChallengeClientHandle;
 
@@ -38,7 +41,7 @@ impl ServerHandle<ExampleChallengeClientHandle> for ExampleChallengeServerHandle
 
 #[tokio::test]
 async fn test_connection_with_challenge_handle() -> Result<(), std::io::Error> {
-    let host = "localhost";
+    let host = "localhost:5011";
 
     // Server setup
     let Ok(server_target) = TcpServerTarget::<
@@ -76,7 +79,16 @@ async fn test_connection_with_challenge_handle() -> Result<(), std::io::Error> {
         let _ = client_target.connect().await;
     };
 
-    let _ = async { join!(future_client, future_server) }.await;
+    let test_timeout = Duration::from_secs(10);
+
+    timeout(test_timeout, async { join!(future_client, future_server) })
+        .await
+        .map_err(|_| {
+            std::io::Error::new(
+                std::io::ErrorKind::TimedOut,
+                format!("Test timed out after {:?}", test_timeout),
+            )
+        })?;
 
     Ok(())
 }
