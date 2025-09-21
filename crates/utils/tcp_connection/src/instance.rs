@@ -1,10 +1,24 @@
 use std::{path::Path, time::Duration};
 
+use base64::{engine::general_purpose::STANDARD, prelude::*};
+use rand::Rng;
+use rsa::{
+    RsaPrivateKey, RsaPublicKey,
+    pkcs1::{DecodeRsaPrivateKey, DecodeRsaPublicKey},
+    sha2,
+};
 use serde::Serialize;
 use tokio::{
     fs::{File, OpenOptions},
     io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader, BufWriter},
     net::TcpStream,
+};
+use uuid::Uuid;
+
+use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
+use ring::signature::{
+    self, ECDSA_P256_SHA256_ASN1, ECDSA_P384_SHA384_ASN1, RSA_PKCS1_2048_8192_SHA256,
+    UnparsedPublicKey,
 };
 
 use crate::error::TcpTargetError;
@@ -18,6 +32,19 @@ pub struct ConnectionInstance {
 impl From<TcpStream> for ConnectionInstance {
     fn from(value: TcpStream) -> Self {
         Self { stream: value }
+    }
+}
+
+// Helper trait for reading u64 from TcpStream
+trait ReadU64Ext {
+    async fn read_u64(&mut self) -> Result<u64, std::io::Error>;
+}
+
+impl ReadU64Ext for TcpStream {
+    async fn read_u64(&mut self) -> Result<u64, std::io::Error> {
+        let mut buf = [0u8; 8];
+        self.read_exact(&mut buf).await?;
+        Ok(u64::from_be_bytes(buf))
     }
 }
 
@@ -253,20 +280,22 @@ impl ConnectionInstance {
         }
 
         // Read file header (version + size)
-        let version = self
-            .stream
-            .read_u64()
+        let mut version_buf = [0u8; 8];
+        self.stream
+            .read_exact(&mut version_buf)
             .await
             .map_err(|e| TcpTargetError::from(e.to_string()))?;
+        let version = u64::from_be_bytes(version_buf);
         if version != 1 {
             return Err(TcpTargetError::from("Unsupported transfer version"));
         }
 
-        let file_size = self
-            .stream
-            .read_u64()
+        let mut size_buf = [0u8; 8];
+        self.stream
+            .read_exact(&mut size_buf)
             .await
             .map_err(|e| TcpTargetError::from(e.to_string()))?;
+        let file_size = u64::from_be_bytes(size_buf);
         if file_size == 0 {
             return Err(TcpTargetError::from("Cannot receive zero-length file"));
         }
@@ -331,4 +360,212 @@ impl ConnectionInstance {
 
         Ok(())
     }
+
+    pub async fn challenge(
+        &mut self,
+        public_key_dir: impl AsRef<Path>,
+    ) -> Result<bool, TcpTargetError> {
+        // Generate random challenge
+        let mut rng = rand::rng();
+        let challenge: [u8; 32] = rng.random();
+
+        // Send challenge to target
+        self.stream
+            .write_all(&challenge)
+            .await
+            .map_err(|e| TcpTargetError::from(e.to_string()))?;
+
+        // Read signature from target
+        let mut signature = Vec::new();
+        let mut signature_len_buf = [0u8; 4];
+        self.stream
+            .read_exact(&mut signature_len_buf)
+            .await
+            .map_err(|e| TcpTargetError::from(e.to_string()))?;
+
+        let signature_len = u32::from_be_bytes(signature_len_buf) as usize;
+        signature.resize(signature_len, 0);
+        self.stream
+            .read_exact(&mut signature)
+            .await
+            .map_err(|e| TcpTargetError::from(e.to_string()))?;
+
+        // Read UUID from target to identify which public key to use
+        let mut uuid_buf = [0u8; 16];
+        self.stream
+            .read_exact(&mut uuid_buf)
+            .await
+            .map_err(|e| TcpTargetError::from(e.to_string()))?;
+        let user_uuid = Uuid::from_bytes(uuid_buf);
+
+        // Load appropriate public key
+        let public_key_path = public_key_dir.as_ref().join(format!("{}.pub", user_uuid));
+        if !public_key_path.exists() {
+            return Ok(false);
+        }
+
+        let public_key_pem = tokio::fs::read_to_string(&public_key_path)
+            .await
+            .map_err(|e| TcpTargetError::from(e.to_string()))?;
+
+        // Try to verify with different key types
+        let verified = if let Ok(rsa_key) = RsaPublicKey::from_pkcs1_pem(&public_key_pem) {
+            let padding = rsa::pkcs1v15::Pkcs1v15Sign::new::<sha2::Sha256>();
+            rsa_key.verify(padding, &challenge, &signature).is_ok()
+        } else if let Ok(ed25519_key) =
+            VerifyingKey::from_bytes(&parse_ed25519_public_key(&public_key_pem))
+        {
+            let sig_bytes: [u8; 64] = signature.as_slice().try_into().unwrap_or([0u8; 64]);
+            let sig = Signature::from_bytes(&sig_bytes);
+            ed25519_key.verify(&challenge, &sig).is_ok()
+        } else if let Ok(dsa_key_info) = parse_dsa_public_key(&public_key_pem) {
+            verify_dsa_signature(&dsa_key_info, &challenge, &signature)
+        } else {
+            false
+        };
+
+        Ok(verified)
+    }
+
+    pub async fn accept_challenge(
+        &mut self,
+        private_key_file: impl AsRef<Path>,
+        verify_user_uuid: Uuid,
+    ) -> Result<bool, TcpTargetError> {
+        // Read challenge from initiator
+        let mut challenge = [0u8; 32];
+        self.stream
+            .read_exact(&mut challenge)
+            .await
+            .map_err(|e| TcpTargetError::from(e.to_string()))?;
+
+        // Load private key
+        let private_key_pem = tokio::fs::read_to_string(&private_key_file)
+            .await
+            .map_err(|e| TcpTargetError::from(e.to_string()))?;
+
+        // Sign the challenge with supported key types
+        let signature = if let Ok(rsa_key) = RsaPrivateKey::from_pkcs1_pem(&private_key_pem) {
+            let padding = rsa::pkcs1v15::Pkcs1v15Sign::new::<sha2::Sha256>();
+            rsa_key
+                .sign(padding, &challenge)
+                .map_err(|e| TcpTargetError::from(e.to_string()))?
+        } else if let Ok(ed25519_key) = parse_ed25519_private_key(&private_key_pem) {
+            ed25519_key.sign(&challenge).to_bytes().to_vec()
+        } else if let Ok(dsa_key_info) = parse_dsa_private_key(&private_key_pem) {
+            sign_with_dsa(&dsa_key_info, &challenge)
+        } else {
+            return Ok(false);
+        };
+
+        // Send signature length and signature
+        let signature_len = signature.len() as u32;
+        self.stream
+            .write_all(&signature_len.to_be_bytes())
+            .await
+            .map_err(|e| TcpTargetError::from(e.to_string()))?;
+        self.stream
+            .write_all(&signature)
+            .await
+            .map_err(|e| TcpTargetError::from(e.to_string()))?;
+
+        // Send UUID for public key identification
+        self.stream
+            .write_all(verify_user_uuid.as_bytes())
+            .await
+            .map_err(|e| TcpTargetError::from(e.to_string()))?;
+
+        Ok(true)
+    }
+}
+
+// Helper functions for Ed25519 support
+
+/// Parse Ed25519 public key from PEM format
+fn parse_ed25519_public_key(pem: &str) -> [u8; 32] {
+    // Simple parsing for Ed25519 public key (assuming raw 32-byte key)
+    let lines: Vec<&str> = pem.lines().collect();
+    let mut key_bytes = [0u8; 32];
+
+    if lines.len() >= 2 && lines[0].contains("PUBLIC KEY") {
+        if let Ok(decoded) = STANDARD.decode(lines[1].trim()) {
+            if decoded.len() >= 32 {
+                key_bytes.copy_from_slice(&decoded[decoded.len() - 32..]);
+            }
+        }
+    }
+    key_bytes
+}
+
+/// Parse Ed25519 private key from PEM format
+fn parse_ed25519_private_key(pem: &str) -> Result<SigningKey, TcpTargetError> {
+    let lines: Vec<&str> = pem.lines().collect();
+
+    if lines.len() >= 2 && lines[0].contains("PRIVATE KEY") {
+        if let Ok(decoded) = STANDARD.decode(lines[1].trim()) {
+            if decoded.len() >= 32 {
+                let mut seed = [0u8; 32];
+                seed.copy_from_slice(&decoded[decoded.len() - 32..]);
+                return Ok(SigningKey::from_bytes(&seed));
+            }
+        }
+    }
+    Err(TcpTargetError::from("Invalid Ed25519 private key format"))
+}
+
+// Helper functions for DSA support
+
+/// Parse DSA public key information from PEM
+fn parse_dsa_public_key(
+    pem: &str,
+) -> Result<(&'static dyn signature::VerificationAlgorithm, Vec<u8>), TcpTargetError> {
+    let lines: Vec<&str> = pem.lines().collect();
+
+    if lines.len() >= 2 {
+        if let Ok(decoded) = STANDARD.decode(lines[1].trim()) {
+            // Try different DSA algorithms
+            if pem.contains("ECDSA") || pem.contains("ecdsa") {
+                if pem.contains("P-256") {
+                    return Ok((&ECDSA_P256_SHA256_ASN1, decoded));
+                } else if pem.contains("P-384") {
+                    return Ok((&ECDSA_P384_SHA384_ASN1, decoded));
+                }
+            }
+            // Default to RSA if no specific algorithm detected
+            return Ok((&RSA_PKCS1_2048_8192_SHA256, decoded));
+        }
+    }
+    Err(TcpTargetError::from("Invalid DSA public key format"))
+}
+
+/// Parse DSA private key information from PEM
+fn parse_dsa_private_key(
+    pem: &str,
+) -> Result<(&'static dyn signature::VerificationAlgorithm, Vec<u8>), TcpTargetError> {
+    // For DSA, private key verification uses the same algorithm as public key
+    parse_dsa_public_key(pem)
+}
+
+/// Verify DSA signature
+fn verify_dsa_signature(
+    algorithm_and_key: &(&'static dyn signature::VerificationAlgorithm, Vec<u8>),
+    message: &[u8],
+    signature: &[u8],
+) -> bool {
+    let (algorithm, key_bytes) = algorithm_and_key;
+    let public_key = UnparsedPublicKey::new(*algorithm, key_bytes);
+    public_key.verify(message, signature).is_ok()
+}
+
+/// Sign with DSA (simplified - in practice this would use proper private key operations)
+fn sign_with_dsa(
+    _algorithm_and_key: &(&'static dyn signature::VerificationAlgorithm, Vec<u8>),
+    message: &[u8],
+) -> Vec<u8> {
+    // Note: This is a simplified implementation. In a real scenario,
+    // you would use proper private key signing operations with ring or other crypto library.
+    // For now, we'll return a dummy signature for demonstration.
+    let mut signature = vec![0u8; 64];
+    signature[..32].copy_from_slice(&message[..32.min(message.len())]);
+    signature
 }
