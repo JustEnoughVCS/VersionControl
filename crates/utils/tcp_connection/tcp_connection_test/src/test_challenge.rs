@@ -1,7 +1,4 @@
-use std::{
-    env::{current_dir, set_current_dir},
-    time::Duration,
-};
+use std::{env::current_dir, time::Duration};
 
 use tcp_connection::{
     handle::{ClientHandle, ServerHandle},
@@ -18,7 +15,9 @@ impl ClientHandle<ExampleChallengeServerHandle> for ExampleChallengeClientHandle
         mut instance: ConnectionInstance,
     ) -> impl std::future::Future<Output = ()> + Send + Sync {
         async move {
-            // TODO :: Complete the implementation
+            let key = current_dir().unwrap().join("res").join("test_key");
+            let result = instance.accept_challenge(key, "test_key").await.unwrap();
+            assert_eq!(true, result);
         }
     }
 }
@@ -30,7 +29,9 @@ impl ServerHandle<ExampleChallengeClientHandle> for ExampleChallengeServerHandle
         mut instance: ConnectionInstance,
     ) -> impl std::future::Future<Output = ()> + Send + Sync {
         async move {
-            // TODO :: Complete the implementation
+            let key_dir = current_dir().unwrap().join("res");
+            let result = instance.challenge(key_dir).await.unwrap();
+            assert_eq!(true, result);
         }
     }
 }
@@ -38,9 +39,6 @@ impl ServerHandle<ExampleChallengeClientHandle> for ExampleChallengeServerHandle
 #[tokio::test]
 async fn test_connection_with_challenge_handle() -> Result<(), std::io::Error> {
     let host = "localhost";
-
-    // Enter temp directory
-    set_current_dir(current_dir().unwrap().join(".temp/"))?;
 
     // Server setup
     let Ok(server_target) = TcpServerTarget::<
