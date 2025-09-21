@@ -5,11 +5,16 @@ use uuid::Uuid;
 use crate::constants::SERVER_FILE_VAULT;
 use crate::member::Member;
 
+pub type MemberUuid = Uuid;
+
 #[derive(Default, Serialize, Deserialize, ConfigFile)]
 #[cfg_file(path = SERVER_FILE_VAULT)]
 pub struct VaultConfig {
+    /// Vault name, which can be used as the project name and generally serves as a hint
     vault_name: String,
-    vault_admin_list: Vec<Uuid>,
+
+    /// Vault admin Uuids, a list of member Uuids representing administrator identities
+    vault_admin_list: Vec<MemberUuid>,
 }
 
 impl VaultConfig {

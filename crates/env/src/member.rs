@@ -1,3 +1,5 @@
+pub mod manager;
+
 use cfg_file::ConfigFile;
 use serde::{Deserialize, Serialize};
 use string_proc::camel_case;
@@ -5,7 +7,10 @@ use uuid::Uuid;
 
 #[derive(Debug, Eq, Clone, ConfigFile, Serialize, Deserialize)]
 pub struct Member {
+    /// Member ID, used to intuitively display the name to other members
     id: String,
+
+    /// Member Uuid, used to ensure the uniqueness of this member
     uuid: Uuid,
 }
 
