@@ -1,17 +1,16 @@
-pub mod manager;
+use std::collections::HashMap;
 
 use cfg_file::ConfigFile;
 use serde::{Deserialize, Serialize};
 use string_proc::camel_case;
-use uuid::Uuid;
 
 #[derive(Debug, Eq, Clone, ConfigFile, Serialize, Deserialize)]
 pub struct Member {
-    /// Member ID, used to intuitively display the name to other members
+    /// Member ID, the unique identifier of the member
     id: String,
 
-    /// Member Uuid, used to ensure the uniqueness of this member
-    uuid: Uuid,
+    /// Member metadata
+    metadata: HashMap<String, String>,
 }
 
 impl Default for Member {
@@ -22,7 +21,7 @@ impl Default for Member {
 
 impl PartialEq for Member {
     fn eq(&self, other: &Self) -> bool {
-        self.uuid == other.uuid
+        self.id == other.id
     }
 }
 
@@ -41,10 +40,9 @@ impl std::convert::AsRef<str> for Member {
 impl Member {
     /// Create member struct by id
     pub fn new(new_id: impl Into<String>) -> Self {
-        let uuid = Uuid::new_v4();
         Self {
             id: camel_case!(new_id.into()),
-            uuid,
+            metadata: HashMap::new(),
         }
     }
 
@@ -53,8 +51,17 @@ impl Member {
         self.id.clone()
     }
 
-    /// Get member uuid
-    pub fn uuid(&self) -> Uuid {
-        self.uuid
+    /// Get metadata
+    pub fn metadata(&self, key: impl Into<String>) -> Option<&String> {
+        self.metadata.get(&key.into())
+    }
+
+    /// Set metadata
+    pub fn set_metadata(
+        &mut self,
+        key: impl AsRef<str>,
+        value: impl Into<String>,
+    ) -> Option<String> {
+        self.metadata.insert(key.as_ref().to_string(), value.into())
     }
 }
