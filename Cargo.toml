@@ -23,6 +23,7 @@ members = [
     "crates/utils/string_proc",
 
     "crates/env",
+    "crates/env/env_test",
 ]
 
 [workspace.package]
