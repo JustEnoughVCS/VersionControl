@@ -350,7 +350,10 @@ dependencies = [
 name = "env_test"
 version = "0.1.0"
 dependencies = [
+ "cfg_file",
  "env",
+ "tcp_connection",
+ "tokio",
 ]
 
 [[package]]

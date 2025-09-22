@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use cfg_file::ConfigFile;
 use serde::{Deserialize, Serialize};
-use string_proc::camel_case;
+use string_proc::snake_case;
 
 #[derive(Debug, Eq, Clone, ConfigFile, Serialize, Deserialize)]
 pub struct Member {
@@ -41,7 +41,7 @@ impl Member {
     /// Create member struct by id
     pub fn new(new_id: impl Into<String>) -> Self {
         Self {
-            id: camel_case!(new_id.into()),
+            id: snake_case!(new_id.into()),
             metadata: HashMap::new(),
         }
     }
