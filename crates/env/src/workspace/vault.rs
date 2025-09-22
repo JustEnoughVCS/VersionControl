@@ -71,26 +71,26 @@ impl Vault {
         // Final, generate README.md
         let readme_content = format!(
             "\
-        # JustEnoughVCS Server Setup
+# JustEnoughVCS Server Setup
 
-           This directory contains the server configuration and data for `JustEnoughVCS`.
+This directory contains the server configuration and data for `JustEnoughVCS`.
 
-        ## User Authentication
-           To allow users to connect to this server, place their public keys in the `{}` directory.
-        Each public key file should correspond to a registered user.
+## User Authentication
+To allow users to connect to this server, place their public keys in the `{}` directory.
+Each public key file should correspond to a registered user.
 
-        ## File Storage
-           All version-controlled files (Virtual File) are stored in the `{}` directory.
+## File Storage
+All version-controlled files (Virtual File) are stored in the `{}` directory.
 
-        ## License
-           This software is distributed under the MIT License.
+## License
+This software is distributed under the MIT License.
 
-        ## Support
-           Repository: `https://github.com/JustEnoughVCS/VersionControl`
-           Please report any issues or questions on the GitHub issue tracker.
+## Support
+Repository: `https://github.com/JustEnoughVCS/VersionControl`
+Please report any issues or questions on the GitHub issue tracker.
 
-        ## Thanks :)
-           Thank you for using `JustEnoughVCS!`
+## Thanks :)
+Thank you for using `JustEnoughVCS!`
         ",
             SERVER_PATH_MEMBER_PUB, SERVER_PATH_VIRTUAL_FILE_ROOT
         )
