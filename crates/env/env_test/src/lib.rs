@@ -1,7 +1,4 @@
-use std::{
-    env::{current_dir, set_current_dir},
-    path::PathBuf,
-};
+use std::{env::current_dir, path::PathBuf};
 
 use tokio::fs;
 
