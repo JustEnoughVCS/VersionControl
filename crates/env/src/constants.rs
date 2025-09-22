@@ -15,7 +15,7 @@ pub const SERVER_FILE_SHEET: &str = "./sheets/{sheet-name}.yaml";
 // Server - Members
 pub const SERVER_PATH_MEMBER: &str = "./members/";
 pub const SERVER_FILE_MEMBER_INFO: &str = "./members/{member_uuid}.toml"; // crates::env::member::manager
-pub const SERVER_FILE_MEMBER_PUB: &str = "./key/{member_uuid}.pub";
+pub const SERVER_FILE_MEMBER_PUB: &str = "./key/{member_uuid}.pem"; // crates::utils::tcp_connection::instance
 
 // Server - Storage
 pub const SERVER_PATH_VISUAL_FILE: &str = "./storage/";
