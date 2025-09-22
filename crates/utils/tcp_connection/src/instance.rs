@@ -91,11 +91,11 @@ impl ConnectionInstance {
     }
 
     /// Read data from target machine and deserialize
-    pub async fn read<Data>(&mut self, buffer_size: impl Into<u32>) -> Result<Data, TcpTargetError>
+    pub async fn read<Data>(&mut self) -> Result<Data, TcpTargetError>
     where
         Data: Default + serde::de::DeserializeOwned,
     {
-        let Ok(json_text) = Self::read_text(self, buffer_size).await else {
+        let Ok(json_text) = Self::read_text(self).await else {
             return Err(TcpTargetError::Io("Read failed.".to_string()));
         };
         let Ok(deser_obj) = serde_json::from_str::<Data>(&json_text) else {
@@ -141,29 +141,32 @@ impl ConnectionInstance {
 
     /// Write text to the target machine
     pub async fn write_text(&mut self, text: impl Into<String>) -> Result<(), TcpTargetError> {
-        // Parse text
         let text = text.into();
-        // Write
-        match self.stream.write_all(text.as_bytes()).await {
+        let bytes = text.as_bytes();
+        let len = bytes.len() as u32;
+
+        self.stream.write_all(&len.to_be_bytes()).await?;
+        match self.stream.write_all(bytes).await {
             Ok(_) => Ok(()),
             Err(err) => Err(TcpTargetError::Io(err.to_string())),
         }
     }
 
     /// Read text from the target machine
-    pub async fn read_text(
-        &mut self,
-        buffer_size: impl Into<u32>,
-    ) -> Result<String, TcpTargetError> {
-        // Create buffer
-        let mut buffer = vec![0; buffer_size.into() as usize];
-        // Read
-        match self.stream.read(&mut buffer).await {
-            Ok(n) => {
-                let text = String::from_utf8_lossy(&buffer[..n]).to_string();
-                Ok(text)
-            }
-            Err(err) => Err(TcpTargetError::Io(err.to_string())),
+    pub async fn read_text(&mut self) -> Result<String, TcpTargetError> {
+        let mut len_buf = [0u8; 4];
+        self.stream.read_exact(&mut len_buf).await?;
+        let len = u32::from_be_bytes(len_buf) as usize;
+
+        let mut buffer = vec![0; len];
+        self.stream.read_exact(&mut buffer).await?;
+
+        match String::from_utf8(buffer) {
+            Ok(text) => Ok(text),
+            Err(err) => Err(TcpTargetError::Serialization(format!(
+                "Invalid UTF-8 sequence: {}",
+                err
+            ))),
         }
     }
 
@@ -427,6 +430,21 @@ impl ConnectionInstance {
         Ok(())
     }
 
+    /// Initiates a challenge to the target machine to verify connection security
+    ///
+    /// This method performs a cryptographic challenge-response authentication:
+    /// 1. Generates a random 32-byte challenge
+    /// 2. Sends the challenge to the target machine
+    /// 3. Receives a digital signature of the challenge
+    /// 4. Verifies the signature using the appropriate public key
+    ///
+    /// # Arguments
+    /// * `public_key_dir` - Directory containing public key files for verification
+    ///
+    /// # Returns
+    /// * `Ok(true)` - Challenge verification successful
+    /// * `Ok(false)` - Challenge verification failed
+    /// * `Err(TcpTargetError)` - Error during challenge process
     pub async fn challenge(
         &mut self,
         public_key_dir: impl AsRef<Path>,
@@ -495,6 +513,22 @@ impl ConnectionInstance {
         Ok(verified)
     }
 
+    /// Accepts a challenge from the target machine to verify connection security
+    ///
+    /// This method performs a cryptographic challenge-response authentication:
+    /// 1. Receives a random 32-byte challenge from the target machine
+    /// 2. Signs the challenge using the appropriate private key
+    /// 3. Sends the digital signature back to the target machine
+    /// 4. Sends the key identifier for public key verification
+    ///
+    /// # Arguments
+    /// * `private_key_file` - Path to the private key file for signing
+    /// * `verify_public_key` - Key identifier for public key verification
+    ///
+    /// # Returns
+    /// * `Ok(true)` - Challenge response sent successfully
+    /// * `Ok(false)` - Private key format not supported
+    /// * `Err(TcpTargetError)` - Error during challenge response process
     pub async fn accept_challenge(
         &mut self,
         private_key_file: impl AsRef<Path>,
