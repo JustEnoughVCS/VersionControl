@@ -14,9 +14,7 @@ use tokio::{
 pub(crate) struct ExampleChallengeClientHandle;
 
 impl ClientHandle<ExampleChallengeServerHandle> for ExampleChallengeClientHandle {
-    fn process(
-        mut instance: ConnectionInstance,
-    ) -> impl std::future::Future<Output = ()> + Send + Sync {
+    fn process(mut instance: ConnectionInstance) -> impl std::future::Future<Output = ()> + Send {
         async move {
             // Accept challenge with correct key
             let key = current_dir()
@@ -69,9 +67,7 @@ impl ClientHandle<ExampleChallengeServerHandle> for ExampleChallengeClientHandle
 pub(crate) struct ExampleChallengeServerHandle;
 
 impl ServerHandle<ExampleChallengeClientHandle> for ExampleChallengeServerHandle {
-    fn process(
-        mut instance: ConnectionInstance,
-    ) -> impl std::future::Future<Output = ()> + Send + Sync {
+    fn process(mut instance: ConnectionInstance) -> impl std::future::Future<Output = ()> + Send {
         async move {
             // Challenge with correct key
             let key_dir = current_dir().unwrap().join("res").join("key");

@@ -14,9 +14,7 @@ use tokio::{
 pub(crate) struct ExampleFileTransferClientHandle;
 
 impl ClientHandle<ExampleFileTransferServerHandle> for ExampleFileTransferClientHandle {
-    fn process(
-        mut instance: ConnectionInstance,
-    ) -> impl std::future::Future<Output = ()> + Send + Sync {
+    fn process(mut instance: ConnectionInstance) -> impl std::future::Future<Output = ()> + Send {
         async move {
             let image_path = current_dir()
                 .unwrap()
@@ -31,9 +29,7 @@ impl ClientHandle<ExampleFileTransferServerHandle> for ExampleFileTransferClient
 pub(crate) struct ExampleFileTransferServerHandle;
 
 impl ServerHandle<ExampleFileTransferClientHandle> for ExampleFileTransferServerHandle {
-    fn process(
-        mut instance: ConnectionInstance,
-    ) -> impl std::future::Future<Output = ()> + Send + Sync {
+    fn process(mut instance: ConnectionInstance) -> impl std::future::Future<Output = ()> + Send {
         async move {
             let save_path = current_dir()
                 .unwrap()

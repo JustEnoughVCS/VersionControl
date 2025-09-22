@@ -11,9 +11,7 @@ use tokio::{join, time::sleep};
 pub(crate) struct ExampleClientHandle;
 
 impl ClientHandle<ExampleServerHandle> for ExampleClientHandle {
-    fn process(
-        mut instance: ConnectionInstance,
-    ) -> impl std::future::Future<Output = ()> + Send + Sync {
+    fn process(mut instance: ConnectionInstance) -> impl std::future::Future<Output = ()> + Send {
         async move {
             // Write name
             let Ok(_) = instance.write_text("Peter").await else {
@@ -31,9 +29,7 @@ impl ClientHandle<ExampleServerHandle> for ExampleClientHandle {
 pub(crate) struct ExampleServerHandle;
 
 impl ServerHandle<ExampleClientHandle> for ExampleServerHandle {
-    fn process(
-        mut instance: ConnectionInstance,
-    ) -> impl std::future::Future<Output = ()> + Send + Sync {
+    fn process(mut instance: ConnectionInstance) -> impl std::future::Future<Output = ()> + Send {
         async move {
             // Read name
             let Ok(name) = instance.read_text().await else {
