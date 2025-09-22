@@ -4,8 +4,15 @@ edition = "2024"
 version.workspace = true
 
 [dependencies]
+tcp_connection = { path = "../utils/tcp_connection" }
 cfg_file = { path = "../utils/cfg_file", features = ["default"] }
 string_proc = { path = "../utils/string_proc" }
 
+# Identity
 uuid = { version = "1.18.1", features = ["v4", "serde"] }
+
+# Serialization
 serde = { version = "1.0.219", features = ["derive"] }
+
+# Async & Networking
+tokio = { version = "1.46.1", features = ["full"] }
