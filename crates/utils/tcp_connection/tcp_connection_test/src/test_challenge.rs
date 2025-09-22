@@ -18,9 +18,50 @@ impl ClientHandle<ExampleChallengeServerHandle> for ExampleChallengeClientHandle
         mut instance: ConnectionInstance,
     ) -> impl std::future::Future<Output = ()> + Send + Sync {
         async move {
-            let key = current_dir().unwrap().join("res").join("test_key");
+            // Accept challenge with correct key
+            let key = current_dir()
+                .unwrap()
+                .join("res")
+                .join("key")
+                .join("test_key_private.pem");
             let result = instance.accept_challenge(key, "test_key").await.unwrap();
+
+            // Sent success
             assert_eq!(true, result);
+            let response = instance.read_text().await.unwrap();
+
+            // Verify success
+            assert_eq!("OK", response);
+
+            // Accept challenge with wrong key
+            let key = current_dir()
+                .unwrap()
+                .join("res")
+                .join("key")
+                .join("wrong_key_private.pem");
+            let result = instance.accept_challenge(key, "test_key").await.unwrap();
+
+            // Sent success
+            assert_eq!(true, result);
+            let response = instance.read_text().await.unwrap();
+
+            // Verify fail
+            assert_eq!("ERROR", response);
+
+            // Accept challenge with wrong name
+            let key = current_dir()
+                .unwrap()
+                .join("res")
+                .join("key")
+                .join("test_key_private.pem");
+            let result = instance.accept_challenge(key, "test_key__").await.unwrap();
+
+            // Sent success
+            assert_eq!(true, result);
+            let response = instance.read_text().await.unwrap();
+
+            // Verify fail
+            assert_eq!("ERROR", response);
         }
     }
 }
@@ -32,9 +73,38 @@ impl ServerHandle<ExampleChallengeClientHandle> for ExampleChallengeServerHandle
         mut instance: ConnectionInstance,
     ) -> impl std::future::Future<Output = ()> + Send + Sync {
         async move {
-            let key_dir = current_dir().unwrap().join("res");
+            // Challenge with correct key
+            let key_dir = current_dir().unwrap().join("res").join("key");
             let result = instance.challenge(key_dir).await.unwrap();
             assert_eq!(true, result);
+
+            // Send response
+            instance
+                .write_text(if result { "OK" } else { "ERROR" })
+                .await
+                .unwrap();
+
+            // Challenge again
+            let key_dir = current_dir().unwrap().join("res").join("key");
+            let result = instance.challenge(key_dir).await.unwrap();
+            assert_eq!(false, result);
+
+            // Send response
+            instance
+                .write_text(if result { "OK" } else { "ERROR" })
+                .await
+                .unwrap();
+
+            // Challenge again
+            let key_dir = current_dir().unwrap().join("res").join("key");
+            let result = instance.challenge(key_dir).await.unwrap();
+            assert_eq!(false, result);
+
+            // Send response
+            instance
+                .write_text(if result { "OK" } else { "ERROR" })
+                .await
+                .unwrap();
         }
     }
 }

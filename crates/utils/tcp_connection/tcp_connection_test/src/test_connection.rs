@@ -20,7 +20,7 @@ impl ClientHandle<ExampleServerHandle> for ExampleClientHandle {
                 panic!("Write text failed!");
             };
             // Read msg
-            let Ok(result) = instance.read_text(512 as u32).await else {
+            let Ok(result) = instance.read_text().await else {
                 return;
             };
             assert_eq!("Hello Peter!", result);
@@ -36,7 +36,7 @@ impl ServerHandle<ExampleClientHandle> for ExampleServerHandle {
     ) -> impl std::future::Future<Output = ()> + Send + Sync {
         async move {
             // Read name
-            let Ok(name) = instance.read_text(512 as u32).await else {
+            let Ok(name) = instance.read_text().await else {
                 return;
             };
             // Write msg
