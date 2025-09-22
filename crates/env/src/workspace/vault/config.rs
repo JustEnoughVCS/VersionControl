@@ -5,7 +5,7 @@ use crate::constants::SERVER_FILE_VAULT;
 use crate::workspace::member::Member;
 use crate::workspace::vault::MemberId;
 
-#[derive(Default, Serialize, Deserialize, ConfigFile)]
+#[derive(Serialize, Deserialize, ConfigFile)]
 #[cfg_file(path = SERVER_FILE_VAULT)]
 pub struct VaultConfig {
     /// Vault name, which can be used as the project name and generally serves as a hint
@@ -13,6 +13,15 @@ pub struct VaultConfig {
 
     /// Vault admin id, a list of member id representing administrator identities
     vault_admin_list: Vec<MemberId>,
+}
+
+impl Default for VaultConfig {
+    fn default() -> Self {
+        Self {
+            vault_name: "JustEnoughVault".to_string(),
+            vault_admin_list: Vec::new(),
+        }
+    }
 }
 
 impl VaultConfig {
