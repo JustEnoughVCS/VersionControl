@@ -12,11 +12,11 @@ use env::{
     },
 };
 
-use crate::get_and_correct_test_dir;
+use crate::get_test_dir;
 
 #[tokio::test]
 async fn test_vault_setup_and_member_register() -> Result<(), std::io::Error> {
-    let dir = get_and_correct_test_dir("member_register").await?;
+    let dir = get_test_dir("member_register").await?;
 
     // Setup vault
     Vault::setup_vault(dir.clone()).await?;
@@ -35,8 +35,8 @@ async fn test_vault_setup_and_member_register() -> Result<(), std::io::Error> {
     assert!(dir.join(SERVER_PATH_VIRTUAL_FILE_ROOT).exists());
 
     // Get vault
-    let config = VaultConfig::read().await?;
-    let Some(vault) = Vault::init_current_dir(config) else {
+    let config = VaultConfig::read_from(dir.join(SERVER_FILE_VAULT)).await?;
+    let Some(vault) = Vault::init(config, &dir) else {
         return Err(Error::new(std::io::ErrorKind::NotFound, "Vault not found!"));
     };
 
