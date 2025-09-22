@@ -27,3 +27,17 @@ pub mod utils {
         pub use cfg_file::*;
     }
 }
+
+pub mod prelude {
+    #[cfg(feature = "env")]
+    pub use super::env::*;
+
+    #[cfg(feature = "tcp_connection")]
+    pub use super::utils::tcp_connection::*;
+
+    #[cfg(feature = "string_proc")]
+    pub use super::utils::string_proc::*;
+
+    #[cfg(feature = "cfg_file")]
+    pub use super::utils::cfg_file::*;
+}
