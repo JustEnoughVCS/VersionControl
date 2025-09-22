@@ -77,13 +77,33 @@ This directory contains the server configuration and data for `JustEnoughVCS`.
 
 ## User Authentication
 To allow users to connect to this server, place their public keys in the `{}` directory.
-Each public key file should correspond to a registered user.
+Each public key file should be named `{{member_id}}.pem` (e.g., `juliet.pem`), and contain the user's public key in PEM format.
+
+**ECDSA:**
+```bash
+openssl genpkey -algorithm ed25519 -out private.pem
+openssl pkey -in private.pem -pubout -out public.pem
+```
+
+**RSA:**
+```bash
+openssl genpkey -algorithm RSA -out private.pem -pkeyopt rsa_keygen_bits:2048
+openssl pkey -in private.pem -pubout -out public.pem
+```
+
+**DSA:**
+```bash
+openssl genpkey -algorithm DSA -out private.pem -pkeyopt dsa_paramgen_bits:2048
+openssl pkey -in private.pem -pubout -out public.pem
+```
+
+Place only the `public.pem` file in the server's `./key/` directory, renamed to match the user's member ID.
 
 ## File Storage
 All version-controlled files (Virtual File) are stored in the `{}` directory.
 
 ## License
-This software is distributed under the MIT License.
+This software is distributed under the MIT License. For complete license details, please see the main repository homepage.
 
 ## Support
 Repository: `https://github.com/JustEnoughVCS/VersionControl`
