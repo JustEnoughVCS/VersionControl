@@ -5,7 +5,7 @@ use env::{
     constants::SERVER_FILE_VAULT,
     workspace::{
         member::Member,
-        vault::{Vault, config::VaultConfig, vitrual_file::VirtualFileVersionDesciption},
+        vault::{Vault, config::VaultConfig, virtual_file::VirtualFileVersionDescription},
     },
 };
 use tcp_connection::{
@@ -87,13 +87,13 @@ impl ServerHandle<VirtualFileCreateClientHandle> for VirtualFileCreateServerHand
 
             // Create visual file
             let virtual_file_id = vault
-                .create_virtual_file_from_connection(&mut instance, member_id.to_string())
+                .create_virtual_file_from_connection(&mut instance, &member_id.to_string())
                 .await
                 .unwrap();
 
             // Grant edit right to member
             vault
-                .grant_virtual_file_edit_right(member_id.to_string(), virtual_file_id.clone())
+                .grant_virtual_file_edit_right(&member_id.to_string(), &virtual_file_id)
                 .await
                 .unwrap();
 
@@ -101,10 +101,10 @@ impl ServerHandle<VirtualFileCreateClientHandle> for VirtualFileCreateServerHand
             vault
                 .update_virtual_file_from_connection(
                     &mut instance,
-                    member_id.to_string(),
-                    virtual_file_id,
-                    "2".to_string(),
-                    VirtualFileVersionDesciption {
+                    &member_id.to_string(),
+                    &virtual_file_id,
+                    &"2".to_string(),
+                    VirtualFileVersionDescription {
                         creator: member_id.to_string(),
                         description: "Update".to_string(),
                     },

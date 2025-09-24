@@ -56,7 +56,7 @@ async fn test_vault_setup_and_member_register() -> Result<(), std::io::Error> {
     );
 
     // Remove member
-    vault.remove_member_from_vault(member_id.to_string())?;
+    vault.remove_member_from_vault(&member_id.to_string())?;
 
     // Check if the member info file not exists
     assert_eq!(
