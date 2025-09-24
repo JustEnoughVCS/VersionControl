@@ -17,7 +17,7 @@ use crate::{
 
 pub mod config;
 pub mod member;
-pub mod vitrual_file;
+pub mod virtual_file;
 
 pub type MemberId = String;
 
@@ -52,6 +52,14 @@ impl Vault {
     pub async fn setup_vault(vault_path: impl Into<PathBuf>) -> Result<(), std::io::Error> {
         let vault_path: PathBuf = vault_path.into();
 
+        // Ensure directory is empty
+        if vault_path.exists() && vault_path.read_dir()?.next().is_some() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::DirectoryNotEmpty,
+                "DirectoryNotEmpty",
+            ));
+        }
+
         // 1. Setup main config
         let config = VaultConfig::default();
         VaultConfig::write_to(&config, vault_path.join(SERVER_FILE_VAULT)).await?;
@@ -81,23 +89,23 @@ Each public key file should be named `{{member_id}}.pem` (e.g., `juliet.pem`), a
 
 **ECDSA:**
 ```bash
-openssl genpkey -algorithm ed25519 -out private.pem
-openssl pkey -in private.pem -pubout -out public.pem
+openssl genpkey -algorithm ed25519 -out your_name_private.pem
+openssl pkey -in your_name_private.pem -pubout -out your_name.pem
 ```
 
 **RSA:**
 ```bash
-openssl genpkey -algorithm RSA -out private.pem -pkeyopt rsa_keygen_bits:2048
-openssl pkey -in private.pem -pubout -out public.pem
+openssl genpkey -algorithm RSA -out your_name_private.pem -pkeyopt rsa_keygen_bits:2048
+openssl pkey -in your_name_private.pem -pubout -out your_name.pem
 ```
 
 **DSA:**
 ```bash
-openssl genpkey -algorithm DSA -out private.pem -pkeyopt dsa_paramgen_bits:2048
-openssl pkey -in private.pem -pubout -out public.pem
+openssl genpkey -algorithm DSA -out your_name_private.pem -pkeyopt dsa_paramgen_bits:2048
+openssl pkey -in your_name_private.pem -pubout -out your_name.pem
 ```
 
-Place only the `public.pem` file in the server's `./key/` directory, renamed to match the user's member ID.
+Place only the `your_name.pem` file in the server's `./key/` directory, renamed to match the user's member ID.
 
 ## File Storage
 All version-controlled files (Virtual File) are stored in the `{}` directory.
