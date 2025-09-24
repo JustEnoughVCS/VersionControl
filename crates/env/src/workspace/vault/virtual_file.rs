@@ -6,6 +6,7 @@ use std::{
 
 use cfg_file::{ConfigFile, config::ConfigFile};
 use serde::{Deserialize, Serialize};
+use string_proc::snake_case;
 use tcp_connection::instance::ConnectionInstance;
 use tokio::fs;
 use uuid::Uuid;
@@ -26,12 +27,12 @@ const ID_PARAM: &str = "{vf_id}";
 const VERSION_PARAM: &str = "{vf_version}";
 const TEMP_NAME: &str = "{temp_name}";
 
-pub struct VirtualFile {
+pub struct VirtualFile<'a> {
     /// Unique identifier for the virtual file
     id: VirtualFileId,
 
-    /// Versions of the virtual file
-    versions: Vec<VirtualFileVersion>,
+    /// Reference of Vault
+    current_vault: &'a Vault,
 }
 
 #[derive(Default, Clone, Serialize, Deserialize, ConfigFile)]
@@ -43,11 +44,14 @@ pub struct VirtualFileMeta {
     hold_member: MemberId,
 
     /// Description of each version
-    version_description: HashMap<VirtualFileVersion, VirtualFileVersionDesciption>,
+    version_description: HashMap<VirtualFileVersion, VirtualFileVersionDescription>,
+
+    /// Histories
+    histories: Vec<VirtualFileVersion>,
 }
 
 #[derive(Default, Clone, Serialize, Deserialize)]
-pub struct VirtualFileVersionDesciption {
+pub struct VirtualFileVersionDescription {
     /// The member who created this version
     pub creator: MemberId,
 
@@ -55,7 +59,7 @@ pub struct VirtualFileVersionDesciption {
     pub description: String,
 }
 
-impl VirtualFileVersionDesciption {
+impl VirtualFileVersionDescription {
     /// Create a new version description
     pub fn new(creator: MemberId, description: String) -> Self {
         Self {
@@ -87,8 +91,8 @@ impl Vault {
     /// Get the directory where a specific virtual file's metadata is stored
     pub fn virtual_file_real_path(
         &self,
-        id: VirtualFileId,
-        version: VirtualFileVersion,
+        id: &VirtualFileId,
+        version: &VirtualFileVersion,
     ) -> PathBuf {
         self.vault_path().join(
             SERVER_FILE_VIRTUAL_FILE_VERSION_INSTANCE
@@ -98,29 +102,18 @@ impl Vault {
     }
 
     /// Get the directory where a specific virtual file's metadata is stored
-    pub fn virtual_file_meta_path(&self, id: VirtualFileId) -> PathBuf {
+    pub fn virtual_file_meta_path(&self, id: &VirtualFileId) -> PathBuf {
         self.vault_path()
             .join(SERVER_FILE_VIRTUAL_FILE_META.replace(ID_PARAM, &id.to_string()))
     }
 
     /// Get the virtual file with the given ID
-    pub fn virtual_file(&self, id: VirtualFileId) -> Option<VirtualFile> {
+    pub fn virtual_file(&self, id: &VirtualFileId) -> Option<VirtualFile<'_>> {
         let dir = self.virtual_file_dir(id.clone());
         if dir.exists() {
             Some(VirtualFile {
-                id,
-                versions: std::fs::read_dir(&dir)
-                    .ok()?
-                    .filter_map(|entry| {
-                        let entry = entry.ok()?;
-                        let path = entry.path();
-                        if path.is_file() && path.extension()?.to_str()? == "rf" {
-                            path.file_stem()?.to_str().map(|s| s.to_string())
-                        } else {
-                            None
-                        }
-                    })
-                    .collect(),
+                id: id.clone(),
+                current_vault: self,
             })
         } else {
             None
@@ -130,7 +123,7 @@ impl Vault {
     /// Get the meta data of the virtual file with the given ID
     pub async fn virtual_file_meta(
         &self,
-        id: VirtualFileId,
+        id: &VirtualFileId,
     ) -> Result<VirtualFileMeta, std::io::Error> {
         let dir = self.virtual_file_meta_path(id);
         let metadata = VirtualFileMeta::read_from(dir).await?;
@@ -140,7 +133,7 @@ impl Vault {
     /// Write the meta data of the virtual file with the given ID
     pub async fn write_virtual_file_meta(
         &self,
-        id: VirtualFileId,
+        id: &VirtualFileId,
         meta: &VirtualFileMeta,
     ) -> Result<(), std::io::Error> {
         let dir = self.virtual_file_meta_path(id);
@@ -160,35 +153,39 @@ impl Vault {
     pub async fn create_virtual_file_from_connection(
         &self,
         instance: &mut ConnectionInstance,
-        member: MemberId,
+        member_id: &MemberId,
     ) -> Result<VirtualFileId, std::io::Error> {
         const FIRST_VERSION: &str = "0";
         let receive_path = self.virtual_file_temp_path();
         let new_id = format!("vf_{}", Uuid::new_v4());
-        let move_path = self.virtual_file_real_path(new_id.clone(), FIRST_VERSION.to_string());
+        let move_path = self.virtual_file_real_path(&new_id, &FIRST_VERSION.to_string());
 
         match instance.read_file(receive_path.clone()).await {
             Ok(_) => {
                 // Read successful, create virtual file
                 // Create default version description
                 let mut version_description =
-                    HashMap::<VirtualFileVersion, VirtualFileVersionDesciption>::new();
+                    HashMap::<VirtualFileVersion, VirtualFileVersionDescription>::new();
                 version_description.insert(
                     FIRST_VERSION.to_string(),
-                    VirtualFileVersionDesciption {
-                        creator: member,
+                    VirtualFileVersionDescription {
+                        creator: member_id.clone(),
                         description: "Track".to_string(),
                     },
                 );
                 // Create metadata
-                let meta = VirtualFileMeta {
+                let mut meta = VirtualFileMeta {
                     current_version: FIRST_VERSION.to_string(),
                     hold_member: String::default(),
                     version_description,
+                    histories: Vec::default(),
                 };
+
+                // Add first version
+                meta.histories.push(FIRST_VERSION.to_string());
+
                 // Write metadata to file
-                VirtualFileMeta::write_to(&meta, self.virtual_file_meta_path(new_id.clone()))
-                    .await?;
+                VirtualFileMeta::write_to(&meta, self.virtual_file_meta_path(&new_id)).await?;
 
                 // Move temp file to virtual file directory
                 if let Some(parent) = move_path.parent() {
@@ -227,22 +224,17 @@ impl Vault {
     pub async fn update_virtual_file_from_connection(
         &self,
         instance: &mut ConnectionInstance,
-        member: MemberId,
-        virtual_file_id: VirtualFileId,
-        new_version: VirtualFileVersion,
-        description: VirtualFileVersionDesciption,
+        member: &MemberId,
+        virtual_file_id: &VirtualFileId,
+        new_version: &VirtualFileVersion,
+        description: VirtualFileVersionDescription,
     ) -> Result<(), std::io::Error> {
+        let new_version = snake_case!(new_version.clone());
+        let mut meta = self.virtual_file_meta(virtual_file_id).await?;
+
         // Check if the member has edit right
-        let mut meta = self.virtual_file_meta(virtual_file_id.clone()).await?;
-        if !meta.hold_member.eq(&member) {
-            return Err(Error::new(
-                ErrorKind::PermissionDenied,
-                format!(
-                    "Member `{}` not allowed to update virtual file `{}`",
-                    member, virtual_file_id
-                ),
-            ));
-        }
+        self.check_virtual_file_edit_right(member, virtual_file_id)
+            .await?;
 
         // Check if the new version already exists
         if meta.version_description.contains_key(&new_version) {
@@ -257,7 +249,7 @@ impl Vault {
 
         // Verify success
         let receive_path = self.virtual_file_temp_path();
-        let move_path = self.virtual_file_real_path(virtual_file_id.clone(), new_version.clone());
+        let move_path = self.virtual_file_real_path(virtual_file_id, &new_version);
 
         match instance.read_file(receive_path.clone()).await {
             Ok(_) => {
@@ -265,7 +257,10 @@ impl Vault {
                 fs::rename(receive_path, move_path).await?;
 
                 // Update metadata
-                meta.version_description.insert(new_version, description);
+                meta.current_version = new_version.clone();
+                meta.version_description
+                    .insert(new_version.clone(), description);
+                meta.histories.push(new_version);
                 VirtualFileMeta::write_to(&meta, self.virtual_file_meta_path(virtual_file_id))
                     .await?;
 
@@ -282,34 +277,146 @@ impl Vault {
         }
     }
 
+    /// Update virtual file from existing version
+    ///
+    /// This operation creates a new version based on the specified old version file instance.
+    /// The new version will retain the same version name as the old version, but use a different version number.
+    /// After the update, this version will be considered newer than the original version when comparing versions.
+    pub async fn update_virtual_file_from_exist_version(
+        &self,
+        member: &MemberId,
+        virtual_file_id: &VirtualFileId,
+        old_version: &VirtualFileVersion,
+    ) -> Result<(), std::io::Error> {
+        let old_version = snake_case!(old_version.clone());
+        let mut meta = self.virtual_file_meta(virtual_file_id).await?;
+
+        // Check if the member has edit right
+        self.check_virtual_file_edit_right(member, virtual_file_id)
+            .await?;
+
+        // Ensure virtual file exist
+        let Some(_) = self.virtual_file(virtual_file_id) else {
+            return Err(Error::new(
+                ErrorKind::NotFound,
+                format!("Virtual file `{}` not found!", virtual_file_id),
+            ));
+        };
+
+        // Ensure version exist
+        if !meta.version_exists(&old_version) {
+            return Err(Error::new(
+                ErrorKind::NotFound,
+                format!("Version `{}` not found!", old_version),
+            ));
+        }
+
+        // Ok, Create new version
+        meta.current_version = old_version.clone();
+        meta.histories.push(old_version);
+        VirtualFileMeta::write_to(&meta, self.virtual_file_meta_path(virtual_file_id)).await?;
+
+        Ok(())
+    }
+
     /// Grant a member the edit right for a virtual file
+    /// This operation takes effect immediately upon success
     pub async fn grant_virtual_file_edit_right(
         &self,
-        member_id: MemberId,
-        virtual_file_id: VirtualFileId,
+        member_id: &MemberId,
+        virtual_file_id: &VirtualFileId,
     ) -> Result<(), std::io::Error> {
-        let mut meta = self.virtual_file_meta(virtual_file_id.clone()).await?;
-        meta.hold_member = member_id;
+        let mut meta = self.virtual_file_meta(virtual_file_id).await?;
+        meta.hold_member = member_id.clone();
         self.write_virtual_file_meta(virtual_file_id, &meta).await
     }
 
     /// Check if a member has the edit right for a virtual file
     pub async fn has_virtual_file_edit_right(
         &self,
-        member_id: MemberId,
-        virtual_file_id: VirtualFileId,
+        member_id: &MemberId,
+        virtual_file_id: &VirtualFileId,
     ) -> Result<bool, std::io::Error> {
         let meta = self.virtual_file_meta(virtual_file_id).await?;
-        Ok(meta.hold_member == member_id)
+        Ok(meta.hold_member.eq(member_id))
+    }
+
+    /// Check if a member has the edit right for a virtual file and return Result
+    /// Returns Ok(()) if the member has edit right, otherwise returns PermissionDenied error
+    pub async fn check_virtual_file_edit_right(
+        &self,
+        member_id: &MemberId,
+        virtual_file_id: &VirtualFileId,
+    ) -> Result<(), std::io::Error> {
+        if !self
+            .has_virtual_file_edit_right(member_id, virtual_file_id)
+            .await?
+        {
+            return Err(Error::new(
+                ErrorKind::PermissionDenied,
+                format!(
+                    "Member `{}` not allowed to update virtual file `{}`",
+                    member_id, virtual_file_id
+                ),
+            ));
+        }
+        Ok(())
     }
 
     /// Revoke the edit right for a virtual file from the current holder
+    /// This operation takes effect immediately upon success
     pub async fn revoke_virtual_file_edit_right(
         &self,
-        virtual_file_id: VirtualFileId,
+        virtual_file_id: &VirtualFileId,
     ) -> Result<(), std::io::Error> {
-        let mut meta = self.virtual_file_meta(virtual_file_id.clone()).await?;
+        let mut meta = self.virtual_file_meta(virtual_file_id).await?;
         meta.hold_member = String::default();
         self.write_virtual_file_meta(virtual_file_id, &meta).await
+    }
+}
+
+impl<'a> VirtualFile<'a> {
+    /// Get id of VirtualFile
+    pub fn id(&self) -> VirtualFileId {
+        self.id.clone()
+    }
+
+    /// Read metadata of VirtualFile
+    pub async fn read_meta(&self) -> Result<VirtualFileMeta, std::io::Error> {
+        self.current_vault.virtual_file_meta(&self.id).await
+    }
+}
+
+impl VirtualFileMeta {
+    /// Get all versions of the virtual file
+    pub fn versions(&self) -> &Vec<VirtualFileVersion> {
+        &self.histories
+    }
+
+    /// Get the total number of versions for this virtual file
+    pub fn version_len(&self) -> i32 {
+        self.histories.len() as i32
+    }
+
+    /// Check if a specific version exists
+    /// Returns true if the version exists, false otherwise
+    pub fn version_exists(&self, version: &VirtualFileVersion) -> bool {
+        self.versions().iter().any(|v| v == version)
+    }
+
+    /// Get the version number (index) for a given version name
+    /// Returns None if the version doesn't exist
+    pub fn version_num(&self, version: &VirtualFileVersion) -> Option<i32> {
+        self.histories
+            .iter()
+            .rev()
+            .position(|v| v == version)
+            .map(|pos| (self.histories.len() - 1 - pos) as i32)
+    }
+
+    /// Get the version name for a given version number (index)
+    /// Returns None if the version number is out of range
+    pub fn version_name(&self, version_num: i32) -> Option<VirtualFileVersion> {
+        self.histories.get(version_num as usize).cloned()
     }
 }
