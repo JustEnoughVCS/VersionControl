@@ -26,7 +26,7 @@ pub const SERVER_PATH_VIRTUAL_FILE_TEMP: &str = "./.temp/{temp_name}";
 pub const SERVER_PATH_VIRTUAL_FILE_ROOT: &str = "./storage/";
 pub const SERVER_PATH_VIRTUAL_FILE_STORAGE: &str = "./storage/{vf_id}/";
 pub const SERVER_FILE_VIRTUAL_FILE_VERSION_INSTANCE: &str = "./storage/{vf_id}/{vf_version}.rf";
-pub const SERVER_FILE_VIRTUAL_FILE_META: &str = "./storage/{vf_id}/meta.toml";
+pub const SERVER_FILE_VIRTUAL_FILE_META: &str = "./storage/{vf_id}/meta.yaml";
 
 pub const SERVER_FILE_README: &str = "./README.md";
 
@@ -40,10 +40,11 @@ pub const CLIENT_FILE_WORKSPACE: &str = "./.jv/workspace.toml"; // crates::env::
 
 // Client - Other
 pub const CLIENT_FILE_IGNOREFILES: &str = ".jgnore .gitignore"; // Support gitignore file.
+pub const CLIENT_FILE_README: &str = "./README.md";
 
 // -------------------------------------------------------------------------------------
 
-// User - Verify (System path)
-pub const USER_FILE_KEY: &str = "./.jv_user/key";
-pub const USER_FILE_KEY_PUB: &str = "./.jv_user/key.pub";
-pub const USER_FILE_MEMBER: &str = "./.jv_user/self.toml";
+// User - Verify (Documents path)
+pub const USER_FILE_ACCOUNTS: &str = "./accounts/";
+pub const USER_FILE_KEY_PUB: &str = "./accounts/{self_id}_private.pem";
+pub const USER_FILE_MEMBER: &str = "./accounts/{self_id}.toml";
