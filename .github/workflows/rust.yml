@@ -64,8 +64,8 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ needs.setup.outputs.cache-key }}-test
-      - name: Verify musl target is installed
-        run: rustup target list | grep x86_64-unknown-linux-musl | grep installed
+      - name: Install musl target
+        run: rustup target add x86_64-unknown-linux-musl
       - name: Build
         run: cargo build --workspace --verbose
       - name: Run tests
