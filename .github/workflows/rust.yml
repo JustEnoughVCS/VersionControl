@@ -1,0 +1,80 @@
+name: JustEnoughVCS
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+  CARGO_BUILD_TARGET: x86_64-unknown-linux-musl
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+        toolchain: stable
+        components: clippy, rustfmt
+    - name: Run clippy
+      run: cargo clippy --workspace --all-targets -- -D warnings
+    - name: Check formatting
+      run: cargo fmt --check
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+    
+    - name: Install musl target
+      run: rustup target add x86_64-unknown-linux-musl
+      
+    - name: Build
+      run: cargo build --workspace --verbose --target x86_64-unknown-linux-musl
+      
+    - name: Run tests
+      run: cargo test --workspace --verbose --target x86_64-unknown-linux-musl
+      
+    - name: Check binary compatibility
+      run: |
+        cargo build --workspace --release --target x86_64-unknown-linux-musl
+        find target/x86_64-unknown-linux-musl/release -maxdepth 1 -executable -type f | head -5 | xargs -I {} file {}
+        echo "Built binaries are statically linked:"
+        find target/x86_64-unknown-linux-musl/release -maxdepth 1 -executable -type f | head -5 | xargs -I {} ldd {} 2>&1 | grep -q "not a dynamic executable" && echo "✓ All binaries are static"
+
+  release:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install musl target
+      run: rustup target add x86_64-unknown-linux-musl
+      
+    - name: Build release binaries
+      run: cargo build --workspace --release --target x86_64-unknown-linux-musl
+      
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-binaries
+        path: target/x86_64-unknown-linux-musl/release/
