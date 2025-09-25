@@ -104,7 +104,7 @@ where
     }
 
     /// Try to create target by string
-    pub fn from_str<'a>(addr_str: impl Into<&'a str>) -> Result<Self, AddrParseError> {
+    pub fn from_address_str<'a>(addr_str: impl Into<&'a str>) -> Result<Self, AddrParseError> {
         let socket_addr = SocketAddr::from_str(addr_str.into());
         match socket_addr {
             Ok(socket_addr) => Ok(Self::from_addr(socket_addr.ip(), socket_addr.port())),

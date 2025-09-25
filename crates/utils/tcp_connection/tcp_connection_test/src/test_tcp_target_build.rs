@@ -7,7 +7,8 @@ fn test_tcp_test_target_build() {
     let host = "127.0.0.1:8080";
 
     // Test build target by string
-    let Ok(target) = TcpServerTarget::<ExampleClientHandle, ExampleServerHandle>::from_str(host)
+    let Ok(target) =
+        TcpServerTarget::<ExampleClientHandle, ExampleServerHandle>::from_address_str(host)
     else {
         panic!("Test target built failed from a target addr `{}`", host);
     };

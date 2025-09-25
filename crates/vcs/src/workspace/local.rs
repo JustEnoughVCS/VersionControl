@@ -24,17 +24,13 @@ impl LocalWorkspace {
 
     /// Initialize local workspace.
     pub fn init(config: LocalConfig, local_path: impl Into<PathBuf>) -> Option<Self> {
-        let Some(local_path) = find_local_path(local_path) else {
-            return None;
-        };
+        let local_path = find_local_path(local_path)?;
         Some(Self { config, local_path })
     }
 
     /// Initialize local workspace in the current directory.
     pub fn init_current_dir(config: LocalConfig) -> Option<Self> {
-        let Some(local_path) = current_local_path() else {
-            return None;
-        };
+        let local_path = current_local_path()?;
         Some(Self { config, local_path })
     }
 

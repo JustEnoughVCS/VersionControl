@@ -34,17 +34,13 @@ impl Vault {
 
     /// Initialize vault
     pub fn init(config: VaultConfig, vault_path: impl Into<PathBuf>) -> Option<Self> {
-        let Some(vault_path) = find_vault_path(vault_path) else {
-            return None;
-        };
+        let vault_path = find_vault_path(vault_path)?;
         Some(Self { config, vault_path })
     }
 
     /// Initialize vault
     pub fn init_current_dir(config: VaultConfig) -> Option<Self> {
-        let Some(vault_path) = current_vault_path() else {
-            return None;
-        };
+        let vault_path = current_vault_path()?;
         Some(Self { config, vault_path })
     }
 

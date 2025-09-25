@@ -95,8 +95,8 @@ impl Vault {
     // Generate index path of virtual file
     fn vf_index(id: &VirtualFileId) -> Result<String, std::io::Error> {
         // Remove VF_PREFIX if present
-        let id_str = if id.starts_with(VF_PREFIX) {
-            &id[VF_PREFIX.len()..]
+        let id_str = if let Some(stripped) = id.strip_prefix(VF_PREFIX) {
+            stripped
         } else {
             id
         };
@@ -237,9 +237,10 @@ impl Vault {
 
                 // Move temp file to virtual file directory
                 if let Some(parent) = move_path.parent()
-                    && !parent.exists() {
-                        fs::create_dir_all(parent).await?;
-                    }
+                    && !parent.exists()
+                {
+                    fs::create_dir_all(parent).await?;
+                }
                 fs::rename(receive_path, move_path).await?;
 
                 Ok(new_id)
