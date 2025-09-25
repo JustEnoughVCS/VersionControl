@@ -138,14 +138,18 @@ impl Vault {
         self.vault_path().join(
             SERVER_FILE_VF_VERSION_INSTANCE
                 .replace(ID_PARAM, &id.to_string())
-                .replace(ID_INDEX, &version.to_string()),
+                .replace(ID_INDEX, &Self::vf_index(id).unwrap_or_default())
+                .replace(VERSION_PARAM, &version.to_string()),
         )
     }
 
     /// Get the directory where a specific virtual file's metadata is stored
     pub fn virtual_file_meta_path(&self, id: &VirtualFileId) -> PathBuf {
-        self.vault_path()
-            .join(SERVER_FILE_VF_META.replace(ID_PARAM, &id.to_string()))
+        self.vault_path().join(
+            SERVER_FILE_VF_META
+                .replace(ID_PARAM, &id.to_string())
+                .replace(ID_INDEX, &Self::vf_index(id).unwrap_or_default()),
+        )
     }
 
     /// Get the virtual file with the given ID
