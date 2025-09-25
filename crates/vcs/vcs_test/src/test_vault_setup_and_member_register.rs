@@ -49,20 +49,18 @@ async fn test_vault_setup_and_member_register() -> Result<(), std::io::Error> {
     const ID_PARAM: &str = "{member_id}";
 
     // Check if the member info file exists
-    assert_eq!(
+    assert!(
         dir.join(SERVER_FILE_MEMBER_INFO.replace(ID_PARAM, member_id))
-            .exists(),
-        true
+            .exists()
     );
 
     // Remove member
     vault.remove_member_from_vault(&member_id.to_string())?;
 
     // Check if the member info file not exists
-    assert_eq!(
-        dir.join(SERVER_FILE_MEMBER_INFO.replace(ID_PARAM, member_id))
-            .exists(),
-        false
+    assert!(
+        !dir.join(SERVER_FILE_MEMBER_INFO.replace(ID_PARAM, member_id))
+            .exists()
     );
 
     Ok(())

@@ -19,7 +19,7 @@ mod test_cfg_file {
         let mut example = ExampleConfig {
             name: "Weicao".to_string(),
             age: 22,
-            hobby: vec!["Programming", "Painting"]
+            hobby: ["Programming", "Painting"]
                 .iter()
                 .map(|m| m.to_string())
                 .collect(),

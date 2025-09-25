@@ -14,94 +14,90 @@ use tokio::{
 pub(crate) struct ExampleChallengeClientHandle;
 
 impl ClientHandle<ExampleChallengeServerHandle> for ExampleChallengeClientHandle {
-    fn process(mut instance: ConnectionInstance) -> impl std::future::Future<Output = ()> + Send {
-        async move {
-            // Accept challenge with correct key
-            let key = current_dir()
-                .unwrap()
-                .join("res")
-                .join("key")
-                .join("test_key_private.pem");
-            let result = instance.accept_challenge(key, "test_key").await.unwrap();
+    async fn process(mut instance: ConnectionInstance) {
+        // Accept challenge with correct key
+        let key = current_dir()
+            .unwrap()
+            .join("res")
+            .join("key")
+            .join("test_key_private.pem");
+        let result = instance.accept_challenge(key, "test_key").await.unwrap();
 
-            // Sent success
-            assert_eq!(true, result);
-            let response = instance.read_text().await.unwrap();
+        // Sent success
+        assert!(result);
+        let response = instance.read_text().await.unwrap();
 
-            // Verify success
-            assert_eq!("OK", response);
+        // Verify success
+        assert_eq!("OK", response);
 
-            // Accept challenge with wrong key
-            let key = current_dir()
-                .unwrap()
-                .join("res")
-                .join("key")
-                .join("wrong_key_private.pem");
-            let result = instance.accept_challenge(key, "test_key").await.unwrap();
+        // Accept challenge with wrong key
+        let key = current_dir()
+            .unwrap()
+            .join("res")
+            .join("key")
+            .join("wrong_key_private.pem");
+        let result = instance.accept_challenge(key, "test_key").await.unwrap();
 
-            // Sent success
-            assert_eq!(true, result);
-            let response = instance.read_text().await.unwrap();
+        // Sent success
+        assert!(result);
+        let response = instance.read_text().await.unwrap();
 
-            // Verify fail
-            assert_eq!("ERROR", response);
+        // Verify fail
+        assert_eq!("ERROR", response);
 
-            // Accept challenge with wrong name
-            let key = current_dir()
-                .unwrap()
-                .join("res")
-                .join("key")
-                .join("test_key_private.pem");
-            let result = instance.accept_challenge(key, "test_key__").await.unwrap();
+        // Accept challenge with wrong name
+        let key = current_dir()
+            .unwrap()
+            .join("res")
+            .join("key")
+            .join("test_key_private.pem");
+        let result = instance.accept_challenge(key, "test_key__").await.unwrap();
 
-            // Sent success
-            assert_eq!(true, result);
-            let response = instance.read_text().await.unwrap();
+        // Sent success
+        assert!(result);
+        let response = instance.read_text().await.unwrap();
 
-            // Verify fail
-            assert_eq!("ERROR", response);
-        }
+        // Verify fail
+        assert_eq!("ERROR", response);
     }
 }
 
 pub(crate) struct ExampleChallengeServerHandle;
 
 impl ServerHandle<ExampleChallengeClientHandle> for ExampleChallengeServerHandle {
-    fn process(mut instance: ConnectionInstance) -> impl std::future::Future<Output = ()> + Send {
-        async move {
-            // Challenge with correct key
-            let key_dir = current_dir().unwrap().join("res").join("key");
-            let result = instance.challenge(key_dir).await.unwrap();
-            assert_eq!(true, result);
+    async fn process(mut instance: ConnectionInstance) {
+        // Challenge with correct key
+        let key_dir = current_dir().unwrap().join("res").join("key");
+        let result = instance.challenge(key_dir).await.unwrap();
+        assert!(result);
 
-            // Send response
-            instance
-                .write_text(if result { "OK" } else { "ERROR" })
-                .await
-                .unwrap();
+        // Send response
+        instance
+            .write_text(if result { "OK" } else { "ERROR" })
+            .await
+            .unwrap();
 
-            // Challenge again
-            let key_dir = current_dir().unwrap().join("res").join("key");
-            let result = instance.challenge(key_dir).await.unwrap();
-            assert_eq!(false, result);
+        // Challenge again
+        let key_dir = current_dir().unwrap().join("res").join("key");
+        let result = instance.challenge(key_dir).await.unwrap();
+        assert!(!result);
 
-            // Send response
-            instance
-                .write_text(if result { "OK" } else { "ERROR" })
-                .await
-                .unwrap();
+        // Send response
+        instance
+            .write_text(if result { "OK" } else { "ERROR" })
+            .await
+            .unwrap();
 
-            // Challenge again
-            let key_dir = current_dir().unwrap().join("res").join("key");
-            let result = instance.challenge(key_dir).await.unwrap();
-            assert_eq!(false, result);
+        // Challenge again
+        let key_dir = current_dir().unwrap().join("res").join("key");
+        let result = instance.challenge(key_dir).await.unwrap();
+        assert!(!result);
 
-            // Send response
-            instance
-                .write_text(if result { "OK" } else { "ERROR" })
-                .await
-                .unwrap();
-        }
+        // Send response
+        instance
+            .write_text(if result { "OK" } else { "ERROR" })
+            .await
+            .unwrap();
     }
 }
 
