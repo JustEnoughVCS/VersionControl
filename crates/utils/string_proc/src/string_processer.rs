@@ -45,11 +45,10 @@ impl StringProcesser {
 
         while let Some(c) = chars.next() {
             processed.push(c);
-            if let Some(&next) = chars.peek() {
-                if c.is_lowercase() && next.is_uppercase() {
+            if let Some(&next) = chars.peek()
+                && c.is_lowercase() && next.is_uppercase() {
                     processed.push(' ');
                 }
-            }
         }
 
         processed

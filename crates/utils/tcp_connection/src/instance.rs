@@ -318,11 +318,10 @@ impl ConnectionInstance {
         let crc_instance = crc::Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
 
         // Make sure parent directory exists
-        if let Some(parent) = path.parent() {
-            if !parent.exists() {
+        if let Some(parent) = path.parent()
+            && !parent.exists() {
                 tokio::fs::create_dir_all(parent).await?;
             }
-        }
 
         // Read file header (version + size + crc)
         let mut version_buf = [0u8; 8];
@@ -398,8 +397,8 @@ impl ConnectionInstance {
         writer.flush().await?;
 
         // Validate CRC if enabled
-        if self.config.enable_crc_validation {
-            if let Some(crc_calculator) = crc_calculator {
+        if self.config.enable_crc_validation
+            && let Some(crc_calculator) = crc_calculator {
                 let actual_crc = crc_calculator.finalize();
                 if actual_crc != expected_crc && expected_crc != 0 {
                     return Err(TcpTargetError::File(format!(
@@ -408,7 +407,6 @@ impl ConnectionInstance {
                     )));
                 }
             }
-        }
 
         // Final flush and sync
         writer.flush().await?;
@@ -577,25 +575,23 @@ fn parse_ed25519_public_key(pem: &str) -> [u8; 32] {
     // Robust parsing for Ed25519 public key using pem crate
     let mut key_bytes = [0u8; 32];
 
-    if let Ok(pem_data) = pem::parse(pem) {
-        if pem_data.tag() == "PUBLIC KEY" && pem_data.contents().len() >= 32 {
+    if let Ok(pem_data) = pem::parse(pem)
+        && pem_data.tag() == "PUBLIC KEY" && pem_data.contents().len() >= 32 {
             let contents = pem_data.contents();
             key_bytes.copy_from_slice(&contents[contents.len() - 32..]);
         }
-    }
     key_bytes
 }
 
 /// Parse Ed25519 private key from PEM format
 fn parse_ed25519_private_key(pem: &str) -> Result<SigningKey, TcpTargetError> {
-    if let Ok(pem_data) = pem::parse(pem) {
-        if pem_data.tag() == "PRIVATE KEY" && pem_data.contents().len() >= 32 {
+    if let Ok(pem_data) = pem::parse(pem)
+        && pem_data.tag() == "PRIVATE KEY" && pem_data.contents().len() >= 32 {
             let contents = pem_data.contents();
             let mut seed = [0u8; 32];
             seed.copy_from_slice(&contents[contents.len() - 32..]);
             return Ok(SigningKey::from_bytes(&seed));
         }
-    }
     Err(TcpTargetError::Crypto(
         "Invalid Ed25519 private key format".to_string(),
     ))
@@ -666,7 +662,7 @@ fn sign_with_dsa(
     if algorithm_ptr == ecdsa_p256_ptr {
         let key_pair = EcdsaKeyPair::from_pkcs8(
             ECDSA_P256_SHA256_ASN1_SIGNING,
-            &key_bytes,
+            key_bytes,
             &SystemRandom::new(),
         )
         .map_err(|e| {
@@ -681,7 +677,7 @@ fn sign_with_dsa(
     } else if algorithm_ptr == ecdsa_p384_ptr {
         let key_pair = EcdsaKeyPair::from_pkcs8(
             ECDSA_P384_SHA384_ASN1_SIGNING,
-            &key_bytes,
+            key_bytes,
             &SystemRandom::new(),
         )
         .map_err(|e| {

@@ -56,7 +56,7 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
         let file_path = cwd.join(path);
 
         // Check if file exists
-        if !fs::metadata(&file_path).await.is_ok() {
+        if fs::metadata(&file_path).await.is_err() {
             return Ok(Self::DataType::default());
         }
 

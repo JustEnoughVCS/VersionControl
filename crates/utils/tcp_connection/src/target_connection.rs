@@ -24,7 +24,7 @@ where
         let Ok(socket) = TcpSocket::new_v4() else {
             return Err(TcpTargetError::from("Create tcp socket failed!"));
         };
-        let stream = match socket.connect(addr.clone()).await {
+        let stream = match socket.connect(addr).await {
             Ok(stream) => stream,
             Err(e) => {
                 let err = format!("Connect to `{}` failed: {}", addr, e);
@@ -40,7 +40,7 @@ where
     /// This function initiates a connection to the server address specified in the target configuration.
     pub async fn listen(&self) -> Result<(), TcpTargetError> {
         let addr = self.get_addr();
-        let listener = match TcpListener::bind(addr.clone()).await {
+        let listener = match TcpListener::bind(addr).await {
             Ok(listener) => listener,
             Err(_) => {
                 let err = format!("Bind to `{}` failed", addr);
@@ -49,7 +49,7 @@ where
         };
 
         let cfg: ServerTargetConfig = match self.get_server_cfg() {
-            Some(cfg) => cfg.clone(),
+            Some(cfg) => *cfg,
             None => ServerTargetConfig::default(),
         };
 

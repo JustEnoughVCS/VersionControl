@@ -236,11 +236,10 @@ impl Vault {
                 VirtualFileMeta::write_to(&meta, self.virtual_file_meta_path(&new_id)).await?;
 
                 // Move temp file to virtual file directory
-                if let Some(parent) = move_path.parent() {
-                    if !parent.exists() {
+                if let Some(parent) = move_path.parent()
+                    && !parent.exists() {
                         fs::create_dir_all(parent).await?;
                     }
-                }
                 fs::rename(receive_path, move_path).await?;
 
                 Ok(new_id)
@@ -251,7 +250,7 @@ impl Vault {
                     fs::remove_file(receive_path).await?;
                 }
 
-                Err(Error::new(ErrorKind::Other, e))
+                Err(Error::other(e))
             }
         }
     }
@@ -312,7 +311,7 @@ impl Vault {
                 VirtualFileMeta::write_to(&meta, self.virtual_file_meta_path(virtual_file_id))
                     .await?;
 
-                return Ok(());
+                Ok(())
             }
             Err(e) => {
                 // Read failed, remove temp file.
@@ -320,7 +319,7 @@ impl Vault {
                     fs::remove_file(receive_path).await?;
                 }
 
-                return Err(Error::new(ErrorKind::Other, e));
+                Err(Error::other(e))
             }
         }
     }

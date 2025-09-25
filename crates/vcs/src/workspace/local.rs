@@ -57,8 +57,7 @@ impl LocalWorkspace {
         LocalConfig::write_to(&config, local_path.join(CLIENT_FILE_WORKSPACE)).await?;
 
         // 2. Setup README.md
-        let readme_content = format!(
-            "\
+        let readme_content = "\
 # JustEnoughVCS Local Workspace
 
 This directory is a **Local Workspace** managed by `JustEnoughVCS`. All files and subdirectories within this scope can be version-controlled using the `JustEnoughVCS` CLI or GUI tools, with the following exceptions:
@@ -89,8 +88,7 @@ Without these credentials, the server will reject all access requests.
 ------
 
 *Thank you for using JustEnoughVCS!*
-"
-        )
+".to_string()
         .trim()
         .to_string();
         fs::write(local_path.join(CLIENT_FILE_README), readme_content).await?;

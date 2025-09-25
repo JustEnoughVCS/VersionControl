@@ -31,7 +31,7 @@ impl Vault {
     /// Update member info
     pub async fn update_member(&self, member: Member) -> Result<(), std::io::Error> {
         // Ensure member exist
-        if let Some(_) = self.member_cfg(&member.id()) {
+        if self.member_cfg(&member.id()).is_some() {
             let member_cfg_path = self.member_cfg_path(&member.id());
             Member::write_to(&member, member_cfg_path).await?;
             return Ok(());
@@ -43,7 +43,7 @@ impl Vault {
     /// Register a member to vault
     pub async fn register_member_to_vault(&self, member: Member) -> Result<(), std::io::Error> {
         // Ensure member not exist
-        if let Some(_) = self.member_cfg(&member.id()) {
+        if self.member_cfg(&member.id()).is_some() {
             return Err(Error::new(
                 ErrorKind::DirectoryNotEmpty,
                 format!("Member `{}` already registered!", member.id()),
@@ -89,17 +89,17 @@ impl Vault {
 
     /// Get the member's configuration file path, but do not check if the file exists
     pub fn member_cfg_path(&self, id: &MemberId) -> PathBuf {
-        let path = self
+        
+        self
             .vault_path
-            .join(SERVER_FILE_MEMBER_INFO.replace(ID_PARAM, id.to_string().as_str()));
-        path
+            .join(SERVER_FILE_MEMBER_INFO.replace(ID_PARAM, id.to_string().as_str()))
     }
 
     /// Get the member's public key file path, but do not check if the file exists
     pub fn member_key_path(&self, id: &MemberId) -> PathBuf {
-        let path = self
+        
+        self
             .vault_path
-            .join(SERVER_FILE_MEMBER_PUB.replace(ID_PARAM, id.to_string().as_str()));
-        path
+            .join(SERVER_FILE_MEMBER_PUB.replace(ID_PARAM, id.to_string().as_str()))
     }
 }
