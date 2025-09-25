@@ -13,9 +13,8 @@ use uuid::Uuid;
 
 use crate::{
     constants::{
-        SERVER_FILE_VIRTUAL_FILE_META, SERVER_FILE_VIRTUAL_FILE_VERSION_INSTANCE,
-        SERVER_PATH_VIRTUAL_FILE_ROOT, SERVER_PATH_VIRTUAL_FILE_STORAGE,
-        SERVER_PATH_VIRTUAL_FILE_TEMP,
+        SERVER_FILE_VF_META, SERVER_FILE_VF_VERSION_INSTANCE, SERVER_PATH_VF_ROOT,
+        SERVER_PATH_VF_STORAGE, SERVER_PATH_VF_TEMP,
     },
     workspace::vault::{MemberId, Vault},
 };
@@ -23,7 +22,9 @@ use crate::{
 pub type VirtualFileId = String;
 pub type VirtualFileVersion = String;
 
+const VF_PREFIX: &str = "vf_";
 const ID_PARAM: &str = "{vf_id}";
+const ID_INDEX: &str = "{vf_index}";
 const VERSION_PARAM: &str = "{vf_version}";
 const TEMP_NAME: &str = "{temp_name}";
 
@@ -74,18 +75,58 @@ impl Vault {
     pub fn virtual_file_temp_path(&self) -> PathBuf {
         let random_receive_name = format!("{}", uuid::Uuid::new_v4());
         self.vault_path
-            .join(SERVER_PATH_VIRTUAL_FILE_TEMP.replace(TEMP_NAME, &random_receive_name))
+            .join(SERVER_PATH_VF_TEMP.replace(TEMP_NAME, &random_receive_name))
     }
 
     /// Get the directory where virtual files are stored
     pub fn virtual_file_storage_dir(&self) -> PathBuf {
-        self.vault_path().join(SERVER_PATH_VIRTUAL_FILE_ROOT)
+        self.vault_path().join(SERVER_PATH_VF_ROOT)
     }
 
     /// Get the directory where a specific virtual file is stored
-    pub fn virtual_file_dir(&self, id: VirtualFileId) -> PathBuf {
-        self.vault_path()
-            .join(SERVER_PATH_VIRTUAL_FILE_STORAGE.replace(ID_PARAM, &id.to_string()))
+    pub fn virtual_file_dir(&self, id: &VirtualFileId) -> Result<PathBuf, std::io::Error> {
+        Ok(self.vault_path().join(
+            SERVER_PATH_VF_STORAGE
+                .replace(ID_PARAM, &id.to_string())
+                .replace(ID_INDEX, &Self::vf_index(id)?),
+        ))
+    }
+
+    // Generate index path of virtual file
+    fn vf_index(id: &VirtualFileId) -> Result<String, std::io::Error> {
+        // Remove VF_PREFIX if present
+        let id_str = if id.starts_with(VF_PREFIX) {
+            &id[VF_PREFIX.len()..]
+        } else {
+            id
+        };
+
+        // Extract the first part before the first hyphen
+        let first_part = id_str.split('-').next().ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "Invalid virtual file ID format: no hyphen found",
+            )
+        })?;
+
+        // Ensure the first part has exactly 8 characters
+        if first_part.len() != 8 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "Invalid virtual file ID format: first part must be 8 characters",
+            ))?;
+        }
+
+        // Split into 2-character chunks and join with path separator
+        let mut path = String::new();
+        for i in (0..first_part.len()).step_by(2) {
+            if i > 0 {
+                path.push('/');
+            }
+            path.push_str(&first_part[i..i + 2]);
+        }
+
+        Ok(path)
     }
 
     /// Get the directory where a specific virtual file's metadata is stored
@@ -95,28 +136,31 @@ impl Vault {
         version: &VirtualFileVersion,
     ) -> PathBuf {
         self.vault_path().join(
-            SERVER_FILE_VIRTUAL_FILE_VERSION_INSTANCE
+            SERVER_FILE_VF_VERSION_INSTANCE
                 .replace(ID_PARAM, &id.to_string())
-                .replace(VERSION_PARAM, &version.to_string()),
+                .replace(ID_INDEX, &version.to_string()),
         )
     }
 
     /// Get the directory where a specific virtual file's metadata is stored
     pub fn virtual_file_meta_path(&self, id: &VirtualFileId) -> PathBuf {
         self.vault_path()
-            .join(SERVER_FILE_VIRTUAL_FILE_META.replace(ID_PARAM, &id.to_string()))
+            .join(SERVER_FILE_VF_META.replace(ID_PARAM, &id.to_string()))
     }
 
     /// Get the virtual file with the given ID
-    pub fn virtual_file(&self, id: &VirtualFileId) -> Option<VirtualFile<'_>> {
-        let dir = self.virtual_file_dir(id.clone());
-        if dir.exists() {
-            Some(VirtualFile {
+    pub fn virtual_file(&self, id: &VirtualFileId) -> Result<VirtualFile<'_>, std::io::Error> {
+        let dir = self.virtual_file_dir(id);
+        if dir?.exists() {
+            Ok(VirtualFile {
                 id: id.clone(),
                 current_vault: self,
             })
         } else {
-            None
+            Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "Cannot found virtual file!",
+            ))
         }
     }
 
@@ -157,7 +201,7 @@ impl Vault {
     ) -> Result<VirtualFileId, std::io::Error> {
         const FIRST_VERSION: &str = "0";
         let receive_path = self.virtual_file_temp_path();
-        let new_id = format!("vf_{}", Uuid::new_v4());
+        let new_id = format!("{}{}", VF_PREFIX, Uuid::new_v4());
         let move_path = self.virtual_file_real_path(&new_id, &FIRST_VERSION.to_string());
 
         match instance.read_file(receive_path.clone()).await {
@@ -296,7 +340,7 @@ impl Vault {
             .await?;
 
         // Ensure virtual file exist
-        let Some(_) = self.virtual_file(virtual_file_id) else {
+        let Ok(_) = self.virtual_file(virtual_file_id) else {
             return Err(Error::new(
                 ErrorKind::NotFound,
                 format!("Virtual file `{}` not found!", virtual_file_id),

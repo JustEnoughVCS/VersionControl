@@ -1,10 +1,10 @@
 use std::io::Error;
 
 use cfg_file::config::ConfigFile;
-use env::{
+use vcs::{
     constants::{
         SERVER_FILE_MEMBER_INFO, SERVER_FILE_README, SERVER_FILE_VAULT, SERVER_PATH_MEMBER_PUB,
-        SERVER_PATH_MEMBERS, SERVER_PATH_SHEETS, SERVER_PATH_VIRTUAL_FILE_ROOT,
+        SERVER_PATH_MEMBERS, SERVER_PATH_SHEETS, SERVER_PATH_VF_ROOT,
     },
     workspace::{
         member::Member,
@@ -32,7 +32,7 @@ async fn test_vault_setup_and_member_register() -> Result<(), std::io::Error> {
     assert!(dir.join(SERVER_PATH_SHEETS).exists());
     assert!(dir.join(SERVER_PATH_MEMBERS).exists());
     assert!(dir.join(SERVER_PATH_MEMBER_PUB).exists());
-    assert!(dir.join(SERVER_PATH_VIRTUAL_FILE_ROOT).exists());
+    assert!(dir.join(SERVER_PATH_VF_ROOT).exists());
 
     // Get vault
     let config = VaultConfig::read_from(dir.join(SERVER_FILE_VAULT)).await?;

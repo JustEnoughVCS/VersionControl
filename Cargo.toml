@@ -5,11 +5,11 @@ license-file = "LICENSE-MIT.md"
 authors = ["Weicao-CatilGrass (GitHub)"]
 
 [features]
-all = ["cfg_file", "tcp_connection", "string_proc", "env"]
+all = ["cfg_file", "tcp_connection", "string_proc", "vcs"]
 cfg_file = []
 tcp_connection = []
 string_proc = []
-env = []
+vcs = []
 
 [workspace]
 members = [
@@ -22,8 +22,8 @@ members = [
 
     "crates/utils/string_proc",
 
-    "crates/env",
-    "crates/env/env_test",
+    "crates/vcs",
+    "crates/vcs/vcs_test",
 ]
 
 [workspace.package]
@@ -53,4 +53,4 @@ cfg_file = { path = "crates/utils/cfg_file" }
 tcp_connection = { path = "crates/utils/tcp_connection" }
 string_proc = { path = "crates/utils/string_proc" }
 
-env = { path = "crates/env" }
+vcs = { path = "crates/vcs" }

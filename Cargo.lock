@@ -356,29 +356,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "env"
-version = "0.1.0"
-dependencies = [
- "cfg_file",
- "dirs",
- "serde",
- "string_proc",
- "tcp_connection",
- "tokio",
- "uuid",
-]
-
-[[package]]
-name = "env_test"
-version = "0.1.0"
-dependencies = [
- "cfg_file",
- "env",
- "tcp_connection",
- "tokio",
-]
-
-[[package]]
 name = "equivalent"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -511,9 +488,9 @@ name = "just_enough_vcs"
 version = "0.0.0"
 dependencies = [
  "cfg_file",
- "env",
  "string_proc",
  "tcp_connection",
+ "vcs",
 ]
 
 [[package]]
@@ -1308,6 +1285,29 @@ dependencies = [
  "js-sys",
  "serde",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "vcs"
+version = "0.1.0"
+dependencies = [
+ "cfg_file",
+ "dirs",
+ "serde",
+ "string_proc",
+ "tcp_connection",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "vcs_test"
+version = "0.1.0"
+dependencies = [
+ "cfg_file",
+ "tcp_connection",
+ "tokio",
+ "vcs",
 ]
 
 [[package]]

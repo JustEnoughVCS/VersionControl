@@ -1,8 +1,8 @@
-// Feature `env`
-#[cfg(feature = "env")]
-pub mod env {
-    extern crate env;
-    pub use env::*;
+// Feature `vcs`
+#[cfg(feature = "vcs")]
+pub mod vcs {
+    extern crate vcs;
+    pub use vcs::*;
 }
 
 pub mod utils {
@@ -29,8 +29,8 @@ pub mod utils {
 }
 
 pub mod prelude {
-    #[cfg(feature = "env")]
-    pub use super::env::*;
+    #[cfg(feature = "vcs")]
+    pub use super::vcs::*;
 
     #[cfg(feature = "tcp_connection")]
     pub use super::utils::tcp_connection::*;

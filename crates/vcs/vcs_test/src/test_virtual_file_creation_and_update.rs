@@ -1,13 +1,6 @@
 use std::time::Duration;
 
 use cfg_file::config::ConfigFile;
-use env::{
-    constants::SERVER_FILE_VAULT,
-    workspace::{
-        member::Member,
-        vault::{Vault, config::VaultConfig, virtual_file::VirtualFileVersionDescription},
-    },
-};
 use tcp_connection::{
     handle::{ClientHandle, ServerHandle},
     target::TcpServerTarget,
@@ -16,6 +9,13 @@ use tcp_connection::{
 use tokio::{
     join,
     time::{sleep, timeout},
+};
+use vcs::{
+    constants::SERVER_FILE_VAULT,
+    workspace::{
+        member::Member,
+        vault::{Vault, config::VaultConfig, virtual_file::VirtualFileVersionDescription},
+    },
 };
 
 use crate::get_test_dir;

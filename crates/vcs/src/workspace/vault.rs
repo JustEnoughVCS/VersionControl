@@ -9,7 +9,7 @@ use cfg_file::config::ConfigFile;
 use crate::{
     constants::{
         SERVER_FILE_README, SERVER_FILE_VAULT, SERVER_PATH_MEMBER_PUB, SERVER_PATH_MEMBERS,
-        SERVER_PATH_SHEETS, SERVER_PATH_VIRTUAL_FILE_ROOT,
+        SERVER_PATH_SHEETS, SERVER_PATH_VF_ROOT,
     },
     current::{current_vault_path, find_vault_path},
     workspace::vault::config::VaultConfig,
@@ -74,7 +74,7 @@ impl Vault {
         create_dir_all(vault_path.join(SERVER_PATH_MEMBERS))?;
 
         // 5. Setup storage directory
-        create_dir_all(vault_path.join(SERVER_PATH_VIRTUAL_FILE_ROOT))?;
+        create_dir_all(vault_path.join(SERVER_PATH_VF_ROOT))?;
 
         // Final, generate README.md
         let readme_content = format!(
@@ -120,7 +120,7 @@ Please report any issues or questions on the GitHub issue tracker.
 ## Thanks :)
 Thank you for using `JustEnoughVCS!`
         ",
-            SERVER_PATH_MEMBER_PUB, SERVER_PATH_VIRTUAL_FILE_ROOT
+            SERVER_PATH_MEMBER_PUB, SERVER_PATH_VF_ROOT
         )
         .trim()
         .to_string();

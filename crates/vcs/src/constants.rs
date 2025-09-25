@@ -22,11 +22,11 @@ pub const SERVER_FILE_MEMBER_INFO: &str = "./members/{member_id}.toml"; // crate
 pub const SERVER_FILE_MEMBER_PUB: &str = "./key/{member_id}.pem"; // crates::utils::tcp_connection::instance
 
 // Server - Virtual File Storage
-pub const SERVER_PATH_VIRTUAL_FILE_TEMP: &str = "./.temp/{temp_name}";
-pub const SERVER_PATH_VIRTUAL_FILE_ROOT: &str = "./storage/";
-pub const SERVER_PATH_VIRTUAL_FILE_STORAGE: &str = "./storage/{vf_id}/";
-pub const SERVER_FILE_VIRTUAL_FILE_VERSION_INSTANCE: &str = "./storage/{vf_id}/{vf_version}.rf";
-pub const SERVER_FILE_VIRTUAL_FILE_META: &str = "./storage/{vf_id}/meta.yaml";
+pub const SERVER_PATH_VF_TEMP: &str = "./.temp/{temp_name}";
+pub const SERVER_PATH_VF_ROOT: &str = "./storage/";
+pub const SERVER_PATH_VF_STORAGE: &str = "./storage/{vf_index}/{vf_id}/";
+pub const SERVER_FILE_VF_VERSION_INSTANCE: &str = "./storage/{vf_index}/{vf_id}/{vf_version}.rf";
+pub const SERVER_FILE_VF_META: &str = "./storage/{vf_index}/{vf_id}/meta.yaml";
 
 pub const SERVER_FILE_README: &str = "./README.md";
 
