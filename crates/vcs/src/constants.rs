@@ -46,5 +46,5 @@ pub const CLIENT_FILE_README: &str = "./README.md";
 
 // User - Verify (Documents path)
 pub const USER_FILE_ACCOUNTS: &str = "./accounts/";
-pub const USER_FILE_KEY_PUB: &str = "./accounts/{self_id}_private.pem";
+pub const USER_FILE_KEY: &str = "./accounts/{self_id}_private.pem";
 pub const USER_FILE_MEMBER: &str = "./accounts/{self_id}.toml";
