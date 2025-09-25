@@ -1,4 +1,4 @@
-name: JustEnoughVCS
+name: Rust CI
 
 on:
   push:
@@ -9,14 +9,37 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: "-D warnings"
-  CARGO_BUILD_TARGET: x86_64-unknown-linux-musl
 
 jobs:
-  lint:
+  setup:
     runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.value }}
     steps:
     - uses: actions/checkout@v4
-    - name: Install Rust
+    - name: Install Rust toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+        toolchain: stable
+        targets: x86_64-unknown-linux-musl
+    - name: Generate cache key
+      id: cache-key
+      run: echo "value=cargo-$(rustc -V | sed 's/.*(\(.*\))/\1/')-$(sha256sum Cargo.lock | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+
+  lint:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+    - uses: actions/checkout@v4
+    - name: Restore cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ needs.setup.outputs.cache-key }}-lint
+    - name: Install Rust toolchain
       uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
         toolchain: stable
@@ -28,51 +51,48 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    needs: lint
+    needs: [setup, lint]
+    env:
+      CARGO_BUILD_TARGET: x86_64-unknown-linux-musl
     steps:
     - uses: actions/checkout@v4
-    
-    - name: Cache cargo registry
+    - name: Restore cache
       uses: actions/cache@v3
       with:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
           target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-
-    
-    - name: Install musl target
-      run: rustup target add x86_64-unknown-linux-musl
-      
+        key: ${{ needs.setup.outputs.cache-key }}-test
+    - name: Verify musl target is installed
+      run: rustup target list | grep x86_64-unknown-linux-musl | grep installed
     - name: Build
-      run: cargo build --workspace --verbose --target x86_64-unknown-linux-musl
-      
+      run: cargo build --workspace --verbose
     - name: Run tests
-      run: cargo test --workspace --verbose --target x86_64-unknown-linux-musl
-      
+      run: cargo test --workspace --verbose
     - name: Check binary compatibility
       run: |
-        cargo build --workspace --release --target x86_64-unknown-linux-musl
-        find target/x86_64-unknown-linux-musl/release -maxdepth 1 -executable -type f | head -5 | xargs -I {} file {}
-        echo "Built binaries are statically linked:"
-        find target/x86_64-unknown-linux-musl/release -maxdepth 1 -executable -type f | head -5 | xargs -I {} ldd {} 2>&1 | grep -q "not a dynamic executable" && echo "✓ All binaries are static"
+        cargo build --workspace --release
+        find target/x86_64-unknown-linux-musl/release -maxdepth 1 -executable -type f 2>/dev/null | head -5 | xargs -I {} sh -c 'file {} | grep -q "statically linked" && echo "✓ {} is statically linked" || echo "✗ {} is not statically linked"'
 
   release:
     runs-on: ubuntu-latest
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+    env:
+      CARGO_BUILD_TARGET: x86_64-unknown-linux-musl
     steps:
     - uses: actions/checkout@v4
-    
-    - name: Install musl target
-      run: rustup target add x86_64-unknown-linux-musl
-      
+    - name: Restore cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ needs.setup.outputs.cache-key }}-release
     - name: Build release binaries
-      run: cargo build --workspace --release --target x86_64-unknown-linux-musl
-      
+      run: cargo build --workspace --release
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
