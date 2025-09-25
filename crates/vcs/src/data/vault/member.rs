@@ -7,8 +7,8 @@ use std::{
 use cfg_file::config::ConfigFile;
 
 use crate::{
-    constants::{SERVER_FILE_MEMBER_INFO, SERVER_FILE_MEMBER_PUB},
-    workspace::{
+    constants::{SERVER_FILE_MEMBER_INFO, SERVER_FILE_MEMBER_PUB, SERVER_PATH_MEMBERS},
+    data::{
         member::Member,
         vault::{MemberId, Vault},
     },
@@ -26,6 +26,45 @@ impl Vault {
         }
 
         Err(Error::new(ErrorKind::NotFound, "Member not found!"))
+    }
+
+    /// List all member IDs in the vault
+    pub fn member_ids(&self) -> Result<Vec<MemberId>, std::io::Error> {
+        let members_path = self.vault_path.join(SERVER_PATH_MEMBERS);
+
+        if !members_path.exists() {
+            return Ok(Vec::new());
+        }
+
+        let mut member_ids = Vec::new();
+
+        for entry in fs::read_dir(members_path)? {
+            let entry = entry?;
+            let path = entry.path();
+
+            if path.is_file()
+                && let Some(file_name) = path.file_stem().and_then(|s| s.to_str())
+                && path.extension().and_then(|s| s.to_str()) == Some("toml")
+            {
+                member_ids.push(file_name.to_string());
+            }
+        }
+
+        Ok(member_ids)
+    }
+
+    /// Get all members
+    /// This method will read and deserialize member information, please pay attention to performance issues
+    pub async fn members(&self) -> Result<Vec<Member>, std::io::Error> {
+        let mut members = Vec::new();
+
+        for member_id in self.member_ids()? {
+            if let Ok(member) = self.member(&member_id).await {
+                members.push(member);
+            }
+        }
+
+        Ok(members)
     }
 
     /// Update member info
@@ -89,17 +128,13 @@ impl Vault {
 
     /// Get the member's configuration file path, but do not check if the file exists
     pub fn member_cfg_path(&self, id: &MemberId) -> PathBuf {
-        
-        self
-            .vault_path
+        self.vault_path
             .join(SERVER_FILE_MEMBER_INFO.replace(ID_PARAM, id.to_string().as_str()))
     }
 
     /// Get the member's public key file path, but do not check if the file exists
     pub fn member_key_path(&self, id: &MemberId) -> PathBuf {
-        
-        self
-            .vault_path
+        self.vault_path
             .join(SERVER_FILE_MEMBER_PUB.replace(ID_PARAM, id.to_string().as_str()))
     }
 }

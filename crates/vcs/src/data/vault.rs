@@ -12,7 +12,7 @@ use crate::{
         SERVER_PATH_SHEETS, SERVER_PATH_VF_ROOT,
     },
     current::{current_vault_path, find_vault_path},
-    workspace::vault::config::VaultConfig,
+    data::vault::config::VaultConfig,
 };
 
 pub mod config;

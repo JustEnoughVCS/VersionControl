@@ -12,7 +12,7 @@ use tokio::{
 };
 use vcs::{
     constants::SERVER_FILE_VAULT,
-    workspace::{
+    data::{
         member::Member,
         vault::{Vault, config::VaultConfig, virtual_file::VirtualFileVersionDescription},
     },
