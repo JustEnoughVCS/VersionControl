@@ -4,7 +4,7 @@ use std::net::SocketAddr;
 
 use crate::constants::CLIENT_FILE_WORKSPACE;
 use crate::constants::PORT;
-use crate::workspace::vault::MemberId;
+use crate::data::vault::MemberId;
 
 #[derive(Serialize, Deserialize, ConfigFile)]
 #[cfg_file(path = CLIENT_FILE_WORKSPACE)]

@@ -2,8 +2,8 @@ use cfg_file::ConfigFile;
 use serde::{Deserialize, Serialize};
 
 use crate::constants::SERVER_FILE_VAULT;
-use crate::workspace::member::Member;
-use crate::workspace::vault::MemberId;
+use crate::data::member::Member;
+use crate::data::vault::MemberId;
 
 #[derive(Serialize, Deserialize, ConfigFile)]
 #[cfg_file(path = SERVER_FILE_VAULT)]

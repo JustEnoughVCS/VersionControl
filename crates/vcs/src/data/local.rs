@@ -6,7 +6,7 @@ use tokio::fs;
 use crate::{
     constants::{CLIENT_FILE_README, CLIENT_FILE_WORKSPACE},
     current::{current_local_path, find_local_path},
-    workspace::local::config::LocalConfig,
+    data::local::config::LocalConfig,
 };
 
 pub mod config;
