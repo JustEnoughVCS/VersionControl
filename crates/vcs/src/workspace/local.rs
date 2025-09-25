@@ -9,7 +9,6 @@ use crate::{
     workspace::local::config::LocalConfig,
 };
 
-pub mod accounts;
 pub mod config;
 
 pub struct LocalWorkspace {

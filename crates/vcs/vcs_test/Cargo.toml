@@ -1,12 +1,12 @@
 [package]
-name = "env_test"
+name = "vcs_test"
 edition = "2024"
 version.workspace = true
 
 [dependencies]
 tcp_connection = { path = "../../utils/tcp_connection" }
 cfg_file = { path = "../../utils/cfg_file", features = ["default"] }
-env = { path = "../../env" }
+vcs = { path = "../../vcs" }
 
 # Async & Networking
 tokio = { version = "1.46.1", features = ["full"] }
