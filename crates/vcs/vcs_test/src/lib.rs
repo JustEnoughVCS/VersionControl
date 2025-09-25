@@ -8,6 +8,9 @@ pub mod test_vault_setup_and_member_register;
 #[cfg(test)]
 pub mod test_virtual_file_creation_and_update;
 
+#[cfg(test)]
+pub mod test_local_workspace_setup_and_account_management;
+
 pub async fn get_test_dir(area: &str) -> Result<PathBuf, std::io::Error> {
     let dir = current_dir()?.join(".temp").join("test").join(area);
     if !dir.exists() {
