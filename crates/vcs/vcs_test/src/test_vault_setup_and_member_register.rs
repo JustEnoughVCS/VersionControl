@@ -6,7 +6,7 @@ use vcs::{
         SERVER_FILE_MEMBER_INFO, SERVER_FILE_README, SERVER_FILE_VAULT, SERVER_PATH_MEMBER_PUB,
         SERVER_PATH_MEMBERS, SERVER_PATH_SHEETS, SERVER_PATH_VF_ROOT,
     },
-    workspace::{
+    data::{
         member::Member,
         vault::{Vault, config::VaultConfig},
     },
