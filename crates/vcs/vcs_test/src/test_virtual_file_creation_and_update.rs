@@ -24,94 +24,86 @@ struct VirtualFileCreateClientHandle;
 struct VirtualFileCreateServerHandle;
 
 impl ClientHandle<VirtualFileCreateServerHandle> for VirtualFileCreateClientHandle {
-    fn process(
-        mut instance: tcp_connection::instance::ConnectionInstance,
-    ) -> impl Future<Output = ()> + Send {
-        async move {
-            let dir = get_test_dir("virtual_file_creation_and_update_2")
-                .await
-                .unwrap();
-            // Create first test file for virtual file creation
-            let test_content_1 = b"Test file content for virtual file creation";
-            let temp_file_path_1 = dir.join("test_virtual_file_1.txt");
+    async fn process(mut instance: tcp_connection::instance::ConnectionInstance) {
+        let dir = get_test_dir("virtual_file_creation_and_update_2")
+            .await
+            .unwrap();
+        // Create first test file for virtual file creation
+        let test_content_1 = b"Test file content for virtual file creation";
+        let temp_file_path_1 = dir.join("test_virtual_file_1.txt");
 
-            tokio::fs::write(&temp_file_path_1, test_content_1)
-                .await
-                .unwrap();
+        tokio::fs::write(&temp_file_path_1, test_content_1)
+            .await
+            .unwrap();
 
-            // Send the first file to server for virtual file creation
-            instance.write_file(&temp_file_path_1).await.unwrap();
+        // Send the first file to server for virtual file creation
+        instance.write_file(&temp_file_path_1).await.unwrap();
 
-            // Create second test file for virtual file update
-            let test_content_2 = b"Updated test file content for virtual file";
-            let temp_file_path_2 = dir.join("test_virtual_file_2.txt");
+        // Create second test file for virtual file update
+        let test_content_2 = b"Updated test file content for virtual file";
+        let temp_file_path_2 = dir.join("test_virtual_file_2.txt");
 
-            tokio::fs::write(&temp_file_path_2, test_content_2)
-                .await
-                .unwrap();
+        tokio::fs::write(&temp_file_path_2, test_content_2)
+            .await
+            .unwrap();
 
-            // Send the second file to server for virtual file update
-            instance.write_file(&temp_file_path_2).await.unwrap();
-        }
+        // Send the second file to server for virtual file update
+        instance.write_file(&temp_file_path_2).await.unwrap();
     }
 }
 
 impl ServerHandle<VirtualFileCreateClientHandle> for VirtualFileCreateServerHandle {
-    fn process(
-        mut instance: tcp_connection::instance::ConnectionInstance,
-    ) -> impl Future<Output = ()> + Send {
-        async move {
-            let dir = get_test_dir("virtual_file_creation_and_update")
+    async fn process(mut instance: tcp_connection::instance::ConnectionInstance) {
+        let dir = get_test_dir("virtual_file_creation_and_update")
+            .await
+            .unwrap();
+
+        // Setup vault
+        Vault::setup_vault(dir.clone()).await.unwrap();
+
+        // Read vault
+        let Some(vault) = Vault::init(
+            VaultConfig::read_from(dir.join(SERVER_FILE_VAULT))
                 .await
-                .unwrap();
+                .unwrap(),
+            &dir,
+        ) else {
+            panic!("No vault found!");
+        };
 
-            // Setup vault
-            Vault::setup_vault(dir.clone()).await.unwrap();
+        // Register member
+        let member_id = "test_member";
+        vault
+            .register_member_to_vault(Member::new(member_id))
+            .await
+            .unwrap();
 
-            // Read vault
-            let Some(vault) = Vault::init(
-                VaultConfig::read_from(dir.join(SERVER_FILE_VAULT))
-                    .await
-                    .unwrap(),
-                &dir,
-            ) else {
-                panic!("No vault found!");
-            };
+        // Create visual file
+        let virtual_file_id = vault
+            .create_virtual_file_from_connection(&mut instance, &member_id.to_string())
+            .await
+            .unwrap();
 
-            // Register member
-            let member_id = "test_member";
-            vault
-                .register_member_to_vault(Member::new(member_id))
-                .await
-                .unwrap();
+        // Grant edit right to member
+        vault
+            .grant_virtual_file_edit_right(&member_id.to_string(), &virtual_file_id)
+            .await
+            .unwrap();
 
-            // Create visual file
-            let virtual_file_id = vault
-                .create_virtual_file_from_connection(&mut instance, &member_id.to_string())
-                .await
-                .unwrap();
-
-            // Grant edit right to member
-            vault
-                .grant_virtual_file_edit_right(&member_id.to_string(), &virtual_file_id)
-                .await
-                .unwrap();
-
-            // Update visual file
-            vault
-                .update_virtual_file_from_connection(
-                    &mut instance,
-                    &member_id.to_string(),
-                    &virtual_file_id,
-                    &"2".to_string(),
-                    VirtualFileVersionDescription {
-                        creator: member_id.to_string(),
-                        description: "Update".to_string(),
-                    },
-                )
-                .await
-                .unwrap();
-        }
+        // Update visual file
+        vault
+            .update_virtual_file_from_connection(
+                &mut instance,
+                &member_id.to_string(),
+                &virtual_file_id,
+                &"2".to_string(),
+                VirtualFileVersionDescription {
+                    creator: member_id.to_string(),
+                    description: "Update".to_string(),
+                },
+            )
+            .await
+            .unwrap();
     }
 }
 

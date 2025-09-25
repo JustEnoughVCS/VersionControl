@@ -14,31 +14,27 @@ use tokio::{
 pub(crate) struct ExampleFileTransferClientHandle;
 
 impl ClientHandle<ExampleFileTransferServerHandle> for ExampleFileTransferClientHandle {
-    fn process(mut instance: ConnectionInstance) -> impl std::future::Future<Output = ()> + Send {
-        async move {
-            let image_path = current_dir()
-                .unwrap()
-                .join("res")
-                .join("image")
-                .join("test_transfer.png");
-            instance.write_file(image_path).await.unwrap();
-        }
+    async fn process(mut instance: ConnectionInstance) {
+        let image_path = current_dir()
+            .unwrap()
+            .join("res")
+            .join("image")
+            .join("test_transfer.png");
+        instance.write_file(image_path).await.unwrap();
     }
 }
 
 pub(crate) struct ExampleFileTransferServerHandle;
 
 impl ServerHandle<ExampleFileTransferClientHandle> for ExampleFileTransferServerHandle {
-    fn process(mut instance: ConnectionInstance) -> impl std::future::Future<Output = ()> + Send {
-        async move {
-            let save_path = current_dir()
-                .unwrap()
-                .join("res")
-                .join(".temp")
-                .join("image")
-                .join("test_transfer.png");
-            instance.read_file(save_path).await.unwrap();
-        }
+    async fn process(mut instance: ConnectionInstance) {
+        let save_path = current_dir()
+            .unwrap()
+            .join("res")
+            .join(".temp")
+            .join("image")
+            .join("test_transfer.png");
+        instance.read_file(save_path).await.unwrap();
     }
 }
 

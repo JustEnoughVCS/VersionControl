@@ -11,35 +11,31 @@ use tokio::{join, time::sleep};
 pub(crate) struct ExampleClientHandle;
 
 impl ClientHandle<ExampleServerHandle> for ExampleClientHandle {
-    fn process(mut instance: ConnectionInstance) -> impl std::future::Future<Output = ()> + Send {
-        async move {
-            // Write name
-            let Ok(_) = instance.write_text("Peter").await else {
-                panic!("Write text failed!");
-            };
-            // Read msg
-            let Ok(result) = instance.read_text().await else {
-                return;
-            };
-            assert_eq!("Hello Peter!", result);
-        }
+    async fn process(mut instance: ConnectionInstance) {
+        // Write name
+        let Ok(_) = instance.write_text("Peter").await else {
+            panic!("Write text failed!");
+        };
+        // Read msg
+        let Ok(result) = instance.read_text().await else {
+            return;
+        };
+        assert_eq!("Hello Peter!", result);
     }
 }
 
 pub(crate) struct ExampleServerHandle;
 
 impl ServerHandle<ExampleClientHandle> for ExampleServerHandle {
-    fn process(mut instance: ConnectionInstance) -> impl std::future::Future<Output = ()> + Send {
-        async move {
-            // Read name
-            let Ok(name) = instance.read_text().await else {
-                return;
-            };
-            // Write msg
-            let Ok(_) = instance.write_text(format!("Hello {}!", name)).await else {
-                panic!("Write text failed!");
-            };
-        }
+    async fn process(mut instance: ConnectionInstance) {
+        // Read name
+        let Ok(name) = instance.read_text().await else {
+            return;
+        };
+        // Write msg
+        let Ok(_) = instance.write_text(format!("Hello {}!", name)).await else {
+            panic!("Write text failed!");
+        };
     }
 }
 
