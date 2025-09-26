@@ -111,19 +111,33 @@ async fn test_sheet_creation_management_and_persistence() -> Result<(), std::io:
 
     // Test 7: List all sheets in vault
     let sheet_names = vault.sheet_names()?;
-    assert_eq!(sheet_names.len(), 1);
-    assert_eq!(sheet_names[0], sheet_name);
+    assert_eq!(sheet_names.len(), 2);
+    assert!(sheet_names.contains(&sheet_name));
+    assert!(sheet_names.contains(&"ref".to_string()));
 
     let all_sheets = vault.sheets().await?;
-    assert_eq!(all_sheets.len(), 1);
-    assert_eq!(all_sheets[0].holder(), &member_id);
+    assert_eq!(all_sheets.len(), 2);
+    // One sheet should be the test sheet, the other should be the ref sheet with host as holder
+    let test_sheet_holder = all_sheets
+        .iter()
+        .find(|s| s.holder() == &member_id)
+        .map(|s| s.holder())
+        .unwrap();
+    let ref_sheet_holder = all_sheets
+        .iter()
+        .find(|s| s.holder() == &"host".to_string())
+        .map(|s| s.holder())
+        .unwrap();
+    assert_eq!(test_sheet_holder, &member_id);
+    assert_eq!(ref_sheet_holder, &"host".to_string());
 
     // Test 8: Safe deletion (move to trash)
     vault.delete_sheet_safely(&sheet_name).await?;
 
     // Verify sheet is not in normal listing but can be restored
     let sheet_names_after_deletion = vault.sheet_names()?;
-    assert_eq!(sheet_names_after_deletion.len(), 0);
+    assert_eq!(sheet_names_after_deletion.len(), 1);
+    assert_eq!(sheet_names_after_deletion[0], "ref");
 
     // Test 9: Restore sheet from trash
     let restored_sheet = vault.sheet(&sheet_name).await?;
@@ -132,14 +146,17 @@ async fn test_sheet_creation_management_and_persistence() -> Result<(), std::io:
 
     // Verify sheet is back in normal listing
     let sheet_names_after_restore = vault.sheet_names()?;
-    assert_eq!(sheet_names_after_restore.len(), 1);
+    assert_eq!(sheet_names_after_restore.len(), 2);
+    assert!(sheet_names_after_restore.contains(&sheet_name));
+    assert!(sheet_names_after_restore.contains(&"ref".to_string()));
 
     // Test 10: Permanent deletion
     vault.delete_sheet(&sheet_name).await?;
 
     // Verify sheet is permanently gone
     let sheet_names_final = vault.sheet_names()?;
-    assert_eq!(sheet_names_final.len(), 0);
+    assert_eq!(sheet_names_final.len(), 1);
+    assert_eq!(sheet_names_final[0], "ref");
 
     // Attempt to access deleted sheet should fail
     let result = vault.sheet(&sheet_name).await;

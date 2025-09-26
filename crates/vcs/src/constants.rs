@@ -7,6 +7,9 @@ pub const PATH_TEMP: &str = "./.temp/";
 // Default Port
 pub const PORT: u16 = 25331;
 
+// Vault Host Name
+pub const VAULT_HOST_NAME: &str = "host";
+
 // Server
 // Server - Vault (Main)
 pub const SERVER_FILE_VAULT: &str = "./vault.toml"; // crates::env::vault::vault_config
