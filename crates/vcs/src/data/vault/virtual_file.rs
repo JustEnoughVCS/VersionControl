@@ -70,6 +70,7 @@ impl VirtualFileVersionDescription {
     }
 }
 
+/// Virtual File Operations
 impl Vault {
     /// Generate a temporary path for receiving
     pub fn virtual_file_temp_path(&self) -> PathBuf {

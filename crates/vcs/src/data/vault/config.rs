@@ -23,6 +23,7 @@ impl Default for VaultConfig {
     }
 }
 
+/// Vault Management
 impl VaultConfig {
     // Change name of the vault.
     pub fn change_name(&mut self, name: impl Into<String>) {

@@ -13,6 +13,7 @@ use crate::{
     },
 };
 
+/// Vault Sheets Management
 impl Vault {
     /// Load all sheets in the vault
     ///
