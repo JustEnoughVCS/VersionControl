@@ -102,7 +102,7 @@ impl<'a> Sheet<'a> {
     /// Because I don't want a second instance of the sheet to be kept in memory.
     /// If needed, please deserialize and reload it.
     pub async fn persist(self) -> Result<(), std::io::Error> {
-        SheetData::write_to(&self.data, &self.sheet_path()).await
+        SheetData::write_to(&self.data, self.sheet_path()).await
     }
 
     /// Get the path to the sheet file
