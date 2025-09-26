@@ -54,9 +54,9 @@ impl Vault {
 
             // Check if it's a YAML file
             if path.is_file() && path.extension().map_or(false, |ext| ext == "yaml") {
-                if let Some(_file_stem) = path.file_stem().and_then(|s| s.to_str()) {
+                if let Some(file_stem) = path.file_stem().and_then(|s| s.to_str()) {
                     // Create a new SheetName and add it to the result list
-                    sheet_names.push(SheetName::new());
+                    sheet_names.push(file_stem.to_string());
                 }
             }
         }
@@ -128,7 +128,7 @@ impl Vault {
 
         // Create the sheet file
         let sheet_data = SheetData {
-            holder: sheet_name.clone(),
+            holder: holder.clone(),
             inputs: Vec::new(),
             mapping: HashMap::new(),
         };

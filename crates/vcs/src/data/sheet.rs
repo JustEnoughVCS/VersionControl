@@ -14,8 +14,15 @@ use crate::{
 pub type SheetName = String;
 pub type SheetPathBuf = PathBuf;
 pub type InputName = String;
-pub type InputPackage = (InputName, Vec<(InputRaltivePathBuf, VirtualFileId)>);
-pub type InputRaltivePathBuf = PathBuf;
+pub type InputRelativePathBuf = PathBuf;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InputPackage {
+    /// Name of the input package
+    pub name: InputName,
+    /// Files in this input package with their relative paths and virtual file IDs
+    pub files: Vec<(InputRelativePathBuf, VirtualFileId)>,
+}
 
 const SHEET_NAME: &str = "{sheet-name}";
 
@@ -62,9 +69,12 @@ impl<'a> Sheet<'a> {
     pub fn add_input(
         &mut self,
         input_name: InputName,
-        files: Vec<(InputRaltivePathBuf, VirtualFileId)>,
+        files: Vec<(InputRelativePathBuf, VirtualFileId)>,
     ) {
-        self.data.inputs.push((input_name, files));
+        self.data.inputs.push(InputPackage {
+            name: input_name,
+            files,
+        });
     }
 
     /// Remove an input package from the sheet
@@ -72,7 +82,7 @@ impl<'a> Sheet<'a> {
         self.data
             .inputs
             .iter()
-            .position(|(name, _)| name == input_name)
+            .position(|input| input.name == *input_name)
             .map(|pos| self.data.inputs.remove(pos))
     }
 
