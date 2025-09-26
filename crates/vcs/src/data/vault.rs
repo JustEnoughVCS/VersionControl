@@ -72,8 +72,7 @@ impl Vault {
         create_dir_all(vault_path.join(SERVER_PATH_VF_ROOT))?;
 
         let Some(vault) = Vault::init(config, &vault_path) else {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            return Err(std::io::Error::other(
                 "Failed to initialize vault",
             ));
         };
