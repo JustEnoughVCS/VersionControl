@@ -53,12 +53,11 @@ impl Vault {
             let path = entry.path();
 
             // Check if it's a YAML file
-            if path.is_file() && path.extension().map_or(false, |ext| ext == "yaml") {
-                if let Some(_file_stem) = path.file_stem().and_then(|s| s.to_str()) {
+            if path.is_file() && path.extension().is_some_and(|ext| ext == "yaml")
+                && let Some(file_stem) = path.file_stem().and_then(|s| s.to_str()) {
                     // Create a new SheetName and add it to the result list
-                    sheet_names.push(SheetName::new());
+                    sheet_names.push(file_stem.to_string());
                 }
-            }
         }
 
         Ok(sheet_names)
@@ -128,7 +127,7 @@ impl Vault {
 
         // Create the sheet file
         let sheet_data = SheetData {
-            holder: sheet_name.clone(),
+            holder: holder.clone(),
             inputs: Vec::new(),
             mapping: HashMap::new(),
         };
@@ -220,7 +219,7 @@ impl Vault {
         if !trash_dir.exists() {
             return Err(Error::new(
                 std::io::ErrorKind::NotFound,
-                format!("Trash directory does not exist!"),
+                "Trash directory does not exist!".to_string(),
             ));
         }
 
@@ -229,15 +228,14 @@ impl Vault {
             let entry = entry?;
             let path = entry.path();
 
-            if path.is_file() {
-                if let Some(file_name) = path.file_stem().and_then(|s| s.to_str()) {
+            if path.is_file()
+                && let Some(file_name) = path.file_stem().and_then(|s| s.to_str()) {
                     // Check if the filename starts with the sheet name
                     if file_name.starts_with(&sheet_name) {
                         found_path = Some(path);
                         break;
                     }
                 }
-            }
         }
 
         let trash_path = found_path.ok_or_else(|| {
