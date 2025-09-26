@@ -16,7 +16,7 @@ use crate::{
         SERVER_FILE_VF_META, SERVER_FILE_VF_VERSION_INSTANCE, SERVER_PATH_VF_ROOT,
         SERVER_PATH_VF_STORAGE, SERVER_PATH_VF_TEMP,
     },
-    data::vault::{MemberId, Vault},
+    data::{member::MemberId, vault::Vault},
 };
 
 pub type VirtualFileId = String;

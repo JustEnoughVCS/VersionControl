@@ -17,9 +17,8 @@ use crate::{
 
 pub mod config;
 pub mod member;
+pub mod sheets;
 pub mod virtual_file;
-
-pub type MemberId = String;
 
 pub struct Vault {
     config: VaultConfig,

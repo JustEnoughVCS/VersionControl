@@ -4,6 +4,8 @@ use cfg_file::ConfigFile;
 use serde::{Deserialize, Serialize};
 use string_proc::snake_case;
 
+pub type MemberId = String;
+
 #[derive(Debug, Eq, Clone, ConfigFile, Serialize, Deserialize)]
 pub struct Member {
     /// Member ID, the unique identifier of the member
