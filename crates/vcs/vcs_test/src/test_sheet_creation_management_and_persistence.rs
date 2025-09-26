@@ -48,20 +48,23 @@ async fn test_sheet_creation_management_and_persistence() -> Result<(), std::io:
 
     // Test 2: Add input packages to the sheet
     let input_name = "source_files".to_string();
-    let files = vec![
-        (
-            InputRelativePathBuf::from("src/main.rs"),
-            VirtualFileId::new(),
-        ),
-        (
-            InputRelativePathBuf::from("src/lib.rs"),
-            VirtualFileId::new(),
-        ),
-    ];
 
-    // Need to get a mutable reference to the sheet
+    // First add mapping entries that will be used to generate the input package
     let mut sheet = vault.sheet(&sheet_name).await?;
-    sheet.add_input(input_name.clone(), files.clone());
+
+    // Add mapping entries for the files
+    let main_rs_path = vcs::data::sheet::SheetPathBuf::from("src/main.rs");
+    let lib_rs_path = vcs::data::sheet::SheetPathBuf::from("src/lib.rs");
+    let main_rs_id = VirtualFileId::new();
+    let lib_rs_id = VirtualFileId::new();
+
+    sheet.add_mapping(main_rs_path.clone(), main_rs_id.clone());
+    sheet.add_mapping(lib_rs_path.clone(), lib_rs_id.clone());
+
+    // Use output_mappings to generate the InputPackage
+    let paths = vec![main_rs_path, lib_rs_path];
+    let input_package = sheet.output_mappings(input_name.clone(), &paths)?;
+    sheet.add_input(input_package)?;
 
     // Verify input was added
     assert_eq!(sheet.inputs().len(), 1);
@@ -70,11 +73,11 @@ async fn test_sheet_creation_management_and_persistence() -> Result<(), std::io:
     assert_eq!(added_input.files.len(), 2);
     assert_eq!(
         added_input.files[0].0,
-        InputRelativePathBuf::from("src/main.rs")
+        InputRelativePathBuf::from("source_files/main.rs")
     );
     assert_eq!(
         added_input.files[1].0,
-        InputRelativePathBuf::from("src/lib.rs")
+        InputRelativePathBuf::from("source_files/lib.rs")
     );
 
     // Test 3: Add mapping entries
@@ -83,7 +86,7 @@ async fn test_sheet_creation_management_and_persistence() -> Result<(), std::io:
     sheet.add_mapping(mapping_path.clone(), virtual_file_id.clone());
 
     // Verify mapping was added
-    assert_eq!(sheet.mapping().len(), 1);
+    assert_eq!(sheet.mapping().len(), 3);
     assert_eq!(sheet.mapping().get(&mapping_path), Some(&virtual_file_id));
 
     // Test 4: Persist sheet to disk
@@ -93,7 +96,7 @@ async fn test_sheet_creation_management_and_persistence() -> Result<(), std::io:
     let reloaded_sheet = vault.sheet(&sheet_name).await?;
     assert_eq!(reloaded_sheet.holder(), &member_id);
     assert_eq!(reloaded_sheet.inputs().len(), 1);
-    assert_eq!(reloaded_sheet.mapping().len(), 1);
+    assert_eq!(reloaded_sheet.mapping().len(), 3);
 
     // Test 5: Remove input package
     let mut sheet_for_removal = vault.sheet(&sheet_name).await?;
@@ -107,7 +110,7 @@ async fn test_sheet_creation_management_and_persistence() -> Result<(), std::io:
     // Test 6: Remove mapping entry
     let removed_virtual_file_id = sheet_for_removal.remove_mapping(&mapping_path);
     assert_eq!(removed_virtual_file_id, Some(virtual_file_id));
-    assert_eq!(sheet_for_removal.mapping().len(), 0);
+    assert_eq!(sheet_for_removal.mapping().len(), 2);
 
     // Test 7: List all sheets in vault
     let sheet_names = vault.sheet_names()?;
@@ -244,7 +247,7 @@ async fn test_sheet_data_serialization() -> Result<(), std::io::Error> {
 
     // Add some inputs
     let input_name = "source_files".to_string();
-    let files = vec![
+    let _files = vec![
         (
             InputRelativePathBuf::from("src/main.rs"),
             VirtualFileId::new(),
@@ -254,7 +257,19 @@ async fn test_sheet_data_serialization() -> Result<(), std::io::Error> {
             VirtualFileId::new(),
         ),
     ];
-    sheet.add_input(input_name, files);
+    // First add mapping entries
+    let main_rs_path = vcs::data::sheet::SheetPathBuf::from("src/main.rs");
+    let lib_rs_path = vcs::data::sheet::SheetPathBuf::from("src/lib.rs");
+    let main_rs_id = VirtualFileId::new();
+    let lib_rs_id = VirtualFileId::new();
+
+    sheet.add_mapping(main_rs_path.clone(), main_rs_id.clone());
+    sheet.add_mapping(lib_rs_path.clone(), lib_rs_id.clone());
+
+    // Use output_mappings to generate the InputPackage
+    let paths = vec![main_rs_path, lib_rs_path];
+    let input_package = sheet.output_mappings(input_name.clone(), &paths)?;
+    sheet.add_input(input_package)?;
 
     // Add some mappings
     sheet.add_mapping(

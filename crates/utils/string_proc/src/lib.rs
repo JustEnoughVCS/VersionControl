@@ -1,9 +1,10 @@
+pub mod format_processer;
 pub mod macros;
-pub mod string_processer;
+pub mod simple_processer;
 
 #[cfg(test)]
 mod tests {
-    use crate::string_processer::StringProcesser;
+    use crate::format_processer::FormatProcesser;
 
     #[test]
     fn test_processer() {
@@ -22,7 +23,7 @@ mod tests {
         ];
 
         for (input, expected) in test_cases {
-            let processor = StringProcesser::from(input);
+            let processor = FormatProcesser::from(input);
             assert_eq!(
                 processor.to_camel_case(),
                 expected,
@@ -34,7 +35,7 @@ mod tests {
 
     #[test]
     fn test_conversions() {
-        let processor = StringProcesser::from("brewCoffee");
+        let processor = FormatProcesser::from("brewCoffee");
 
         assert_eq!(processor.to_upper_case(), "BREW COFFEE");
         assert_eq!(processor.to_lower_case(), "brew coffee");
