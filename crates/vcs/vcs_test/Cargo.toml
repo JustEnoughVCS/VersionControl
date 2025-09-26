@@ -5,6 +5,7 @@ version.workspace = true
 
 [dependencies]
 tcp_connection = { path = "../../utils/tcp_connection" }
+tcp_connection_test = { path = "../../utils/tcp_connection/tcp_connection_test" }
 cfg_file = { path = "../../utils/cfg_file", features = ["default"] }
 vcs = { path = "../../vcs" }
 

@@ -6,3 +6,4 @@ version.workspace = true
 [dependencies]
 tcp_connection = { path = "../../tcp_connection" }
 tokio = { version = "1.46.1", features = ["full"] }
+serde = { version = "1.0.219", features = ["derive"] }

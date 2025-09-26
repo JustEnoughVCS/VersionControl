@@ -1,12 +1,13 @@
 use std::time::Duration;
 
-use tcp_connection::{
+use tcp_connection::instance::ConnectionInstance;
+use tokio::{join, time::sleep};
+
+use crate::test_utils::{
     handle::{ClientHandle, ServerHandle},
-    instance::ConnectionInstance,
     target::TcpServerTarget,
     target_configure::ServerTargetConfig,
 };
-use tokio::{join, time::sleep};
 
 pub(crate) struct ExampleClientHandle;
 

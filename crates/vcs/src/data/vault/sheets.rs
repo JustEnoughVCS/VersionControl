@@ -13,6 +13,7 @@ use crate::{
     },
 };
 
+/// Vault Sheets Management
 impl Vault {
     /// Load all sheets in the vault
     ///
@@ -153,6 +154,9 @@ impl Vault {
     /// and will not be used in the future.
     ///
     /// For a safer deletion method, consider using `delete_sheet_safety`.
+    ///
+    /// Note: This function is intended for server-side use only and should not be
+    /// arbitrarily called by other members to prevent unauthorized data deletion.
     pub async fn delete_sheet(&self, sheet_name: &SheetName) -> Result<(), std::io::Error> {
         let sheet_name = snake_case!(sheet_name.clone());
 
@@ -173,11 +177,18 @@ impl Vault {
 
     /// Safely delete the sheet
     ///
-    /// The sheet will be moved to the trash directory, ensuring it does not appear in the results of `sheets` and `sheet_names` methods.
-    /// However, if the sheet's holder attempts to access the sheet through the `sheet` method, the system will automatically restore it from the trash directory.
-    /// This means: the sheet will only permanently remain in the trash directory, waiting for manual cleanup by an administrator, when it is truly no longer in use.
+    /// The sheet will be moved to the trash directory, ensuring it does not appear in the
+    /// results of `sheets` and `sheet_names` methods.
+    /// However, if the sheet's holder attempts to access the sheet through the `sheet` method,
+    /// the system will automatically restore it from the trash directory.
+    /// This means: the sheet will only permanently remain in the trash directory,
+    /// waiting for manual cleanup by an administrator, when it is truly no longer in use.
     ///
-    /// This is a safer deletion method because it provides the possibility of recovery, avoiding irreversible data loss caused by accidental deletion.
+    /// This is a safer deletion method because it provides the possibility of recovery,
+    /// avoiding irreversible data loss caused by accidental deletion.
+    ///
+    /// Note: This function is intended for server-side use only and should not be
+    /// arbitrarily called by other members to prevent unauthorized data deletion.
     pub async fn delete_sheet_safely(&self, sheet_name: &SheetName) -> Result<(), std::io::Error> {
         let sheet_name = snake_case!(sheet_name.clone());
 

@@ -1,12 +1,11 @@
+use tcp_connection::{error::TcpTargetError, instance::ConnectionInstance};
 use tokio::{
     net::{TcpListener, TcpSocket},
     spawn,
 };
 
-use crate::{
-    error::TcpTargetError,
+use crate::test_utils::{
     handle::{ClientHandle, ServerHandle},
-    instance::ConnectionInstance,
     target::TcpServerTarget,
     target_configure::ServerTargetConfig,
 };
@@ -17,7 +16,10 @@ where
     Server: ServerHandle<Client>,
 {
     /// Attempts to establish a connection to the TCP server.
-    /// This function initiates a connection to the server address specified in the target configuration.
+    ///
+    /// This function initiates a connection to the server address
+    /// specified in the target configuration.
+    ///
     /// This is a Block operation.
     pub async fn connect(&self) -> Result<(), TcpTargetError> {
         let addr = self.get_addr();
@@ -37,7 +39,9 @@ where
     }
 
     /// Attempts to establish a connection to the TCP server.
-    /// This function initiates a connection to the server address specified in the target configuration.
+    ///
+    /// This function initiates a connection to the server address
+    /// specified in the target configuration.
     pub async fn listen(&self) -> Result<(), TcpTargetError> {
         let addr = self.get_addr();
         let listener = match TcpListener::bind(addr).await {

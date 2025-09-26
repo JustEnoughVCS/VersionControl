@@ -1,8 +1,8 @@
-pub struct StringProcesser {
+pub struct FormatProcesser {
     content: Vec<String>,
 }
 
-impl From<String> for StringProcesser {
+impl From<String> for FormatProcesser {
     fn from(value: String) -> Self {
         Self {
             content: Self::process_string(value),
@@ -10,7 +10,7 @@ impl From<String> for StringProcesser {
     }
 }
 
-impl From<&str> for StringProcesser {
+impl From<&str> for FormatProcesser {
     fn from(value: &str) -> Self {
         Self {
             content: Self::process_string(value.to_string()),
@@ -18,7 +18,7 @@ impl From<&str> for StringProcesser {
     }
 }
 
-impl StringProcesser {
+impl FormatProcesser {
     /// Process the string into an intermediate format
     fn process_string(input: String) -> Vec<String> {
         let mut result = String::new();
@@ -46,9 +46,11 @@ impl StringProcesser {
         while let Some(c) = chars.next() {
             processed.push(c);
             if let Some(&next) = chars.peek()
-                && c.is_lowercase() && next.is_uppercase() {
-                    processed.push(' ');
-                }
+                && c.is_lowercase()
+                && next.is_uppercase()
+            {
+                processed.push(' ');
+            }
         }
 
         processed

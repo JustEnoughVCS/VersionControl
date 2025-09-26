@@ -658,6 +658,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "paste"
+version = "1.0.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
+
+[[package]]
 name = "pbkdf2"
 version = "0.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -843,6 +849,28 @@ dependencies = [
  "libc",
  "untrusted",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "rmp"
+version = "0.8.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "228ed7c16fa39782c3b3468e974aec2795e9089153cd08ee2e9aefb3613334c4"
+dependencies = [
+ "byteorder",
+ "num-traits",
+ "paste",
+]
+
+[[package]]
+name = "rmp-serde"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52e599a477cf9840e92f2cde9a7189e67b42c57532749bf90aea6ec10facd4db"
+dependencies = [
+ "byteorder",
+ "rmp",
+ "serde",
 ]
 
 [[package]]
@@ -1125,6 +1153,7 @@ dependencies = [
  "pem",
  "rand 0.10.0-rc.0",
  "ring",
+ "rmp-serde",
  "rsa",
  "serde",
  "serde_json",
@@ -1137,6 +1166,7 @@ dependencies = [
 name = "tcp_connection_test"
 version = "0.1.0"
 dependencies = [
+ "serde",
  "tcp_connection",
  "tokio",
 ]
@@ -1306,6 +1336,7 @@ version = "0.1.0"
 dependencies = [
  "cfg_file",
  "tcp_connection",
+ "tcp_connection_test",
  "tokio",
  "vcs",
 ]

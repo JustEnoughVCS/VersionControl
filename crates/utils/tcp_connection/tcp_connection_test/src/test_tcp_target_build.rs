@@ -1,6 +1,7 @@
-use tcp_connection::target::TcpServerTarget;
-
-use crate::test_connection::{ExampleClientHandle, ExampleServerHandle};
+use crate::{
+    test_connection::{ExampleClientHandle, ExampleServerHandle},
+    test_utils::target::TcpServerTarget,
+};
 
 #[test]
 fn test_tcp_test_target_build() {

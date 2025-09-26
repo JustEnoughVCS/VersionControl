@@ -1,14 +1,15 @@
 use std::{env::current_dir, time::Duration};
 
-use tcp_connection::{
-    handle::{ClientHandle, ServerHandle},
-    instance::ConnectionInstance,
-    target::TcpServerTarget,
-    target_configure::ServerTargetConfig,
-};
+use tcp_connection::instance::ConnectionInstance;
 use tokio::{
     join,
     time::{sleep, timeout},
+};
+
+use crate::test_utils::{
+    handle::{ClientHandle, ServerHandle},
+    target::TcpServerTarget,
+    target_configure::ServerTargetConfig,
 };
 
 pub(crate) struct ExampleChallengeClientHandle;
