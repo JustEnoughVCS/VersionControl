@@ -32,6 +32,9 @@ pub enum TcpTargetError {
 
     #[error("Unsupported operation: {0}")]
     Unsupported(String),
+
+    #[error("Pool already exists: {0}")]
+    PoolAlreadyExists(String),
 }
 
 impl From<io::Error> for TcpTargetError {
@@ -85,5 +88,17 @@ impl From<base64::DecodeError> for TcpTargetError {
 impl From<pem::PemError> for TcpTargetError {
     fn from(error: pem::PemError) -> Self {
         TcpTargetError::Crypto(error.to_string())
+    }
+}
+
+impl From<rmp_serde::encode::Error> for TcpTargetError {
+    fn from(error: rmp_serde::encode::Error) -> Self {
+        TcpTargetError::Serialization(error.to_string())
+    }
+}
+
+impl From<rmp_serde::decode::Error> for TcpTargetError {
+    fn from(error: rmp_serde::decode::Error) -> Self {
+        TcpTargetError::Serialization(error.to_string())
     }
 }

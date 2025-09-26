@@ -71,6 +71,15 @@ impl<'a> Sheet<'a> {
         &self.data.inputs
     }
 
+    /// Get the names of the inputs of this sheet
+    pub fn input_names(&self) -> Vec<String> {
+        self.data
+            .inputs
+            .iter()
+            .map(|input| input.name.clone())
+            .collect()
+    }
+
     /// Get the mapping of this sheet
     pub fn mapping(&self) -> &HashMap<SheetPathBuf, VirtualFileId> {
         &self.data.mapping
