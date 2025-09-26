@@ -1,12 +1,11 @@
+use tcp_connection::{error::TcpTargetError, instance::ConnectionInstance};
 use tokio::{
     net::{TcpListener, TcpSocket},
     spawn,
 };
 
-use crate::{
-    error::TcpTargetError,
+use crate::test_utils::{
     handle::{ClientHandle, ServerHandle},
-    instance::ConnectionInstance,
     target::TcpServerTarget,
     target_configure::ServerTargetConfig,
 };

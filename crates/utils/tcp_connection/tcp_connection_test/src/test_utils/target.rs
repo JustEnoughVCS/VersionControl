@@ -1,5 +1,3 @@
-use crate::handle::{ClientHandle, ServerHandle};
-use crate::target_configure::{ClientTargetConfig, ServerTargetConfig};
 use serde::{Deserialize, Serialize};
 use std::{
     fmt::{Display, Formatter},
@@ -8,6 +6,11 @@ use std::{
     str::FromStr,
 };
 use tokio::net::lookup_host;
+
+use crate::test_utils::{
+    handle::{ClientHandle, ServerHandle},
+    target_configure::{ClientTargetConfig, ServerTargetConfig},
+};
 
 const DEFAULT_PORT: u16 = 8080;
 

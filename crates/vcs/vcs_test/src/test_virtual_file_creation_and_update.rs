@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use cfg_file::config::ConfigFile;
-use tcp_connection::{
+use tcp_connection_test::{
     handle::{ClientHandle, ServerHandle},
     target::TcpServerTarget,
     target_configure::ServerTargetConfig,

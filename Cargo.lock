@@ -1336,6 +1336,7 @@ version = "0.1.0"
 dependencies = [
  "cfg_file",
  "tcp_connection",
+ "tcp_connection_test",
  "tokio",
  "vcs",
 ]
