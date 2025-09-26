@@ -9,10 +9,10 @@ use cfg_file::config::ConfigFile;
 use crate::{
     constants::{
         SERVER_FILE_README, SERVER_FILE_VAULT, SERVER_PATH_MEMBER_PUB, SERVER_PATH_MEMBERS,
-        SERVER_PATH_SHEETS, SERVER_PATH_VF_ROOT,
+        SERVER_PATH_SHEETS, SERVER_PATH_VF_ROOT, VAULT_HOST_NAME,
     },
     current::{current_vault_path, find_vault_path},
-    data::vault::config::VaultConfig,
+    data::{member::Member, vault::config::VaultConfig},
 };
 
 pub mod config;
@@ -70,6 +70,23 @@ impl Vault {
 
         // 5. Setup storage directory
         create_dir_all(vault_path.join(SERVER_PATH_VF_ROOT))?;
+
+        let Some(vault) = Vault::init(config, &vault_path) else {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Failed to initialize vault",
+            ));
+        };
+
+        // 6. Create host member
+        vault
+            .register_member_to_vault(Member::new(VAULT_HOST_NAME))
+            .await?;
+
+        // 7. Setup reference sheet
+        vault
+            .create_sheet(&"ref".to_string(), &VAULT_HOST_NAME.to_string())
+            .await?;
 
         // Final, generate README.md
         let readme_content = format!(
