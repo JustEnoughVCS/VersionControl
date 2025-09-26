@@ -9,8 +9,8 @@ use cfg_file::config::ConfigFile;
 use crate::{
     constants::{SERVER_FILE_MEMBER_INFO, SERVER_FILE_MEMBER_PUB, SERVER_PATH_MEMBERS},
     data::{
-        member::Member,
-        vault::{MemberId, Vault},
+        member::{Member, MemberId},
+        vault::Vault,
     },
 };
 

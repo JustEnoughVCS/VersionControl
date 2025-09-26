@@ -8,7 +8,10 @@ use cfg_file::config::ConfigFile;
 
 use crate::{
     constants::{USER_FILE_ACCOUNTS, USER_FILE_KEY, USER_FILE_MEMBER},
-    data::{member::Member, user::UserDirectory, vault::MemberId},
+    data::{
+        member::{Member, MemberId},
+        user::UserDirectory,
+    },
 };
 
 const SELF_ID: &str = "{self_id}";

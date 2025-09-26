@@ -12,6 +12,7 @@ pub const PORT: u16 = 25331;
 pub const SERVER_FILE_VAULT: &str = "./vault.toml"; // crates::env::vault::vault_config
 
 // Server - Sheets
+pub const REF_SHEET_NAME: &str = "ref";
 pub const SERVER_PATH_SHEETS: &str = "./sheets/";
 pub const SERVER_FILE_SHEET: &str = "./sheets/{sheet-name}.yaml";
 
