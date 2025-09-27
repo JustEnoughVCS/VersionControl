@@ -31,15 +31,6 @@ Sheets are divided into two types, primarily differing in permission management:
 -   **Reference Sheet**: Stores files commonly used across the team, serving as a shared resource library. All members can acquire files from it into their own sheets. Members can submit their own files to the Reference Sheet; after approval by an administrator, they are added to the Reference Sheet for other members to import into their own sheets.
 -   **Member Sheet**: A member's own sheet, used to manage personal projects, tasks, and assets. The member has full management rights over the **sheet structure** (such as adding, moving mappings, etc.), but **edit rights** for the file itself remain exclusive to the file's holder, following the "Acquire First, Edit Later" principle. Typically, newly tracked files automatically grant ownership to the tracker.
 
-| Operation | Reference Sheet | Member Sheet |
-| :--- | :--- | :--- |
-| **Check-in** | All Members | All Members |
-| **Add Item** | All Members (to a staging area) | Owner |
-| **Move Item** | Administrator | Owner |
-| **Unlink** | Administrator | Owner |
-| **Merge** | Administrator | Owner |
-| **Clone** | All Members | All Members |
-
 ### Transferring Files Between Sheets
 
 ​	Through the **Import/Export mechanism** provided by the Sheet System, members can copy a file's **mapping relationship** from one sheet to another. This mechanism transfers the file's **mapping relationship** (i.e., the binding of `VirtualFileId` to a path), not the file entity itself. The file entity always resides in the Virtual File System. This mechanism supports cross-sheet collaboration, such as submitting completed work to the team for sharing, or recommending a file to a specific member for further processing.
