@@ -1,5 +1,9 @@
 # JustEnoughVCS - A Lightweight, Cross-Functional, Binary-Friendly Parallel Version Control System
 
+> **⚠️ Warning: JustEnoughVCS is currently under active development.**
+>
+> This software is in the development stage, and its features are not yet complete.
+
 ​	`JustEnoughVCS` is a lightweight version control system designed for **cross-functional teams**. It allows each member to view and organize files in a file structure **best suited to their functional role**, enabling the team to focus on content creation itself. It primarily serves collaborative scenarios involving large volumes of binary assets, such as **game development** and **multimedia design**.
 
 ## My Design Philosophy - Also My Humble Opinion 😃
