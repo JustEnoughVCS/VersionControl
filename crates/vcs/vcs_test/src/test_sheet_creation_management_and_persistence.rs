@@ -100,7 +100,7 @@ async fn test_sheet_creation_management_and_persistence() -> Result<(), std::io:
 
     // Test 5: Remove input package
     let mut sheet_for_removal = vault.sheet(&sheet_name).await?;
-    let removed_input = sheet_for_removal.remove_input(&input_name);
+    let removed_input = sheet_for_removal.deny_input(&input_name);
     assert!(removed_input.is_some());
     let removed_input = removed_input.unwrap();
     assert_eq!(removed_input.name, input_name);
@@ -108,7 +108,7 @@ async fn test_sheet_creation_management_and_persistence() -> Result<(), std::io:
     assert_eq!(sheet_for_removal.inputs().len(), 0);
 
     // Test 6: Remove mapping entry
-    let removed_virtual_file_id = sheet_for_removal.remove_mapping(&mapping_path);
+    let removed_virtual_file_id = sheet_for_removal.remove_mapping(&mapping_path).await;
     assert_eq!(removed_virtual_file_id, Some(virtual_file_id));
     assert_eq!(sheet_for_removal.mapping().len(), 2);
 
