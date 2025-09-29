@@ -225,7 +225,7 @@ impl Vault {
                 // Create metadata
                 let mut meta = VirtualFileMeta {
                     current_version: FIRST_VERSION.to_string(),
-                    hold_member: String::default(),
+                    hold_member: member_id.clone(), // The holder of the newly created virtual file is the creator by default
                     version_description,
                     histories: Vec::default(),
                 };
@@ -243,6 +243,8 @@ impl Vault {
                     fs::create_dir_all(parent).await?;
                 }
                 fs::rename(receive_path, move_path).await?;
+
+                //
 
                 Ok(new_id)
             }

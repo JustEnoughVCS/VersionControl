@@ -97,8 +97,8 @@ impl<'a> Sheet<'a> {
         Ok(())
     }
 
-    /// Remove an input package from the sheet
-    pub fn remove_input(&mut self, input_name: &InputName) -> Option<InputPackage> {
+    /// Deny and remove an input package from the sheet
+    pub fn deny_input(&mut self, input_name: &InputName) -> Option<InputPackage> {
         self.data
             .inputs
             .iter()
@@ -106,14 +106,127 @@ impl<'a> Sheet<'a> {
             .map(|pos| self.data.inputs.remove(pos))
     }
 
-    /// Add a mapping entry to the sheet
-    pub fn add_mapping(&mut self, sheet_path: SheetPathBuf, virtual_file_id: VirtualFileId) {
-        self.data.mapping.insert(sheet_path, virtual_file_id);
+    /// Accept an input package and insert to the sheet
+    pub fn accept_import(
+        &mut self,
+        input_name: &InputName,
+        insert_to: &SheetPathBuf,
+    ) -> Result<(), std::io::Error> {
+        // Remove inputs
+        let input = self
+            .inputs()
+            .iter()
+            .position(|input| input.name == *input_name)
+            .map(|pos| self.data.inputs.remove(pos));
+
+        // Ensure input is not empty
+        let Some(input) = input else {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "Empty inputs.",
+            ));
+        };
+
+        // Insert to sheet
+        for (relative_path, virtual_file_id) in input.files {
+            let _ = self.add_mapping(insert_to.join(relative_path), virtual_file_id);
+        }
+
+        Ok(())
+    }
+
+    /// Add (or Edit) a mapping entry to the sheet
+    ///
+    /// This operation performs safety checks to ensure the member has the right to add the mapping:
+    /// 1. If the virtual file ID doesn't exist in the vault, the mapping is added directly
+    /// 2. If the virtual file exists, check if the member has edit rights to the virtual file
+    /// 3. If member has edit rights, the mapping is not allowed to be modified and returns an error
+    /// 4. If member doesn't have edit rights, the mapping is allowed (member is giving up the file)
+    ///
+    /// Note: Full validation adds overhead - avoid frequent calls
+    pub async fn add_mapping(
+        &mut self,
+        sheet_path: SheetPathBuf,
+        virtual_file_id: VirtualFileId,
+    ) -> Result<(), std::io::Error> {
+        // Check if the virtual file exists in the vault
+        if self.vault_reference.virtual_file(&virtual_file_id).is_err() {
+            // Virtual file doesn't exist, add the mapping directly
+            self.data.mapping.insert(sheet_path, virtual_file_id);
+            return Ok(());
+        }
+
+        // Check if the holder has edit rights to the virtual file
+        match self
+            .vault_reference
+            .has_virtual_file_edit_right(self.holder(), &virtual_file_id)
+            .await
+        {
+            Ok(false) => {
+                // Holder doesn't have rights, add the mapping (member is giving up the file)
+                self.data.mapping.insert(sheet_path, virtual_file_id);
+                Ok(())
+            }
+            Ok(true) => {
+                // Holder has edit rights, don't allow modifying the mapping
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::PermissionDenied,
+                    "Member has edit rights to the virtual file, cannot modify mapping",
+                ))
+            }
+            Err(_) => {
+                // Error checking rights, don't allow modifying the mapping
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    "Failed to check virtual file edit rights",
+                ))
+            }
+        }
     }
 
     /// Remove a mapping entry from the sheet
-    pub fn remove_mapping(&mut self, sheet_path: &SheetPathBuf) -> Option<VirtualFileId> {
-        self.data.mapping.remove(sheet_path)
+    ///
+    /// This operation performs safety checks to ensure the member has the right to remove the mapping:
+    /// 1. Member must NOT have edit rights to the virtual file to release it (ensuring clear ownership)
+    /// 2. If the virtual file doesn't exist, the mapping is removed but no ID is returned
+    /// 3. If member has no edit rights and the file exists, returns the removed virtual file ID
+    ///
+    /// Note: Full validation adds overhead - avoid frequent calls
+    pub async fn remove_mapping(&mut self, sheet_path: &SheetPathBuf) -> Option<VirtualFileId> {
+        let virtual_file_id = match self.data.mapping.get(sheet_path) {
+            Some(id) => id,
+            None => {
+                // The mapping entry doesn't exist, nothing to remove
+                return None;
+            }
+        };
+
+        // Check if the virtual file exists in the vault
+        if self.vault_reference.virtual_file(virtual_file_id).is_err() {
+            // Virtual file doesn't exist, remove the mapping and return None
+            self.data.mapping.remove(sheet_path);
+            return None;
+        }
+
+        // Check if the holder has edit rights to the virtual file
+        match self
+            .vault_reference
+            .has_virtual_file_edit_right(self.holder(), virtual_file_id)
+            .await
+        {
+            Ok(false) => {
+                // Holder doesn't have rights, remove and return the virtual file ID
+                self.data.mapping.remove(sheet_path)
+            }
+            Ok(true) => {
+                // Holder has edit rights, don't remove the mapping
+                None
+            }
+            Err(_) => {
+                // Error checking rights, don't remove the mapping
+                None
+            }
+        }
     }
 
     /// Persist the sheet to disk
@@ -178,9 +291,7 @@ impl<'a> Sheet<'a> {
         }
 
         // Find the longest common prefix among all paths
-        let common_prefix = paths.iter().skip(1).fold(paths[0].clone(), |prefix, path| {
-            Self::common_path_prefix(prefix, path)
-        });
+        let common_prefix = Self::find_longest_common_prefix(paths);
 
         // Create output files with optimized relative paths
         let files = paths
@@ -209,16 +320,28 @@ impl<'a> Sheet<'a> {
         })
     }
 
-    /// Helper function to find common path prefix between two paths
-    fn common_path_prefix(path1: impl Into<PathBuf>, path2: impl Into<PathBuf>) -> PathBuf {
-        let path1 = path1.into();
-        let path2 = path2.into();
+    /// Helper function to find the longest common prefix among all paths
+    fn find_longest_common_prefix(paths: &[SheetPathBuf]) -> PathBuf {
+        if paths.is_empty() {
+            return PathBuf::new();
+        }
 
-        path1
-            .components()
-            .zip(path2.components())
-            .take_while(|(a, b)| a == b)
-            .map(|(comp, _)| comp)
-            .collect()
+        let first_path = &paths[0];
+        let mut common_components = Vec::new();
+
+        for (component_idx, first_component) in first_path.components().enumerate() {
+            for path in paths.iter().skip(1) {
+                if let Some(component) = path.components().nth(component_idx) {
+                    if component != first_component {
+                        return common_components.into_iter().collect();
+                    }
+                } else {
+                    return common_components.into_iter().collect();
+                }
+            }
+            common_components.push(first_component);
+        }
+
+        common_components.into_iter().collect()
     }
 }
