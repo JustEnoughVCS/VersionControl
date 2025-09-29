@@ -13,5 +13,8 @@ pub mod test_file_transfer;
 #[cfg(test)]
 pub mod test_msgpack;
 
+#[cfg(test)]
+pub mod test_incremental_transfer;
+
 pub mod test_utils;
 pub use test_utils::*;
