@@ -1,0 +1,11 @@
+[package]
+name = "vcs_service"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
+tcp_connection = { path = "../utils/tcp_connection" }
+vcs_service_macros = { path = "service_macros" }
+
+# Serialization
+serde = { version = "1.0.219", features = ["derive"] }
