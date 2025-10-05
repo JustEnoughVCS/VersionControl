@@ -1,4 +1,4 @@
-# JustEnoughVCS - A Lightweight, Cross-Functional, Binary-Friendly Parallel Version Control System
+# JustEnoughVCS - A Lightweight, Cross-Functional, Binary-Friendly Centralized Version Control System
 
 > **⚠️ Warning: JustEnoughVCS is currently under active development.**
 >

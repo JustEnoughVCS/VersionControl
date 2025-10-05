@@ -1,4 +1,4 @@
-# JustEnoughVCS - 轻量、跨职能、二进制友好的并行版本控制系统
+# JustEnoughVCS - 轻量、跨职能、二进制友好的集中式版本控制系统
 
 > **⚠️ 警告：JustEnoughVCS 目前正在积极开发中。**
 >
