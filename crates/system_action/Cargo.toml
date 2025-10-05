@@ -1,0 +1,11 @@
+[package]
+name = "action_system"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
+tcp_connection = { path = "../utils/tcp_connection" }
+action_system_macros = { path = "action_macros" }
+
+# Serialization
+serde = { version = "1.0.219", features = ["derive"] }
