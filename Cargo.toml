@@ -22,6 +22,9 @@ members = [
 
     "crates/utils/string_proc",
 
+    "crates/service",
+    "crates/service/service_macros",
+
     "crates/vcs",
     "crates/vcs/vcs_test",
 ]

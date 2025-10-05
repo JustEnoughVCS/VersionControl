@@ -1360,6 +1360,27 @@ dependencies = [
  "tcp_connection",
  "tokio",
  "uuid",
+ "vcs_service",
+]
+
+[[package]]
+name = "vcs_service"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "tcp_connection",
+ "vcs_service_macros",
+]
+
+[[package]]
+name = "vcs_service_macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "string_proc",
+ "syn",
+ "tcp_connection",
 ]
 
 [[package]]
