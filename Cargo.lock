@@ -541,7 +541,8 @@ dependencies = [
  "cfg_file",
  "string_proc",
  "tcp_connection",
- "vcs",
+ "vcs_actions",
+ "vcs_data",
 ]
 
 [[package]]
@@ -1370,7 +1371,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "vcs"
+name = "vcs_actions"
+version = "0.1.0"
+dependencies = [
+ "action_system",
+ "cfg_file",
+ "string_proc",
+ "tcp_connection",
+ "vcs_data",
+]
+
+[[package]]
+name = "vcs_data"
 version = "0.1.0"
 dependencies = [
  "action_system",
@@ -1384,14 +1396,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "vcs_test"
+name = "vcs_data_test"
 version = "0.1.0"
 dependencies = [
  "cfg_file",
  "tcp_connection",
  "tcp_connection_test",
  "tokio",
- "vcs",
+ "vcs_data",
 ]
 
 [[package]]
