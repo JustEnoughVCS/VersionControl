@@ -30,7 +30,8 @@ fn generate_action_struct(input_fn: ItemFn, _is_local: bool) -> proc_macro2::Tok
 
     validate_function_signature(fn_sig);
 
-    let (arg_type, return_type) = extract_types(fn_sig);
+    let (context_param_name, arg_param_name, arg_type, return_type) =
+        extract_parameters_and_types(fn_sig);
 
     let struct_name = quote::format_ident!("{}", convert_to_pascal_case(&fn_name.to_string()));
 
@@ -40,7 +41,7 @@ fn generate_action_struct(input_fn: ItemFn, _is_local: bool) -> proc_macro2::Tok
         #[derive(Debug, Clone, Default)]
         #fn_vis struct #struct_name;
 
-        impl vcs_service::action::Action<#arg_type, #return_type> for #struct_name {
+        impl action_system::action::Action<#arg_type, #return_type> for #struct_name {
             fn action_name() -> &'static str {
                 Box::leak(string_proc::snake_case!(stringify!(#action_name_ident)).into_boxed_str())
             }
@@ -49,7 +50,7 @@ fn generate_action_struct(input_fn: ItemFn, _is_local: bool) -> proc_macro2::Tok
                 !#_is_local
             }
 
-            async fn process(context: vcs_service::action::ActionContext, args: #arg_type) -> Result<#return_type, tcp_connection::error::TcpTargetError> {
+            async fn process(#context_param_name: action_system::action::ActionContext, #arg_param_name: #arg_type) -> Result<#return_type, tcp_connection::error::TcpTargetError> {
                 #fn_block
             }
         }
@@ -57,7 +58,6 @@ fn generate_action_struct(input_fn: ItemFn, _is_local: bool) -> proc_macro2::Tok
         #[deprecated = "This function is used by #[action_gen] as a template."]
         #[doc = " This function is used by #[action_gen] as a template to generate the struct. "]
         #[doc = " It is forbidden to call it anywhere."]
-        #[doc = " You should use the generated struct to register this function in `ActionPool`"]
         #[doc = " and call it using the function name."]
         #fn_vis #fn_sig #fn_block
     }
@@ -109,20 +109,38 @@ fn convert_to_pascal_case(s: &str) -> String {
         .collect()
 }
 
-fn extract_types(fn_sig: &syn::Signature) -> (proc_macro2::TokenStream, proc_macro2::TokenStream) {
+fn extract_parameters_and_types(
+    fn_sig: &syn::Signature,
+) -> (
+    proc_macro2::TokenStream,
+    proc_macro2::TokenStream,
+    proc_macro2::TokenStream,
+    proc_macro2::TokenStream,
+) {
     let mut inputs = fn_sig.inputs.iter();
 
-    let _ = inputs.next();
-
-    let arg_type = match inputs.next() {
+    let context_param = match inputs.next() {
         Some(syn::FnArg::Typed(pat_type)) => {
+            let pat = &pat_type.pat;
+            quote::quote!(#pat)
+        }
+        _ => {
+            panic!("Expected the first argument to be a typed parameter, but found something else")
+        }
+    };
+
+    let arg_param = match inputs.next() {
+        Some(syn::FnArg::Typed(pat_type)) => {
+            let pat = &pat_type.pat;
             let ty = &pat_type.ty;
-            quote::quote!(#ty)
+            (quote::quote!(#pat), quote::quote!(#ty))
         }
         _ => {
             panic!("Expected the second argument to be a typed parameter, but found something else")
         }
     };
+
+    let (arg_param_name, arg_type) = arg_param;
 
     let return_type = match &fn_sig.output {
         syn::ReturnType::Type(_, ty) => {
@@ -145,5 +163,5 @@ fn extract_types(fn_sig: &syn::Signature) -> (proc_macro2::TokenStream, proc_mac
         _ => panic!("Expected function to have return type, but found none"),
     };
 
-    (arg_type, return_type)
+    (context_param, arg_param_name, arg_type, return_type)
 }

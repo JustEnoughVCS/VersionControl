@@ -8,6 +8,7 @@ runBuildScripts = true
 
 [rust-analyzer]
 procMacro.enable = true
+procMacro.attributes.enable = true
 
 diagnostics.disabled = ["unresolved-proc-macro"]
 
@@ -28,6 +29,8 @@ check.extraArgs = ["--all-features"]
 files.watcher = "client"
 
 macroExpansion.mode = "hir"
+macroExpansion.maxDepth = 32
+macroExpansion.engines = { hir = true, tt = true }
 
 workspace.symbol.search.scope = "workspace"
 
@@ -45,3 +48,4 @@ callInfo.full = true
 linkedProjects = ["Cargo.toml"]
 
 experimental.procAttrMacros = true
+experimental.procMacro.server = true
