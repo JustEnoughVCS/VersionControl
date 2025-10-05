@@ -40,7 +40,7 @@ fn generate_action_struct(input_fn: ItemFn, _is_local: bool) -> proc_macro2::Tok
         #[derive(Debug, Clone, Default)]
         #fn_vis struct #struct_name;
 
-        impl vcs_service::action::Action<#arg_type, #return_type> for #struct_name {
+        impl action_system::action::Action<#arg_type, #return_type> for #struct_name {
             fn action_name() -> &'static str {
                 Box::leak(string_proc::snake_case!(stringify!(#action_name_ident)).into_boxed_str())
             }
@@ -49,7 +49,7 @@ fn generate_action_struct(input_fn: ItemFn, _is_local: bool) -> proc_macro2::Tok
                 !#_is_local
             }
 
-            async fn process(context: vcs_service::action::ActionContext, args: #arg_type) -> Result<#return_type, tcp_connection::error::TcpTargetError> {
+            async fn process(context: action_system::action::ActionContext, args: #arg_type) -> Result<#return_type, tcp_connection::error::TcpTargetError> {
                 #fn_block
             }
         }
