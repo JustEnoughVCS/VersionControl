@@ -1,0 +1,47 @@
+[package]
+proc-macro.enable = true
+
+[cargo]
+allFeatures = true
+loadOutDirsFromCheck = true
+runBuildScripts = true
+
+[rust-analyzer]
+procMacro.enable = true
+
+diagnostics.disabled = ["unresolved-proc-macro"]
+
+inlayHints.typeHints = true
+inlayHints.parameterHints = true
+inlayHints.chainingHints = true
+
+completion.autoimport.enable = true
+completion.postfix.enable = true
+
+lens.enable = true
+lens.implementations.enable = true
+lens.references.enable = true
+
+check.command = "clippy"
+check.extraArgs = ["--all-features"]
+
+files.watcher = "client"
+
+macroExpansion.mode = "hir"
+
+workspace.symbol.search.scope = "workspace"
+
+assist.importMergeBehavior = "last"
+assist.importPrefix = "by_self"
+
+hover.actions.enable = true
+hover.actions.debug.enable = true
+hover.actions.gotoTypeDef.enable = true
+hover.actions.implementations.enable = true
+hover.actions.references.enable = true
+
+callInfo.full = true
+
+linkedProjects = ["Cargo.toml"]
+
+experimental.procAttrMacros = true
