@@ -1,5 +1,5 @@
 [package]
-name = "vcs_service_macros"
+name = "action_system_macros"
 edition = "2024"
 version.workspace = true
 

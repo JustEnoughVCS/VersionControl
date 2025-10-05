@@ -3,6 +3,26 @@
 version = 4
 
 [[package]]
+name = "action_system"
+version = "0.1.0"
+dependencies = [
+ "action_system_macros",
+ "serde",
+ "tcp_connection",
+]
+
+[[package]]
+name = "action_system_macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "string_proc",
+ "syn",
+ "tcp_connection",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1353,6 +1373,7 @@ dependencies = [
 name = "vcs"
 version = "0.1.0"
 dependencies = [
+ "action_system",
  "cfg_file",
  "dirs",
  "serde",
@@ -1360,27 +1381,6 @@ dependencies = [
  "tcp_connection",
  "tokio",
  "uuid",
- "vcs_service",
-]
-
-[[package]]
-name = "vcs_service"
-version = "0.1.0"
-dependencies = [
- "serde",
- "tcp_connection",
- "vcs_service_macros",
-]
-
-[[package]]
-name = "vcs_service_macros"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "string_proc",
- "syn",
- "tcp_connection",
 ]
 
 [[package]]

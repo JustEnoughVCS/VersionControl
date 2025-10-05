@@ -7,7 +7,7 @@ version.workspace = true
 tcp_connection = { path = "../utils/tcp_connection" }
 cfg_file = { path = "../utils/cfg_file", features = ["default"] }
 string_proc = { path = "../utils/string_proc" }
-vcs_service = { path = "../service" }
+action_system = { path = "../system_action" }
 
 # Identity
 uuid = { version = "1.18.1", features = ["v4", "serde"] }
