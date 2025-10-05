@@ -10,6 +10,8 @@
 
 ​	`JustEnoughVCS` adheres to the "**Just Enough**" philosophy, aiming to achieve collaborative security through architectural design. Centered around a **Virtual File System** and **Sheet Isolation**, it provides each creator with a focused, distraction-free workspace, making collaboration natural and simple.
 
+![img](docs/images/FRAMEWORK_CANVAS.png)
+
 ## Virtual File System
 
 ​	The Virtual File System is the foundation of `JustEnoughVCS`. Each file is identified by a globally unique `VirtualFileId`, decoupled from its physical path. It comprehensively records:

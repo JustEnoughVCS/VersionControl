@@ -3,6 +3,9 @@
 pub mod vcs {
     extern crate vcs;
     pub use vcs::*;
+
+    extern crate vcs_actions;
+    pub use vcs_actions::*;
 }
 
 pub mod utils {

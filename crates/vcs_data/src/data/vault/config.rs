@@ -28,7 +28,7 @@ pub struct VaultServerConfig {
     port: u16,
 
     /// Whether to enable LAN discovery, allowing members on the same LAN to more easily find the upstream server
-    lan_discovery: bool,
+    lan_discovery: bool, // TODO
 
     /// Authentication strength level
     /// 0: Weakest - Anyone can claim any identity, fastest speed
@@ -36,7 +36,7 @@ pub struct VaultServerConfig {
     /// 2: Advanced - Uses asymmetric encryption, multiple devices can use key authentication to log in simultaneously, slightly slower
     /// 3: Secure - Uses asymmetric encryption, only one device can use key for authentication at a time, much slower
     /// Default is "Advanced", if using a lower security policy, ensure your server is only accessible by trusted devices
-    auth_strength: u8,
+    auth_strength: u8, // TODO
 }
 
 impl Default for VaultConfig {

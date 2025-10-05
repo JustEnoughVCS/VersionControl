@@ -10,6 +10,8 @@
 
 ​	`JustEnoughVCS` 遵循"**Just Enough**"的理念，旨在通过架构设计来实现协作安全。它以**虚拟文件系统**和**表隔离**为核心，为每个创作者提供专注、无干扰的工作空间，让协作变得自然且简单。
 
+![img](docs/images/FRAMEWORK_CANVAS.png)
+
 ## 虚拟文件系统 (Virtual File System)
 
 ​	虚拟文件系统是 `JustEnoughVCS` 的基础。每个文件由一个全局唯一的 `VirtualFileId` 标识，与其物理路径解耦。它全面记录：

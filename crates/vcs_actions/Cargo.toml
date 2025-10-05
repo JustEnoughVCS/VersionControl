@@ -1,0 +1,15 @@
+[package]
+name = "vcs_actions"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
+
+# Utils
+tcp_connection = { path = "../utils/tcp_connection" }
+cfg_file = { path = "../utils/cfg_file", features = ["default"] }
+string_proc = { path = "../utils/string_proc" }
+
+# Core dependencies
+action_system = { path = "../system_action" }
+vcs_data = { path = "../vcs_data" }

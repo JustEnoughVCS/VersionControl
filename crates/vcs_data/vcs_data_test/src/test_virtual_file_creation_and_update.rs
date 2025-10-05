@@ -10,7 +10,7 @@ use tokio::{
     join,
     time::{sleep, timeout},
 };
-use vcs::{
+use vcs_data::{
     constants::SERVER_FILE_VAULT,
     data::{
         member::Member,

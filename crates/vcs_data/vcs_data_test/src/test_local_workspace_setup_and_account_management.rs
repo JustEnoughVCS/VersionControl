@@ -1,7 +1,7 @@
 use std::io::Error;
 
 use cfg_file::config::ConfigFile;
-use vcs::{
+use vcs_data::{
     constants::{CLIENT_FILE_README, CLIENT_FILE_WORKSPACE, USER_FILE_KEY, USER_FILE_MEMBER},
     data::{
         local::{LocalWorkspace, config::LocalConfig},

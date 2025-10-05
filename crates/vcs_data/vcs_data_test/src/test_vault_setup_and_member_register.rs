@@ -1,7 +1,7 @@
 use std::io::Error;
 
 use cfg_file::config::ConfigFile;
-use vcs::{
+use vcs_data::{
     constants::{
         SERVER_FILE_MEMBER_INFO, SERVER_FILE_README, SERVER_FILE_VAULT, SERVER_PATH_MEMBER_PUB,
         SERVER_PATH_MEMBERS, SERVER_PATH_SHEETS, SERVER_PATH_VF_ROOT,

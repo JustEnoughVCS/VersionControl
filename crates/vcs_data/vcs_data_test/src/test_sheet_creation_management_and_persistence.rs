@@ -1,7 +1,7 @@
 use std::io::Error;
 
 use cfg_file::config::ConfigFile;
-use vcs::{
+use vcs_data::{
     constants::{SERVER_FILE_SHEET, SERVER_FILE_VAULT},
     data::{
         member::{Member, MemberId},
@@ -53,8 +53,8 @@ async fn test_sheet_creation_management_and_persistence() -> Result<(), std::io:
     let mut sheet = vault.sheet(&sheet_name).await?;
 
     // Add mapping entries for the files
-    let main_rs_path = vcs::data::sheet::SheetPathBuf::from("src/main.rs");
-    let lib_rs_path = vcs::data::sheet::SheetPathBuf::from("src/lib.rs");
+    let main_rs_path = vcs_data::data::sheet::SheetPathBuf::from("src/main.rs");
+    let lib_rs_path = vcs_data::data::sheet::SheetPathBuf::from("src/lib.rs");
     let main_rs_id = VirtualFileId::new();
     let lib_rs_id = VirtualFileId::new();
 
@@ -85,7 +85,7 @@ async fn test_sheet_creation_management_and_persistence() -> Result<(), std::io:
     );
 
     // Test 3: Add mapping entries
-    let mapping_path = vcs::data::sheet::SheetPathBuf::from("output/build.exe");
+    let mapping_path = vcs_data::data::sheet::SheetPathBuf::from("output/build.exe");
     let virtual_file_id = VirtualFileId::new();
 
     sheet
@@ -265,8 +265,8 @@ async fn test_sheet_data_serialization() -> Result<(), std::io::Error> {
         ),
     ];
     // First add mapping entries
-    let main_rs_path = vcs::data::sheet::SheetPathBuf::from("src/main.rs");
-    let lib_rs_path = vcs::data::sheet::SheetPathBuf::from("src/lib.rs");
+    let main_rs_path = vcs_data::data::sheet::SheetPathBuf::from("src/main.rs");
+    let lib_rs_path = vcs_data::data::sheet::SheetPathBuf::from("src/lib.rs");
     let main_rs_id = VirtualFileId::new();
     let lib_rs_id = VirtualFileId::new();
 
@@ -287,7 +287,7 @@ async fn test_sheet_data_serialization() -> Result<(), std::io::Error> {
 
     sheet
         .add_mapping(
-            vcs::data::sheet::SheetPathBuf::from("output/build.exe"),
+            vcs_data::data::sheet::SheetPathBuf::from("output/build.exe"),
             build_exe_id,
         )
         .await?;

@@ -1,5 +1,5 @@
 [package]
-name = "vcs"
+name = "vcs_data"
 edition = "2024"
 version.workspace = true
 
