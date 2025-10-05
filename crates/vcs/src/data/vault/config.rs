@@ -1,7 +1,9 @@
+use std::net::{IpAddr, Ipv4Addr};
+
 use cfg_file::ConfigFile;
 use serde::{Deserialize, Serialize};
 
-use crate::constants::SERVER_FILE_VAULT;
+use crate::constants::{PORT, SERVER_FILE_VAULT};
 use crate::data::member::{Member, MemberId};
 
 #[derive(Serialize, Deserialize, ConfigFile)]
@@ -12,6 +14,29 @@ pub struct VaultConfig {
 
     /// Vault admin id, a list of member id representing administrator identities
     vault_admin_list: Vec<MemberId>,
+
+    /// Vault server configuration, which will be loaded when connecting to the server
+    server_config: VaultServerConfig,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct VaultServerConfig {
+    /// Local IP address to bind to when the server starts
+    local_bind: IpAddr,
+
+    /// TCP port to bind to when the server starts
+    port: u16,
+
+    /// Whether to enable LAN discovery, allowing members on the same LAN to more easily find the upstream server
+    lan_discovery: bool,
+
+    /// Authentication strength level
+    /// 0: Weakest - Anyone can claim any identity, fastest speed
+    /// 1: Basic - Any device can claim any registered identity, slightly faster
+    /// 2: Advanced - Uses asymmetric encryption, multiple devices can use key authentication to log in simultaneously, slightly slower
+    /// 3: Secure - Uses asymmetric encryption, only one device can use key for authentication at a time, much slower
+    /// Default is "Advanced", if using a lower security policy, ensure your server is only accessible by trusted devices
+    auth_strength: u8,
 }
 
 impl Default for VaultConfig {
@@ -19,6 +44,12 @@ impl Default for VaultConfig {
         Self {
             vault_name: "JustEnoughVault".to_string(),
             vault_admin_list: Vec::new(),
+            server_config: VaultServerConfig {
+                local_bind: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+                port: PORT,
+                lan_discovery: false,
+                auth_strength: 2,
+            },
         }
     }
 }
