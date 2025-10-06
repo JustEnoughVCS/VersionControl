@@ -4,9 +4,13 @@ edition = "2024"
 version.workspace = true
 
 [dependencies]
+
+# Utils
 tcp_connection = { path = "../utils/tcp_connection" }
 cfg_file = { path = "../utils/cfg_file", features = ["default"] }
 string_proc = { path = "../utils/string_proc" }
+
+# Core
 action_system = { path = "../system_action" }
 
 # Identity
