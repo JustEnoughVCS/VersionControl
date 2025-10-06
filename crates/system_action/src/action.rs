@@ -11,13 +11,30 @@ pub trait Action<Args, Return> {
     ) -> impl std::future::Future<Output = Result<Return, TcpTargetError>> + Send;
 }
 
+#[derive(Default)]
 pub struct ActionContext {
     // Whether the action is executed locally or remotely
     local: bool,
 
     /// The connection instance in the current context,
     /// used to interact with the machine on the other end
-    instance: ConnectionInstance,
+    instance: Option<ConnectionInstance>,
+}
+
+impl ActionContext {
+    /// Generate local context
+    pub fn local() -> Self {
+        let mut ctx = ActionContext::default();
+        ctx.local = true;
+        ctx
+    }
+
+    /// Generate remote context
+    pub fn remote() -> Self {
+        let mut ctx = ActionContext::default();
+        ctx.local = false;
+        ctx
+    }
 }
 
 impl ActionContext {
@@ -32,7 +49,7 @@ impl ActionContext {
     }
 
     /// Get the connection instance in the current context
-    pub fn instance(&self) -> &ConnectionInstance {
+    pub fn instance(&self) -> &Option<ConnectionInstance> {
         &self.instance
     }
 }
