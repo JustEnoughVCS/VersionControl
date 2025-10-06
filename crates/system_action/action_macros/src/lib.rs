@@ -55,10 +55,38 @@ fn generate_action_struct(input_fn: ItemFn, _is_local: bool) -> proc_macro2::Tok
             }
         }
 
+        impl #struct_name {
+            #fn_vis fn register_to_pool(pool: &mut action_system::action_pool::ActionPool) {
+                pool.register::<#struct_name, #arg_type, #return_type>();
+            }
+
+            #fn_vis async fn process_at_pool<'a>(
+                pool: &'a action_system::action_pool::ActionPool,
+                ctx: action_system::action::ActionContext,
+                #arg_param_name: #arg_type
+            ) -> Result<#return_type, tcp_connection::error::TcpTargetError> {
+                pool.process::<#arg_type, #return_type>(
+                    Box::leak(string_proc::snake_case!(stringify!(#action_name_ident)).into_boxed_str()),
+                    ctx,
+                    #arg_param_name
+                ).await
+            }
+        }
+
+        #[allow(dead_code)]
         #[deprecated = "This function is used by #[action_gen] as a template."]
-        #[doc = " This function is used by #[action_gen] as a template to generate the struct. "]
-        #[doc = " It is forbidden to call it anywhere."]
-        #[doc = " and call it using the function name."]
+        #[doc = "Template function for #[[action_gen]] - do not call directly."]
+        #[doc = "Use the generated struct instead."]
+        #[doc = ""]
+        #[doc = "Register the action to the pool."]
+        #[doc = "```rust"]
+        #[doc = "YourActionPascalName::register_to_pool(&mut pool);"]
+        #[doc = "```"]
+        #[doc = ""]
+        #[doc = "Process the action at the pool."]
+        #[doc = "```rust"]
+        #[doc = "let result = YourActionPascalName::process_at_pool(&pool, ctx, arg).await?;"]
+        #[doc = "```"]
         #fn_vis #fn_sig #fn_block
     }
 }

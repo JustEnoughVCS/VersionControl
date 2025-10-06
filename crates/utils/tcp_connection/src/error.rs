@@ -35,6 +35,12 @@ pub enum TcpTargetError {
 
     #[error("Pool already exists: {0}")]
     PoolAlreadyExists(String),
+
+    #[error("Not local machine: {0}")]
+    NotLocal(String),
+
+    #[error("Not remote machine: {0}")]
+    NotRemote(String),
 }
 
 impl From<io::Error> for TcpTargetError {
