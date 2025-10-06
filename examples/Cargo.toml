@@ -1,0 +1,21 @@
+[package]
+name = "examples"
+edition = "2024"
+version.workspace = true
+
+[[bin]]
+name = "example_action_system"
+path = "src/bin/example_action_system.rs"
+
+[dependencies]
+
+# Utils
+tcp_connection = { path = "../crates/utils/tcp_connection" }
+cfg_file = { path = "../crates/utils/cfg_file", features = ["default"] }
+string_proc = { path = "../crates/utils/string_proc" }
+
+# Core
+action_system = { path = "../crates/system_action" }
+
+# Async & Networking
+tokio = { version = "1.46.1", features = ["full"] }
