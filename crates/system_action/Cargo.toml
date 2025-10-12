@@ -9,3 +9,6 @@ action_system_macros = { path = "action_macros" }
 
 # Serialization
 serde = { version = "1.0.219", features = ["derive"] }
+
+# Async & Networking
+tokio = { version = "1.46.1", features = ["full"] }
