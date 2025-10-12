@@ -1,6 +1,12 @@
+use serde::{Serialize, de::DeserializeOwned};
 use tcp_connection::{error::TcpTargetError, instance::ConnectionInstance};
+use tokio::net::TcpStream;
 
-pub trait Action<Args, Return> {
+pub trait Action<Args, Return>
+where
+    Args: Serialize + DeserializeOwned + Send,
+    Return: Serialize + DeserializeOwned + Send,
+{
     fn action_name() -> &'static str;
 
     fn is_remote_action() -> bool;
@@ -13,7 +19,7 @@ pub trait Action<Args, Return> {
 
 #[derive(Default)]
 pub struct ActionContext {
-    // Whether the action is executed locally or remotely
+    /// Whether the action is executed locally or remotely
     local: bool,
 
     /// The connection instance in the current context,
@@ -34,6 +40,18 @@ impl ActionContext {
         let mut ctx = ActionContext::default();
         ctx.local = false;
         ctx
+    }
+
+    /// Build connection instance from TcpStream
+    pub fn build_instance(mut self, stream: TcpStream) -> Self {
+        self.instance = Some(ConnectionInstance::from(stream));
+        self
+    }
+
+    /// Insert connection instance into context
+    pub fn insert_instance(mut self, instance: ConnectionInstance) -> Self {
+        self.instance = Some(instance);
+        self
     }
 }
 
