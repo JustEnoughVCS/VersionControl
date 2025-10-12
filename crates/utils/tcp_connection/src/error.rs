@@ -41,6 +41,9 @@ pub enum TcpTargetError {
 
     #[error("Not remote machine: {0}")]
     NotRemote(String),
+
+    #[error("Not found: {0}")]
+    NotFound(String),
 }
 
 impl From<io::Error> for TcpTargetError {

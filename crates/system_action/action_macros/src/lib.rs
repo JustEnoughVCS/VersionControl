@@ -79,13 +79,13 @@ fn generate_action_struct(input_fn: ItemFn, _is_local: bool) -> proc_macro2::Tok
         #[doc = "Use the generated struct instead."]
         #[doc = ""]
         #[doc = "Register the action to the pool."]
-        #[doc = "```rust"]
-        #[doc = "YourActionPascalName::register_to_pool(&mut pool);"]
+        #[doc = "```ignore"]
+        #[doc = "YourAction::register_to_pool(&mut pool);"]
         #[doc = "```"]
         #[doc = ""]
         #[doc = "Process the action at the pool."]
-        #[doc = "```rust"]
-        #[doc = "let result = YourActionPascalName::process_at_pool(&pool, ctx, arg).await?;"]
+        #[doc = "```ignore"]
+        #[doc = "let result = YourAction::process_at_pool(&pool, ctx, arg).await?;"]
         #[doc = "```"]
         #fn_vis #fn_sig #fn_block
     }
