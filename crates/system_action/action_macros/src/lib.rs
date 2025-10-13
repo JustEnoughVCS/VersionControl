@@ -89,12 +89,12 @@ fn generate_action_struct(input_fn: ItemFn, _is_local: bool) -> proc_macro2::Tok
         #[doc = ""]
         #[doc = "Register the action to the pool."]
         #[doc = "```ignore"]
-        #[doc = "YourAction::register_to_pool(&mut pool);"]
+        #[doc = "register_your_func(&mut pool);"]
         #[doc = "```"]
         #[doc = ""]
         #[doc = "Process the action at the pool."]
         #[doc = "```ignore"]
-        #[doc = "let result = YourAction::process_at_pool(&pool, ctx, arg).await?;"]
+        #[doc = "let result = proc_your_func(&pool, ctx, arg).await?;"]
         #[doc = "```"]
         #fn_vis #fn_sig #fn_block
     }

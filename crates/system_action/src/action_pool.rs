@@ -8,7 +8,8 @@ use crate::action::{Action, ActionContext};
 
 type ProcBeginCallback =
     for<'a> fn(
-        &'a mut ActionContext,
+        &'a ActionContext,
+        args: &'a (dyn std::any::Any + Send + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<(), TcpTargetError>> + Send + 'a>>;
 type ProcEndCallback = fn() -> Pin<Box<dyn Future<Output = Result<(), TcpTargetError>> + Send>>;
 
@@ -85,9 +86,9 @@ impl ActionPool {
         if let Some(action) = self.actions.get(action_name) {
             // Set action name and args in context for callbacks
             let context = context.set_action_name(action_name.to_string());
-            let mut context = context.set_action_args_json(args_json.clone());
+            let context = context.set_action_args(args_json.clone());
 
-            let _ = self.exec_on_proc_begin(&mut context).await?;
+            let _ = self.exec_on_proc_begin(&context, &args_json).await?;
             let result = action.process_json_erased(context, args_json).await?;
             let _ = self.exec_on_proc_end().await?;
             Ok(result)
@@ -109,11 +110,11 @@ impl ActionPool {
         args: Args,
     ) -> Result<Return, TcpTargetError>
     where
-        Args: serde::de::DeserializeOwned + Send + 'static,
+        Args: serde::de::DeserializeOwned + Send + Sync + 'static,
         Return: serde::Serialize + Send + 'static,
     {
         if let Some(action) = self.actions.get(action_name) {
-            let _ = self.exec_on_proc_begin(&mut context).await?;
+            let _ = self.exec_on_proc_begin(&context, &args).await?;
             let result = action.process_erased(context, Box::new(args)).await?;
             let result = *result
                 .downcast::<Return>()
@@ -126,9 +127,13 @@ impl ActionPool {
     }
 
     /// Executes the process begin callback if set
-    async fn exec_on_proc_begin(&self, context: &mut ActionContext) -> Result<(), TcpTargetError> {
+    async fn exec_on_proc_begin(
+        &self,
+        context: &ActionContext,
+        args: &(dyn std::any::Any + Send + Sync),
+    ) -> Result<(), TcpTargetError> {
         if let Some(callback) = &self.on_proc_begin {
-            callback(context).await
+            callback(context, args).await
         } else {
             Ok(())
         }

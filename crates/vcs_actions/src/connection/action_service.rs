@@ -136,7 +136,10 @@ async fn process_connection(stream: TcpStream, vault: Arc<Vault>, action_pool: A
     };
 
     // Build context
-    let ctx = ActionContext::remote().insert_instance(instance);
+    let ctx: ActionContext = ActionContext::remote().insert_instance(instance);
+
+    // Insert vault into context
+    let ctx = ctx.insert_arc(vault);
 
     // Process action
     let Ok(_result_json) = action_pool
