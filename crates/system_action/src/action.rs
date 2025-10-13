@@ -41,16 +41,18 @@ pub struct ActionContext {
 impl ActionContext {
     /// Generate local context
     pub fn local() -> Self {
-        let mut ctx = ActionContext::default();
-        ctx.local = true;
-        ctx
+        ActionContext {
+            local: true,
+            ..Default::default()
+        }
     }
 
     /// Generate remote context
     pub fn remote() -> Self {
-        let mut ctx = ActionContext::default();
-        ctx.local = false;
-        ctx
+        ActionContext {
+            local: false,
+            ..Default::default()
+        }
     }
 
     /// Build connection instance from TcpStream

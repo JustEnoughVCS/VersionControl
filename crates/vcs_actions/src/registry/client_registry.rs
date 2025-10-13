@@ -46,8 +46,8 @@ async fn on_proc_begin(
     if is_remote {
         // Build protocol message
         let msg = RemoteActionInvoke {
-            action_name: action_name,
-            action_args_json: action_args_json,
+            action_name,
+            action_args_json,
         };
 
         // Send

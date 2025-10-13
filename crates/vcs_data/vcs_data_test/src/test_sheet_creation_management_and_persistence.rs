@@ -254,7 +254,7 @@ async fn test_sheet_data_serialization() -> Result<(), std::io::Error> {
 
     // Add some inputs
     let input_name = "source_files".to_string();
-    let _files = vec![
+    let _files = [
         (
             InputRelativePathBuf::from("src/main.rs"),
             VirtualFileId::new(),

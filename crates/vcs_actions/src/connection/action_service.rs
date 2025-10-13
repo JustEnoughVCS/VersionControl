@@ -30,7 +30,7 @@ pub async fn server_entry(vault_path: impl Into<PathBuf>) -> Result<(), TcpTarge
 
     // Start the server
     let (_shutdown_rx, future) = build_server_future(vault.clone(), action_pool.clone(), listener);
-    let _ = future.await?; // Start and block until shutdown
+    future.await?; // Start and block until shutdown
 
     Ok(())
 }
@@ -38,7 +38,7 @@ pub async fn server_entry(vault_path: impl Into<PathBuf>) -> Result<(), TcpTarge
 async fn create_tcp_listener(cfg: &VaultConfig) -> Result<TcpListener, TcpTargetError> {
     let local_bind_addr = cfg.server_config().local_bind();
     let bind_port = cfg.server_config().port();
-    let sock_addr = SocketAddr::new(local_bind_addr.clone(), bind_port);
+    let sock_addr = SocketAddr::new(*local_bind_addr, bind_port);
     let listener = TcpListener::bind(sock_addr).await?;
 
     Ok(listener)

@@ -107,7 +107,7 @@ impl<'a> Sheet<'a> {
     }
 
     /// Accept an input package and insert to the sheet
-    pub fn accept_import(
+    pub async fn accept_import(
         &mut self,
         input_name: &InputName,
         insert_to: &SheetPathBuf,
@@ -129,7 +129,8 @@ impl<'a> Sheet<'a> {
 
         // Insert to sheet
         for (relative_path, virtual_file_id) in input.files {
-            let _ = self.add_mapping(insert_to.join(relative_path), virtual_file_id);
+            self.add_mapping(insert_to.join(relative_path), virtual_file_id)
+                .await?;
         }
 
         Ok(())
@@ -176,8 +177,7 @@ impl<'a> Sheet<'a> {
             }
             Err(_) => {
                 // Error checking rights, don't allow modifying the mapping
-                Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
+                Err(std::io::Error::other(
                     "Failed to check virtual file edit rights",
                 ))
             }

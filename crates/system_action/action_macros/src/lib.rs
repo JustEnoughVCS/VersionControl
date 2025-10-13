@@ -101,7 +101,7 @@ fn generate_action_struct(input_fn: ItemFn, _is_local: bool) -> proc_macro2::Tok
 }
 
 fn validate_function_signature(fn_sig: &syn::Signature) {
-    if !fn_sig.asyncness.is_some() {
+    if fn_sig.asyncness.is_none() {
         panic!("Expected async function for Action, but found synchronous function");
     }
 
@@ -120,13 +120,12 @@ fn validate_function_signature(fn_sig: &syn::Signature) {
     };
 
     if let syn::Type::Path(type_path) = return_type.as_ref() {
-        if let Some(segment) = type_path.path.segments.last() {
-            if segment.ident != "Result" {
+        if let Some(segment) = type_path.path.segments.last()
+            && segment.ident != "Result" {
                 panic!(
                     "Expected Action function to return Result<T, TcpTargetError>, but found different return type"
                 );
             }
-        }
     } else {
         panic!(
             "Expected Action function to return Result<T, TcpTargetError>, but found no return type"

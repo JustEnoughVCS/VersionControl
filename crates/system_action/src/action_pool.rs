@@ -6,12 +6,14 @@ use tcp_connection::error::TcpTargetError;
 
 use crate::action::{Action, ActionContext};
 
-type ProcBeginCallback =
-    for<'a> fn(
-        &'a ActionContext,
-        args: &'a (dyn std::any::Any + Send + Sync),
-    ) -> Pin<Box<dyn Future<Output = Result<(), TcpTargetError>> + Send + 'a>>;
-type ProcEndCallback = fn() -> Pin<Box<dyn Future<Output = Result<(), TcpTargetError>> + Send>>;
+type ProcBeginCallback = for<'a> fn(
+    &'a ActionContext,
+    args: &'a (dyn std::any::Any + Send + Sync),
+) -> ProcBeginFuture<'a>;
+type ProcEndCallback = fn() -> ProcEndFuture;
+
+type ProcBeginFuture<'a> = Pin<Box<dyn Future<Output = Result<(), TcpTargetError>> + Send + 'a>>;
+type ProcEndFuture = Pin<Box<dyn Future<Output = Result<(), TcpTargetError>> + Send>>;
 
 /// A pool of registered actions that can be processed by name
 pub struct ActionPool {
@@ -23,6 +25,12 @@ pub struct ActionPool {
 
     /// Callback to execute when process ends
     on_proc_end: Option<ProcEndCallback>,
+}
+
+impl Default for ActionPool {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl ActionPool {
@@ -88,9 +96,9 @@ impl ActionPool {
             let context = context.set_action_name(action_name.to_string());
             let context = context.set_action_args(args_json.clone());
 
-            let _ = self.exec_on_proc_begin(&context, &args_json).await?;
+            self.exec_on_proc_begin(&context, &args_json).await?;
             let result = action.process_json_erased(context, args_json).await?;
-            let _ = self.exec_on_proc_end().await?;
+            self.exec_on_proc_end().await?;
             Ok(result)
         } else {
             Err(TcpTargetError::Unsupported("InvalidAction".to_string()))
@@ -106,7 +114,7 @@ impl ActionPool {
     pub async fn process<'a, Args, Return>(
         &'a self,
         action_name: &'a str,
-        mut context: ActionContext,
+        context: ActionContext,
         args: Args,
     ) -> Result<Return, TcpTargetError>
     where
@@ -114,12 +122,12 @@ impl ActionPool {
         Return: serde::Serialize + Send + 'static,
     {
         if let Some(action) = self.actions.get(action_name) {
-            let _ = self.exec_on_proc_begin(&context, &args).await?;
+            self.exec_on_proc_begin(&context, &args).await?;
             let result = action.process_erased(context, Box::new(args)).await?;
             let result = *result
                 .downcast::<Return>()
                 .map_err(|_| TcpTargetError::Unsupported("InvalidArguments".to_string()))?;
-            let _ = self.exec_on_proc_end().await?;
+            self.exec_on_proc_end().await?;
             Ok(result)
         } else {
             Err(TcpTargetError::Unsupported("InvalidAction".to_string()))
@@ -150,25 +158,29 @@ impl ActionPool {
 }
 
 /// Trait for type-erased actions that can be stored in ActionPool
+type ProcessErasedFuture = std::pin::Pin<
+    Box<
+        dyn std::future::Future<Output = Result<Box<dyn std::any::Any + Send>, TcpTargetError>>
+            + Send,
+    >,
+>;
+type ProcessJsonErasedFuture =
+    std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, TcpTargetError>> + Send>>;
+
 trait ActionErased: Send + Sync {
     /// Processes the action with type-erased arguments and returns type-erased result
     fn process_erased(
         &self,
         context: ActionContext,
         args: Box<dyn std::any::Any + Send>,
-    ) -> std::pin::Pin<
-        Box<
-            dyn std::future::Future<Output = Result<Box<dyn std::any::Any + Send>, TcpTargetError>>
-                + Send,
-        >,
-    >;
+    ) -> ProcessErasedFuture;
 
     /// Processes the action with JSON-serialized arguments and returns JSON-serialized result
     fn process_json_erased(
         &self,
         context: ActionContext,
         args_json: String,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, TcpTargetError>> + Send>>;
+    ) -> ProcessJsonErasedFuture;
 }
 
 /// Wrapper struct that implements ActionErased for concrete Action types
