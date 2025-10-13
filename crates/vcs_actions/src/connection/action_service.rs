@@ -1,6 +1,6 @@
 use std::{net::SocketAddr, path::PathBuf, sync::Arc};
 
-use action_system::action_pool::ActionPool;
+use action_system::{action::ActionContext, action_pool::ActionPool};
 use cfg_file::config::ConfigFile;
 use tcp_connection::{error::TcpTargetError, instance::ConnectionInstance};
 use tokio::{
@@ -10,10 +10,12 @@ use tokio::{
 };
 use vcs_data::data::vault::{Vault, config::VaultConfig};
 
-use crate::registry::server_registry::server_action_pool;
+use crate::{
+    connection::protocol::RemoteActionInvoke, registry::server_registry::server_action_pool,
+};
 
 // Start the server with a Vault using the specified directory
-pub async fn server_entry(path: impl Into<PathBuf>) -> Result<(), TcpTargetError> {
+pub async fn server_entry(vault_path: impl Into<PathBuf>) -> Result<(), TcpTargetError> {
     // Read the vault cfg
     let vault_cfg = VaultConfig::read().await?;
 
@@ -21,7 +23,7 @@ pub async fn server_entry(path: impl Into<PathBuf>) -> Result<(), TcpTargetError
     let listener = create_tcp_listener(&vault_cfg).await?;
 
     // Initialize the vault
-    let vault: Arc<Vault> = init_vault(vault_cfg, path.into()).await?;
+    let vault: Arc<Vault> = init_vault(vault_cfg, vault_path.into()).await?;
 
     // Create ActionPool
     let action_pool: Arc<ActionPool> = Arc::new(server_action_pool());
@@ -125,5 +127,22 @@ fn build_server_future(
 }
 
 async fn process_connection(stream: TcpStream, vault: Arc<Vault>, action_pool: Arc<ActionPool>) {
-    let instance = ConnectionInstance::from(stream);
+    // Setup connection instance
+    let mut instance = ConnectionInstance::from(stream);
+
+    // Read action name and action arguments
+    let Ok(msg) = instance.read_msgpack::<RemoteActionInvoke>().await else {
+        return;
+    };
+
+    // Build context
+    let ctx = ActionContext::remote().insert_instance(instance);
+
+    // Process action
+    let Ok(_result_json) = action_pool
+        .process_json(&msg.action_name, ctx, msg.action_args_json)
+        .await
+    else {
+        return;
+    };
 }

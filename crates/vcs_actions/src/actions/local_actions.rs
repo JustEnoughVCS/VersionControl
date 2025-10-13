@@ -6,7 +6,7 @@ use tcp_connection::error::TcpTargetError;
 #[action_gen(local)]
 pub async fn set_upstream_vault_action(
     ctx: ActionContext,
-    upstream: SocketAddr,
+    _upstream: SocketAddr,
 ) -> Result<(), TcpTargetError> {
     if ctx.is_remote() {
         return Err(TcpTargetError::NotLocal(

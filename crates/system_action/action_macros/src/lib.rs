@@ -67,14 +67,19 @@ fn generate_action_struct(input_fn: ItemFn, _is_local: bool) -> proc_macro2::Tok
             ctx: action_system::action::ActionContext,
             #arg_param_name: #arg_type
         ) -> Result<#return_type, tcp_connection::error::TcpTargetError> {
-            pool.process::<#arg_type, #return_type>(
+            let args_json = serde_json::to_string(&#arg_param_name)
+                .map_err(|e| {
+                    tcp_connection::error::TcpTargetError::Serialization(e.to_string())
+                })?;
+            let result_json = pool.process_json(
                 Box::leak(string_proc::snake_case!(stringify!(#action_name_ident)).into_boxed_str()),
                 ctx,
-                serde_json::to_string(&#arg_param_name)
-                    .map_err(|e| {
-                        tcp_connection::error::TcpTargetError::Serialization(e.to_string())
-                    })?
-            ).await
+                args_json,
+            ).await?;
+            serde_json::from_str(&result_json)
+                .map_err(|e| {
+                    tcp_connection::error::TcpTargetError::Serialization(e.to_string())
+                })
         }
 
         #[allow(dead_code)]
