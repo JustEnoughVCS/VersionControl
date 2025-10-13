@@ -1,11 +1,11 @@
 use action_system::{action::ActionContext, action_pool::ActionPool};
 use tcp_connection::error::TcpTargetError;
 
-use crate::actions::local_actions::SetUpstreamVaultAction;
+use crate::actions::local_actions::register_set_upstream_vault_action;
 
 fn register_actions(pool: &mut ActionPool) {
     // Pool register here
-    SetUpstreamVaultAction::register_to_pool(pool);
+    register_set_upstream_vault_action(pool);
 }
 
 pub fn client_action_pool() -> ActionPool {

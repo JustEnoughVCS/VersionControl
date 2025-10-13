@@ -37,6 +37,9 @@ fn generate_action_struct(input_fn: ItemFn, _is_local: bool) -> proc_macro2::Tok
 
     let action_name_ident = &fn_name;
 
+    let register_this_action = quote::format_ident!("register_{}", action_name_ident);
+    let proc_this_action = quote::format_ident!("proc_{}", action_name_ident);
+
     quote! {
         #[derive(Debug, Clone, Default)]
         #fn_vis struct #struct_name;
@@ -55,22 +58,23 @@ fn generate_action_struct(input_fn: ItemFn, _is_local: bool) -> proc_macro2::Tok
             }
         }
 
-        impl #struct_name {
-            #fn_vis fn register_to_pool(pool: &mut action_system::action_pool::ActionPool) {
-                pool.register::<#struct_name, #arg_type, #return_type>();
-            }
+        #fn_vis fn #register_this_action(pool: &mut action_system::action_pool::ActionPool) {
+            pool.register::<#struct_name, #arg_type, #return_type>();
+        }
 
-            #fn_vis async fn process_at_pool<'a>(
-                pool: &'a action_system::action_pool::ActionPool,
-                ctx: action_system::action::ActionContext,
-                #arg_param_name: #arg_type
-            ) -> Result<#return_type, tcp_connection::error::TcpTargetError> {
-                pool.process::<#arg_type, #return_type>(
-                    Box::leak(string_proc::snake_case!(stringify!(#action_name_ident)).into_boxed_str()),
-                    ctx,
-                    #arg_param_name
-                ).await
-            }
+        #fn_vis async fn #proc_this_action(
+            pool: &action_system::action_pool::ActionPool,
+            ctx: action_system::action::ActionContext,
+            #arg_param_name: #arg_type
+        ) -> Result<#return_type, tcp_connection::error::TcpTargetError> {
+            pool.process::<#arg_type, #return_type>(
+                Box::leak(string_proc::snake_case!(stringify!(#action_name_ident)).into_boxed_str()),
+                ctx,
+                serde_json::to_string(&#arg_param_name)
+                    .map_err(|e| {
+                        tcp_connection::error::TcpTargetError::Serialization(e.to_string())
+                    })?
+            ).await
         }
 
         #[allow(dead_code)]

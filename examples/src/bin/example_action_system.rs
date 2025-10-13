@@ -4,9 +4,9 @@ use tcp_connection::error::TcpTargetError;
 #[tokio::main]
 async fn main() {
     let mut pool = ActionPool::new();
-    PrintNameAction::register_to_pool(&mut pool);
+    register_print_name_action(&mut pool);
 
-    PrintNameAction::process_at_pool(&pool, ActionContext::local(), "World".to_string())
+    proc_print_name_action(&pool, ActionContext::local(), "World".to_string())
         .await
         .unwrap();
 }

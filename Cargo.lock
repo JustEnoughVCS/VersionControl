@@ -8,6 +8,7 @@ version = "0.1.0"
 dependencies = [
  "action_system_macros",
  "serde",
+ "serde_json",
  "tcp_connection",
  "tokio",
 ]
@@ -18,6 +19,8 @@ version = "0.1.0"
 dependencies = [
  "proc-macro2",
  "quote",
+ "serde",
+ "serde_json",
  "string_proc",
  "syn",
  "tcp_connection",
@@ -419,6 +422,8 @@ version = "0.1.0"
 dependencies = [
  "action_system",
  "cfg_file",
+ "serde",
+ "serde_json",
  "string_proc",
  "tcp_connection",
  "tokio",

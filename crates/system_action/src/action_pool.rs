@@ -72,7 +72,7 @@ impl ActionPool {
         &'a self,
         action_name: &'a str,
         context: ActionContext,
-        args: Args,
+        args_json: String,
     ) -> Result<Return, TcpTargetError>
     where
         Args: serde::de::DeserializeOwned + Send + 'static,
@@ -80,6 +80,8 @@ impl ActionPool {
     {
         if let Some(action) = self.actions.get(action_name) {
             let _ = self.exec_on_proc_begin(&context).await?;
+            let args: Args = serde_json::from_str(&args_json)
+                .map_err(|e| TcpTargetError::Serialization(format!("Deserialize failed: {}", e)))?;
             let result = action.process_erased(context, Box::new(args)).await?;
             let result = *result
                 .downcast::<Return>()
