@@ -9,19 +9,10 @@ use crate::test_utils::{
     target_configure::ServerTargetConfig,
 };
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize, Default)]
 struct TestData {
     id: u32,
     name: String,
-}
-
-impl Default for TestData {
-    fn default() -> Self {
-        Self {
-            id: 0,
-            name: String::new(),
-        }
-    }
 }
 
 pub(crate) struct MsgPackClientHandle;

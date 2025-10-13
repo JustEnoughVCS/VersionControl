@@ -37,6 +37,9 @@ fn generate_action_struct(input_fn: ItemFn, _is_local: bool) -> proc_macro2::Tok
 
     let action_name_ident = &fn_name;
 
+    let register_this_action = quote::format_ident!("register_{}", action_name_ident);
+    let proc_this_action = quote::format_ident!("proc_{}", action_name_ident);
+
     quote! {
         #[derive(Debug, Clone, Default)]
         #fn_vis struct #struct_name;
@@ -55,22 +58,28 @@ fn generate_action_struct(input_fn: ItemFn, _is_local: bool) -> proc_macro2::Tok
             }
         }
 
-        impl #struct_name {
-            #fn_vis fn register_to_pool(pool: &mut action_system::action_pool::ActionPool) {
-                pool.register::<#struct_name, #arg_type, #return_type>();
-            }
+        #fn_vis fn #register_this_action(pool: &mut action_system::action_pool::ActionPool) {
+            pool.register::<#struct_name, #arg_type, #return_type>();
+        }
 
-            #fn_vis async fn process_at_pool<'a>(
-                pool: &'a action_system::action_pool::ActionPool,
-                ctx: action_system::action::ActionContext,
-                #arg_param_name: #arg_type
-            ) -> Result<#return_type, tcp_connection::error::TcpTargetError> {
-                pool.process::<#arg_type, #return_type>(
-                    Box::leak(string_proc::snake_case!(stringify!(#action_name_ident)).into_boxed_str()),
-                    ctx,
-                    #arg_param_name
-                ).await
-            }
+        #fn_vis async fn #proc_this_action(
+            pool: &action_system::action_pool::ActionPool,
+            ctx: action_system::action::ActionContext,
+            #arg_param_name: #arg_type
+        ) -> Result<#return_type, tcp_connection::error::TcpTargetError> {
+            let args_json = serde_json::to_string(&#arg_param_name)
+                .map_err(|e| {
+                    tcp_connection::error::TcpTargetError::Serialization(e.to_string())
+                })?;
+            let result_json = pool.process_json(
+                Box::leak(string_proc::snake_case!(stringify!(#action_name_ident)).into_boxed_str()),
+                ctx,
+                args_json,
+            ).await?;
+            serde_json::from_str(&result_json)
+                .map_err(|e| {
+                    tcp_connection::error::TcpTargetError::Serialization(e.to_string())
+                })
         }
 
         #[allow(dead_code)]
@@ -79,20 +88,20 @@ fn generate_action_struct(input_fn: ItemFn, _is_local: bool) -> proc_macro2::Tok
         #[doc = "Use the generated struct instead."]
         #[doc = ""]
         #[doc = "Register the action to the pool."]
-        #[doc = "```rust"]
-        #[doc = "YourActionPascalName::register_to_pool(&mut pool);"]
+        #[doc = "```ignore"]
+        #[doc = "register_your_func(&mut pool);"]
         #[doc = "```"]
         #[doc = ""]
         #[doc = "Process the action at the pool."]
-        #[doc = "```rust"]
-        #[doc = "let result = YourActionPascalName::process_at_pool(&pool, ctx, arg).await?;"]
+        #[doc = "```ignore"]
+        #[doc = "let result = proc_your_func(&pool, ctx, arg).await?;"]
         #[doc = "```"]
         #fn_vis #fn_sig #fn_block
     }
 }
 
 fn validate_function_signature(fn_sig: &syn::Signature) {
-    if !fn_sig.asyncness.is_some() {
+    if fn_sig.asyncness.is_none() {
         panic!("Expected async function for Action, but found synchronous function");
     }
 
@@ -111,13 +120,12 @@ fn validate_function_signature(fn_sig: &syn::Signature) {
     };
 
     if let syn::Type::Path(type_path) = return_type.as_ref() {
-        if let Some(segment) = type_path.path.segments.last() {
-            if segment.ident != "Result" {
+        if let Some(segment) = type_path.path.segments.last()
+            && segment.ident != "Result" {
                 panic!(
                     "Expected Action function to return Result<T, TcpTargetError>, but found different return type"
                 );
             }
-        }
     } else {
         panic!(
             "Expected Action function to return Result<T, TcpTargetError>, but found no return type"

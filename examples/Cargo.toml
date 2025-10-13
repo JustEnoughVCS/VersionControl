@@ -19,3 +19,7 @@ action_system = { path = "../crates/system_action" }
 
 # Async & Networking
 tokio = { version = "1.46.1", features = ["full"] }
+
+# Serialization
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
