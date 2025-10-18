@@ -57,7 +57,10 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
 
         // Check if file exists
         if fs::metadata(&file_path).await.is_err() {
-            return Ok(Self::DataType::default());
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "Config file not found",
+            ));
         }
 
         // Open file
