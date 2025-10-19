@@ -1,6 +1,9 @@
-# JustEnoughVCS - A Lightweight, Cross-Functional, Binary-Friendly Centralized Version Control System
+# Just Enough VCS
 
-> **⚠️ Warning: JustEnoughVCS is currently under active development.**
+> A Lightweight, Cross-Functional, Binary-Friendly Centralized VCS.
+
+> [!WARNING]
+> JustEnoughVCS is currently under active development.**
 >
 > This software is in the development stage, and its features are not yet complete.
 
