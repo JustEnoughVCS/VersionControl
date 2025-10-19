@@ -60,4 +60,4 @@
 
 ---
 
-最后，感谢您对 `JustEnoughVCS` 的关注！🎉
+最后，感谢您对 `JustEnoughVCS` 的关注！
