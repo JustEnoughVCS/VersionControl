@@ -60,4 +60,4 @@ For the complete license terms, please refer to the ./LICENSE-MIT.md file in the
 
 ---
 
-Finally, thank you for your interest in `JustEnoughVCS`! 🎉
+Finally, thank you for your interest in `JustEnoughVCS`!
