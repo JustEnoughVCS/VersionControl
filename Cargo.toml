@@ -60,5 +60,7 @@ cfg_file = { path = "crates/utils/cfg_file" }
 tcp_connection = { path = "crates/utils/tcp_connection" }
 string_proc = { path = "crates/utils/string_proc" }
 
+action_system = { path = "crates/system_action" }
+
 vcs_data = { path = "crates/vcs_data" }
 vcs_actions = { path = "crates/vcs_actions" }

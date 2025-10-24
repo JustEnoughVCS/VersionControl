@@ -1,4 +1,4 @@
-use action_system::{action::ActionContext, action_gen, action_pool::ActionPool};
+use action_system::{action::ActionContext, action_pool::ActionPool, macros::action_gen};
 use tcp_connection::error::TcpTargetError;
 
 #[tokio::main]

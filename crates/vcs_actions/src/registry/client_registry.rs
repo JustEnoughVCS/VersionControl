@@ -2,12 +2,13 @@ use action_system::{action::ActionContext, action_pool::ActionPool};
 use tcp_connection::error::TcpTargetError;
 
 use crate::{
-    actions::local_actions::register_hello_world_action, connection::protocol::RemoteActionInvoke,
+    actions::local_actions::register_set_upstream_vault_action,
+    connection::protocol::RemoteActionInvoke,
 };
 
 fn register_actions(pool: &mut ActionPool) {
     // Pool register here
-    register_hello_world_action(pool);
+    register_set_upstream_vault_action(pool);
 }
 
 pub fn client_action_pool() -> ActionPool {

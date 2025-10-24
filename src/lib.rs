@@ -1,11 +1,17 @@
 // Feature `vcs`
 #[cfg(feature = "vcs")]
 pub mod vcs {
-    extern crate vcs_data;
+    pub extern crate vcs_data;
     pub use vcs_data::*;
 
-    extern crate vcs_actions;
+    pub extern crate vcs_actions;
     pub use vcs_actions::*;
+}
+
+pub mod system {
+    pub mod action_system {
+        pub use action_system::*;
+    }
 }
 
 pub mod utils {

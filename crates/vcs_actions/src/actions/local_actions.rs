@@ -1,4 +1,6 @@
-use action_system::{action::ActionContext, action_gen};
+use std::net::SocketAddr;
+
+use action_system::{action::ActionContext, macros::action_gen};
 use log::info;
 use tcp_connection::error::TcpTargetError;
 
@@ -21,5 +23,13 @@ pub async fn hello_world_action(ctx: ActionContext, _n: ()) -> Result<(), TcpTar
         info!("{}", read)
     }
 
+    Ok(())
+}
+
+#[action_gen]
+pub async fn set_upstream_vault_action(
+    ctx: ActionContext,
+    upstream: SocketAddr,
+) -> Result<(), TcpTargetError> {
     Ok(())
 }
