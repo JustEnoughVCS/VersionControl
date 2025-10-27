@@ -118,7 +118,7 @@ fn build_server_future(
                 accept_result = listener.accept(), if !shutdown_requested => {
                     match accept_result {
                         Ok((stream, _addr)) => {
-                            info!("New connection accepted.");
+                            info!("New connection. (now {})", active_connections);
                             let _ = tx.send(1).await;
 
                             let vault_clone = vault.clone();
@@ -127,7 +127,7 @@ fn build_server_future(
 
                             spawn(async move {
                                 process_connection(stream, vault_clone, action_pool_clone).await;
-                                info!("A connection closed.");
+                                info!("A connection closed. (now {})", active_connections);
                                 let _ = tx_clone.send(-1).await;
                             });
                         }
