@@ -121,11 +121,12 @@ fn validate_function_signature(fn_sig: &syn::Signature) {
 
     if let syn::Type::Path(type_path) = return_type.as_ref() {
         if let Some(segment) = type_path.path.segments.last()
-            && segment.ident != "Result" {
-                panic!(
-                    "Expected Action function to return Result<T, TcpTargetError>, but found different return type"
-                );
-            }
+            && segment.ident != "Result"
+        {
+            panic!(
+                "Expected Action function to return Result<T, TcpTargetError>, but found different return type"
+            );
+        }
     } else {
         panic!(
             "Expected Action function to return Result<T, TcpTargetError>, but found no return type"
