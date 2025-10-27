@@ -14,11 +14,10 @@ pub async fn hello_world_action(ctx: ActionContext, _n: ()) -> Result<(), TcpTar
     };
 
     if ctx.is_local() {
-        // Invoke on local
-        // Send the message to the server
-        let _ = instance.lock().await.write_text("Hello World!").await;
+        // Local execution - communication is handled by on_proc_begin
+        info!("Hello World action executed locally");
     } else if ctx.is_remote() {
-        // Read the message from the client
+        // Remote execution - read the message from the client
         let read = instance.lock().await.read_text().await?;
         info!("{}", read)
     }
@@ -43,9 +42,9 @@ pub async fn set_upstream_vault_action(
         // Send the message to the server
         let _ = instance.lock().await.write_text("Hello World!").await;
     } else if ctx.is_remote() {
-        // Read the message from the client
+        // Remote execution - read the message from the client
         let read = instance.lock().await.read_text().await?;
-        info!("{}", read)
+        info!("Received: {}", read)
     }
 
     Ok(())
