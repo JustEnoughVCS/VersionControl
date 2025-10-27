@@ -17,6 +17,7 @@ use crate::{
 
 pub mod config;
 pub mod member;
+pub mod service;
 pub mod sheets;
 pub mod virtual_file;
 
