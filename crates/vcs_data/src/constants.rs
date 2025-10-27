@@ -12,7 +12,7 @@ pub const VAULT_HOST_NAME: &str = "host";
 
 // Server
 // Server - Vault (Main)
-pub const SERVER_FILE_VAULT: &str = "./vault.toml"; // crates::env::vault::vault_config
+pub const SERVER_FILE_VAULT: &str = "./vault.toml";
 
 // Server - Sheets
 pub const REF_SHEET_NAME: &str = "ref";
@@ -22,8 +22,8 @@ pub const SERVER_FILE_SHEET: &str = "./sheets/{sheet-name}.yaml";
 // Server - Members
 pub const SERVER_PATH_MEMBERS: &str = "./members/";
 pub const SERVER_PATH_MEMBER_PUB: &str = "./key/";
-pub const SERVER_FILE_MEMBER_INFO: &str = "./members/{member_id}.toml"; // crates::env::member::manager
-pub const SERVER_FILE_MEMBER_PUB: &str = "./key/{member_id}.pem"; // crates::utils::tcp_connection::instance
+pub const SERVER_FILE_MEMBER_INFO: &str = "./members/{member_id}.toml";
+pub const SERVER_FILE_MEMBER_PUB: &str = "./key/{member_id}.pem";
 
 // Server - Virtual File Storage
 pub const SERVER_PATH_VF_TEMP: &str = "./.temp/{temp_name}";
@@ -31,6 +31,9 @@ pub const SERVER_PATH_VF_ROOT: &str = "./storage/";
 pub const SERVER_PATH_VF_STORAGE: &str = "./storage/{vf_index}/{vf_id}/";
 pub const SERVER_FILE_VF_VERSION_INSTANCE: &str = "./storage/{vf_index}/{vf_id}/{vf_version}.rf";
 pub const SERVER_FILE_VF_META: &str = "./storage/{vf_index}/{vf_id}/meta.yaml";
+
+// Server - Service
+pub const SERVER_FILE_LOCKFILE: &str = "./.lock";
 
 pub const SERVER_FILE_README: &str = "./README.md";
 
@@ -40,10 +43,10 @@ pub const SERVER_FILE_README: &str = "./README.md";
 pub const CLIENT_PATH_WORKSPACE_ROOT: &str = "./.jv/";
 
 // Client - Workspace (Main)
-pub const CLIENT_FILE_WORKSPACE: &str = "./.jv/workspace.toml"; // crates::env::local::local_config
+pub const CLIENT_FILE_WORKSPACE: &str = "./.jv/workspace.toml";
 
 // Client - Other
-pub const CLIENT_FILE_IGNOREFILES: &str = ".jgnore .gitignore"; // Support gitignore file.
+pub const CLIENT_FILE_IGNOREFILES: &str = "IGNORE_RULES.toml";
 pub const CLIENT_FILE_README: &str = "./README.md";
 
 // -------------------------------------------------------------------------------------

@@ -555,6 +555,7 @@ dependencies = [
 name = "just_enough_vcs"
 version = "0.0.0"
 dependencies = [
+ "action_system",
  "cfg_file",
  "string_proc",
  "tcp_connection",

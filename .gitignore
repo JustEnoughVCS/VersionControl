@@ -16,3 +16,6 @@
 
 # Obsidian directory
 /.obsidian/
+
+# Target directory
+/target/

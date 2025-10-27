@@ -44,6 +44,9 @@ pub enum TcpTargetError {
 
     #[error("Not found: {0}")]
     NotFound(String),
+
+    #[error("Locked: {0}")]
+    Locked(String),
 }
 
 impl From<io::Error> for TcpTargetError {

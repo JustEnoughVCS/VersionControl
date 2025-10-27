@@ -64,9 +64,10 @@ fn generate_action_struct(input_fn: ItemFn, _is_local: bool) -> proc_macro2::Tok
 
         #fn_vis async fn #proc_this_action(
             pool: &action_system::action_pool::ActionPool,
-            ctx: action_system::action::ActionContext,
+            mut ctx: action_system::action::ActionContext,
             #arg_param_name: #arg_type
         ) -> Result<#return_type, tcp_connection::error::TcpTargetError> {
+            ctx.set_is_remote_action(!#_is_local);
             let args_json = serde_json::to_string(&#arg_param_name)
                 .map_err(|e| {
                     tcp_connection::error::TcpTargetError::Serialization(e.to_string())
@@ -121,11 +122,12 @@ fn validate_function_signature(fn_sig: &syn::Signature) {
 
     if let syn::Type::Path(type_path) = return_type.as_ref() {
         if let Some(segment) = type_path.path.segments.last()
-            && segment.ident != "Result" {
-                panic!(
-                    "Expected Action function to return Result<T, TcpTargetError>, but found different return type"
-                );
-            }
+            && segment.ident != "Result"
+        {
+            panic!(
+                "Expected Action function to return Result<T, TcpTargetError>, but found different return type"
+            );
+        }
     } else {
         panic!(
             "Expected Action function to return Result<T, TcpTargetError>, but found no return type"

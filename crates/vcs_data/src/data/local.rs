@@ -93,7 +93,7 @@ Without these credentials, the server will reject all access requests.
     }
 
     /// Setup local workspace in current directory
-    pub async fn setup_local_workspacecurrent_dir() -> Result<(), std::io::Error> {
+    pub async fn setup_local_workspace_current_dir() -> Result<(), std::io::Error> {
         Self::setup_local_workspace(current_dir()?).await?;
         Ok(())
     }
