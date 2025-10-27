@@ -200,7 +200,6 @@ async fn process_connection(stream: TcpStream, vault: Arc<Vault>, action_pool: A
         Ok(_result_json) => {}
         Err(e) => {
             warn!("Failed to process action `{}`: {}", msg.action_name, e);
-            return;
         }
-    };
+    }
 }

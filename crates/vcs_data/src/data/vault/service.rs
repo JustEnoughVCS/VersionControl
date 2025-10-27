@@ -33,11 +33,10 @@ impl Vault {
 
     /// Unlock the current Vault
     pub fn unlock(&self) -> Result<(), std::io::Error> {
-        if let Err(e) = std::fs::remove_file(self.lock_file_path()) {
-            if e.kind() != std::io::ErrorKind::NotFound {
+        if let Err(e) = std::fs::remove_file(self.lock_file_path())
+            && e.kind() != std::io::ErrorKind::NotFound {
                 return Err(e);
             }
-        }
         Ok(())
     }
 }
