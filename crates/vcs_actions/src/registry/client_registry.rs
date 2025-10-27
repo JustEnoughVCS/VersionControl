@@ -26,7 +26,7 @@ pub fn client_action_pool() -> ActionPool {
 }
 
 async fn on_proc_begin(
-    ctx: &ActionContext,
+    ctx: &mut ActionContext,
     _args: &(dyn std::any::Any + Send + Sync),
 ) -> Result<(), TcpTargetError> {
     // Is ctx remote

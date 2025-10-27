@@ -7,7 +7,7 @@ use tcp_connection::error::TcpTargetError;
 use crate::action::{Action, ActionContext};
 
 type ProcBeginCallback = for<'a> fn(
-    &'a ActionContext,
+    &'a mut ActionContext,
     args: &'a (dyn std::any::Any + Send + Sync),
 ) -> ProcBeginFuture<'a>;
 type ProcEndCallback = fn() -> ProcEndFuture;
@@ -94,9 +94,9 @@ impl ActionPool {
         if let Some(action) = self.actions.get(action_name) {
             // Set action name and args in context for callbacks
             let context = context.set_action_name(action_name.to_string());
-            let context = context.set_action_args(args_json.clone());
+            let mut context = context.set_action_args(args_json.clone());
 
-            self.exec_on_proc_begin(&context, &args_json).await?;
+            self.exec_on_proc_begin(&mut context, &args_json).await?;
             let result = action.process_json_erased(context, args_json).await?;
             self.exec_on_proc_end().await?;
             Ok(result)
@@ -114,7 +114,7 @@ impl ActionPool {
     pub async fn process<'a, Args, Return>(
         &'a self,
         action_name: &'a str,
-        context: ActionContext,
+        mut context: ActionContext,
         args: Args,
     ) -> Result<Return, TcpTargetError>
     where
@@ -122,7 +122,7 @@ impl ActionPool {
         Return: serde::Serialize + Send + 'static,
     {
         if let Some(action) = self.actions.get(action_name) {
-            self.exec_on_proc_begin(&context, &args).await?;
+            self.exec_on_proc_begin(&mut context, &args).await?;
             let result = action.process_erased(context, Box::new(args)).await?;
             let result = *result
                 .downcast::<Return>()
@@ -137,7 +137,7 @@ impl ActionPool {
     /// Executes the process begin callback if set
     async fn exec_on_proc_begin(
         &self,
-        context: &ActionContext,
+        context: &mut ActionContext,
         args: &(dyn std::any::Any + Send + Sync),
     ) -> Result<(), TcpTargetError> {
         if let Some(callback) = &self.on_proc_begin {
