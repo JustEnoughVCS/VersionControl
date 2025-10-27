@@ -67,6 +67,7 @@ fn generate_action_struct(input_fn: ItemFn, _is_local: bool) -> proc_macro2::Tok
             mut ctx: action_system::action::ActionContext,
             #arg_param_name: #arg_type
         ) -> Result<#return_type, tcp_connection::error::TcpTargetError> {
+            ctx.set_is_remote_action(!#_is_local);
             let args_json = serde_json::to_string(&#arg_param_name)
                 .map_err(|e| {
                     tcp_connection::error::TcpTargetError::Serialization(e.to_string())

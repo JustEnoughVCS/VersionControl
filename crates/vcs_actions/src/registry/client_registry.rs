@@ -30,7 +30,7 @@ async fn on_proc_begin(
     _args: &(dyn std::any::Any + Send + Sync),
 ) -> Result<(), TcpTargetError> {
     // Is ctx remote
-    let is_remote = ctx.is_remote();
+    let is_remote = ctx.is_remote_action();
 
     // Action name and arguments
     let action_name = ctx.action_name().to_string();
