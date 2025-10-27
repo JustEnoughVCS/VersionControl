@@ -23,7 +23,10 @@ where
 #[derive(Default)]
 pub struct ActionContext {
     /// Whether the action is executed locally or remotely
-    local: bool,
+    proc_on_local: bool,
+
+    /// Whether the action being executed in the current context is a remote action
+    is_remote_action: bool,
 
     /// The name of the action being executed
     action_name: String,
@@ -42,7 +45,7 @@ impl ActionContext {
     /// Generate local context
     pub fn local() -> Self {
         ActionContext {
-            local: true,
+            proc_on_local: true,
             ..Default::default()
         }
     }
@@ -50,7 +53,7 @@ impl ActionContext {
     /// Generate remote context
     pub fn remote() -> Self {
         ActionContext {
-            local: false,
+            proc_on_local: false,
             ..Default::default()
         }
     }
@@ -75,13 +78,23 @@ impl ActionContext {
 
 impl ActionContext {
     /// Whether the action is executed locally
-    pub fn is_local(&self) -> bool {
-        self.local
+    pub fn is_proc_on_local(&self) -> bool {
+        self.proc_on_local
     }
 
     /// Whether the action is executed remotely
-    pub fn is_remote(&self) -> bool {
-        !self.local
+    pub fn is_proc_on_remote(&self) -> bool {
+        !self.proc_on_local
+    }
+
+    /// Whether the action being executed in the current context is a remote action
+    pub fn is_remote_action(&self) -> bool {
+        self.is_remote_action
+    }
+
+    /// Set whether the action being executed in the current context is a remote action
+    pub fn set_is_remote_action(&mut self, is_remote_action: bool) {
+        self.is_remote_action = is_remote_action;
     }
 
     /// Get the connection instance in the current context
