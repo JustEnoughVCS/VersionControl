@@ -32,6 +32,9 @@ pub const SERVER_PATH_VF_STORAGE: &str = "./storage/{vf_index}/{vf_id}/";
 pub const SERVER_FILE_VF_VERSION_INSTANCE: &str = "./storage/{vf_index}/{vf_id}/{vf_version}.rf";
 pub const SERVER_FILE_VF_META: &str = "./storage/{vf_index}/{vf_id}/meta.yaml";
 
+// Server - Service
+pub const SERVER_FILE_LOCKFILE: &str = "./.lock";
+
 pub const SERVER_FILE_README: &str = "./README.md";
 
 // -------------------------------------------------------------------------------------
