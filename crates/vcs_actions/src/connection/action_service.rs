@@ -31,12 +31,21 @@ pub async fn server_entry(vault_path: impl Into<PathBuf>) -> Result<(), TcpTarge
     // Initialize the vault
     let vault: Arc<Vault> = init_vault(vault_cfg, vault_path.into()).await?;
 
+    // Lock the vault
+    vault.lock().map_err(|e| {
+        error!("{}", e);
+        TcpTargetError::Locked(e.to_string())
+    })?;
+
     // Create ActionPool
     let action_pool: Arc<ActionPool> = Arc::new(server_action_pool());
 
     // Start the server
     let (_shutdown_rx, future) = build_server_future(vault.clone(), action_pool.clone(), listener);
     future.await?; // Start and block until shutdown
+
+    // Unlock the vault
+    vault.unlock()?;
 
     Ok(())
 }
