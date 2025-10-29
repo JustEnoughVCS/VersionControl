@@ -130,15 +130,25 @@ impl ActionContext {
     }
 
     /// Insert arbitrary data in the context
-    pub fn insert<T: Any + Send + Sync>(mut self, value: T) -> Self {
+    pub fn with_data<T: Any + Send + Sync>(mut self, value: T) -> Self {
         self.data.insert(TypeId::of::<T>(), Arc::new(value));
         self
     }
 
     /// Insert arbitrary data as Arc in the context
-    pub fn insert_arc<T: Any + Send + Sync>(mut self, value: Arc<T>) -> Self {
+    pub fn with_arc_data<T: Any + Send + Sync>(mut self, value: Arc<T>) -> Self {
         self.data.insert(TypeId::of::<T>(), value);
         self
+    }
+
+    /// Insert arbitrary data in the context
+    pub fn insert_data<T: Any + Send + Sync>(&mut self, value: T) {
+        self.data.insert(TypeId::of::<T>(), Arc::new(value));
+    }
+
+    /// Insert arbitrary data as Arc in the context
+    pub fn insert_arc_data<T: Any + Send + Sync>(&mut self, value: Arc<T>) {
+        self.data.insert(TypeId::of::<T>(), value);
     }
 
     /// Get arbitrary data from the context

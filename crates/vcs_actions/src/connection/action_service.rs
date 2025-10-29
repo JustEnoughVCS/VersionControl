@@ -184,7 +184,7 @@ async fn process_connection(stream: TcpStream, vault: Arc<Vault>, action_pool: A
     let ctx: ActionContext = ActionContext::remote().insert_instance(instance);
 
     // Insert vault into context
-    let ctx = ctx.insert_arc(vault);
+    let ctx = ctx.with_arc_data(vault);
 
     info!(
         "Process action `{}` with argument `{}`",
