@@ -40,7 +40,7 @@ pub async fn set_upstream_vault_action(
         instance
             .lock()
             .await
-            .write(vault.config().vault_uuid().clone())
+            .write(*vault.config().vault_uuid())
             .await?;
     }
 
