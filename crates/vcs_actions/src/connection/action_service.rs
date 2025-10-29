@@ -21,21 +21,23 @@ use crate::{
 };
 
 // Start the server with a Vault using the specified directory
-pub async fn server_entry(vault_path: impl Into<PathBuf>) -> Result<(), TcpTargetError> {
+pub async fn server_entry(
+    vault_path: impl Into<PathBuf>,
+    port_override: u16,
+) -> Result<(), TcpTargetError> {
     // Read the vault cfg
     let vault_cfg = VaultConfig::read().await?;
 
     // Create TCPListener
-    let listener = create_tcp_listener(&vault_cfg).await?;
+    let listener = create_tcp_listener(&vault_cfg, port_override).await?;
 
     // Initialize the vault
     let vault: Arc<Vault> = init_vault(vault_cfg, vault_path.into()).await?;
 
     // Lock the vault
-    vault.lock().map_err(|e| {
-        error!("{}", e);
-        TcpTargetError::Locked(e.to_string())
-    })?;
+    vault
+        .lock()
+        .map_err(|e| TcpTargetError::Locked(e.to_string()))?;
 
     // Create ActionPool
     let action_pool: Arc<ActionPool> = Arc::new(server_action_pool());
@@ -50,9 +52,17 @@ pub async fn server_entry(vault_path: impl Into<PathBuf>) -> Result<(), TcpTarge
     Ok(())
 }
 
-async fn create_tcp_listener(cfg: &VaultConfig) -> Result<TcpListener, TcpTargetError> {
+async fn create_tcp_listener(
+    cfg: &VaultConfig,
+    port_override: u16,
+) -> Result<TcpListener, TcpTargetError> {
     let local_bind_addr = cfg.server_config().local_bind();
-    let bind_port = cfg.server_config().port();
+    let port = if port_override > 0 {
+        port_override // Override -> PORT > 0
+    } else {
+        cfg.server_config().port() // Default  -> Port = 0
+    };
+    let bind_port = port;
     let sock_addr = SocketAddr::new(*local_bind_addr, bind_port);
     let listener = TcpListener::bind(sock_addr).await?;
 
@@ -184,7 +194,7 @@ async fn process_connection(stream: TcpStream, vault: Arc<Vault>, action_pool: A
     let ctx: ActionContext = ActionContext::remote().insert_instance(instance);
 
     // Insert vault into context
-    let ctx = ctx.insert_arc(vault);
+    let ctx = ctx.with_arc_data(vault);
 
     info!(
         "Process action `{}` with argument `{}`",

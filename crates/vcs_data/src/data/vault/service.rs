@@ -9,7 +9,7 @@ impl Vault {
     }
 
     /// Check if the current Vault is locked
-    pub fn is_locked(&self) ->  bool {
+    pub fn is_locked(&self) -> bool {
         self.lock_file_path().exists()
     }
 
@@ -19,10 +19,7 @@ impl Vault {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::AlreadyExists,
                 format!(
-                    "Vault is already locked at {}. \
-                    To unlock, please stop any running services. \
-                    If you are certain no services are running, \
-                    please delete this file",
+                    "Vault is locked! This indicates a service is already running here.\nPlease stop other services or delete the lock file at the vault root directory: {}",
                     self.lock_file_path().display()
                 ),
             ));
@@ -34,9 +31,10 @@ impl Vault {
     /// Unlock the current Vault
     pub fn unlock(&self) -> Result<(), std::io::Error> {
         if let Err(e) = std::fs::remove_file(self.lock_file_path())
-            && e.kind() != std::io::ErrorKind::NotFound {
-                return Err(e);
-            }
+            && e.kind() != std::io::ErrorKind::NotFound
+        {
+            return Err(e);
+        }
         Ok(())
     }
 }

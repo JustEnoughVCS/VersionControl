@@ -2,6 +2,7 @@ use std::{
     env::current_dir,
     fs::{self, create_dir_all},
     path::PathBuf,
+    sync::Arc,
 };
 
 use cfg_file::config::ConfigFile;
@@ -22,7 +23,7 @@ pub mod sheets;
 pub mod virtual_file;
 
 pub struct Vault {
-    config: VaultConfig,
+    config: Arc<VaultConfig>,
     vault_path: PathBuf,
 }
 
@@ -35,13 +36,19 @@ impl Vault {
     /// Initialize vault
     pub fn init(config: VaultConfig, vault_path: impl Into<PathBuf>) -> Option<Self> {
         let vault_path = find_vault_path(vault_path)?;
-        Some(Self { config, vault_path })
+        Some(Self {
+            config: Arc::new(config),
+            vault_path,
+        })
     }
 
     /// Initialize vault
     pub fn init_current_dir(config: VaultConfig) -> Option<Self> {
         let vault_path = current_vault_path()?;
-        Some(Self { config, vault_path })
+        Some(Self {
+            config: Arc::new(config),
+            vault_path,
+        })
     }
 
     /// Setup vault
@@ -143,5 +150,10 @@ Thank you for using `JustEnoughVCS!`
     pub async fn setup_vault_current_dir() -> Result<(), std::io::Error> {
         Self::setup_vault(current_dir()?).await?;
         Ok(())
+    }
+
+    /// Get vault configuration
+    pub fn config(&self) -> &Arc<VaultConfig> {
+        &self.config
     }
 }
