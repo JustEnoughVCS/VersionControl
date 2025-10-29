@@ -3,38 +3,32 @@ use thiserror::Error;
 
 #[derive(Error, Debug, Clone)]
 pub enum TcpTargetError {
-    #[error("I/O error: {0}")]
-    Io(String),
-
-    #[error("Serialization error: {0}")]
-    Serialization(String),
+    #[error("Authentication failed: {0}")]
+    Authentication(String),
 
     #[error("Cryptographic error: {0}")]
     Crypto(String),
 
-    #[error("Protocol error: {0}")]
-    Protocol(String),
-
-    #[error("Authentication failed: {0}")]
-    Authentication(String),
-
     #[error("File operation error: {0}")]
     File(String),
 
-    #[error("Network error: {0}")]
-    Network(String),
+    #[error("I/O error: {0}")]
+    Io(String),
 
     #[error("Invalid configuration: {0}")]
     Config(String),
 
-    #[error("Timeout: {0}")]
-    Timeout(String),
+    #[error("Locked: {0}")]
+    Locked(String),
 
-    #[error("Unsupported operation: {0}")]
-    Unsupported(String),
+    #[error("Network error: {0}")]
+    Network(String),
 
-    #[error("Pool already exists: {0}")]
-    PoolAlreadyExists(String),
+    #[error("No result: {0}")]
+    NoResult(String),
+
+    #[error("Not found: {0}")]
+    NotFound(String),
 
     #[error("Not local machine: {0}")]
     NotLocal(String),
@@ -42,11 +36,20 @@ pub enum TcpTargetError {
     #[error("Not remote machine: {0}")]
     NotRemote(String),
 
-    #[error("Not found: {0}")]
-    NotFound(String),
+    #[error("Pool already exists: {0}")]
+    PoolAlreadyExists(String),
 
-    #[error("Locked: {0}")]
-    Locked(String),
+    #[error("Protocol error: {0}")]
+    Protocol(String),
+
+    #[error("Serialization error: {0}")]
+    Serialization(String),
+
+    #[error("Timeout: {0}")]
+    Timeout(String),
+
+    #[error("Unsupported operation: {0}")]
+    Unsupported(String),
 }
 
 impl From<io::Error> for TcpTargetError {
