@@ -1,5 +1,12 @@
+use std::sync::Arc;
+
 use action_system::{action::ActionContext, action_pool::ActionPool};
+use cfg_file::config::ConfigFile;
 use tcp_connection::error::TcpTargetError;
+use vcs_data::data::{
+    local::{LocalWorkspace, config::LocalConfig},
+    user::UserDirectory,
+};
 
 use crate::{
     actions::local_actions::register_set_upstream_vault_action,
@@ -35,6 +42,33 @@ async fn on_proc_begin(
     // Action name and arguments
     let action_name = ctx.action_name().to_string();
     let action_args_json = ctx.action_args_json().clone();
+
+    // Insert LocalWorkspace Arc
+    let Ok(local_config) = LocalConfig::read().await else {
+        return Err(TcpTargetError::NotFound(
+            "The current directory does not have a local workspace".to_string(),
+        ));
+    };
+    let local_workspace = match LocalWorkspace::init_current_dir(local_config) {
+        Some(workspace) => workspace,
+        None => {
+            return Err(TcpTargetError::NotFound(format!(
+                "Failed to initialize local workspace.",
+            )));
+        }
+    };
+    let local_workspace_arc = Arc::new(local_workspace);
+    ctx.insert_arc_data(local_workspace_arc);
+
+    // Insert UserDirectory Arc
+    let Some(user_directory) = UserDirectory::current_doc_dir() else {
+        return Err(TcpTargetError::NotFound(
+            "The user directory does not exist.".to_string(),
+        ));
+    };
+
+    let user_directory_arc = Arc::new(user_directory);
+    ctx.insert_arc_data(user_directory_arc);
 
     // Get instance
     let Some(instance) = ctx.instance() else {
