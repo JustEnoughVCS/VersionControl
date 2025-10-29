@@ -1,7 +1,7 @@
-use std::{env::current_dir, path::PathBuf};
+use std::{env::current_dir, path::PathBuf, sync::Arc};
 
 use cfg_file::config::ConfigFile;
-use tokio::fs;
+use tokio::{fs, sync::Mutex};
 
 use crate::{
     constants::{CLIENT_FILE_README, CLIENT_FILE_WORKSPACE},
@@ -12,7 +12,7 @@ use crate::{
 pub mod config;
 
 pub struct LocalWorkspace {
-    config: LocalConfig,
+    config: Arc<Mutex<LocalConfig>>,
     local_path: PathBuf,
 }
 
@@ -25,13 +25,19 @@ impl LocalWorkspace {
     /// Initialize local workspace.
     pub fn init(config: LocalConfig, local_path: impl Into<PathBuf>) -> Option<Self> {
         let local_path = find_local_path(local_path)?;
-        Some(Self { config, local_path })
+        Some(Self {
+            config: Arc::new(Mutex::new(config)),
+            local_path,
+        })
     }
 
     /// Initialize local workspace in the current directory.
     pub fn init_current_dir(config: LocalConfig) -> Option<Self> {
         let local_path = current_local_path()?;
-        Some(Self { config, local_path })
+        Some(Self {
+            config: Arc::new(Mutex::new(config)),
+            local_path,
+        })
     }
 
     /// Setup local workspace
@@ -90,6 +96,11 @@ Without these credentials, the server will reject all access requests.
         fs::write(local_path.join(CLIENT_FILE_README), readme_content).await?;
 
         Ok(())
+    }
+
+    /// Get a reference to the local configuration.
+    pub fn config(&self) -> Arc<Mutex<LocalConfig>> {
+        self.config.clone()
     }
 
     /// Setup local workspace in current directory
