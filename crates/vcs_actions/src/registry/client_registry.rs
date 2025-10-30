@@ -52,7 +52,9 @@ async fn on_proc_begin(
     let local_workspace = match LocalWorkspace::init_current_dir(local_config) {
         Some(workspace) => workspace,
         None => {
-            return Err(TcpTargetError::NotFound("Failed to initialize local workspace.".to_string()));
+            return Err(TcpTargetError::NotFound(
+                "Failed to initialize local workspace.".to_string(),
+            ));
         }
     };
     let local_workspace_arc = Arc::new(local_workspace);

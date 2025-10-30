@@ -10,6 +10,7 @@ use crate::{
 };
 
 pub mod config;
+pub mod latest_info;
 
 pub struct LocalWorkspace {
     config: Arc<Mutex<LocalConfig>>,

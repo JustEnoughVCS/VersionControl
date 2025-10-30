@@ -42,8 +42,7 @@ async fn test_sheet_creation_management_and_persistence() -> Result<(), std::io:
     assert!(sheet.mapping().is_empty());
 
     // Verify sheet file was created
-    const SHEET_NAME_PARAM: &str = "{sheet-name}";
-    let sheet_path = dir.join(SERVER_FILE_SHEET.replace(SHEET_NAME_PARAM, &sheet_name));
+    let sheet_path = dir.join(SERVER_FILE_SHEET.replace("{sheet_name}", &sheet_name));
     assert!(sheet_path.exists());
 
     // Test 2: Add input packages to the sheet
@@ -296,8 +295,7 @@ async fn test_sheet_data_serialization() -> Result<(), std::io::Error> {
     sheet.persist().await?;
 
     // Verify the sheet file was created
-    const SHEET_NAME_PARAM: &str = "{sheet-name}";
-    let sheet_path = dir.join(SERVER_FILE_SHEET.replace(SHEET_NAME_PARAM, &sheet_name));
+    let sheet_path = dir.join(SERVER_FILE_SHEET.replace("{sheet_name}", &sheet_name));
     assert!(sheet_path.exists());
 
     // Clean up
