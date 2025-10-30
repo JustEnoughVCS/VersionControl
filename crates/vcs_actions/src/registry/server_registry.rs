@@ -1,9 +1,12 @@
 use action_system::action_pool::ActionPool;
 
-use crate::actions::local_actions::register_set_upstream_vault_action;
+use crate::actions::local_actions::{
+    register_set_upstream_vault_action, register_update_to_latest_info_action,
+};
 
 pub fn server_action_pool() -> ActionPool {
     let mut pool = ActionPool::new();
     register_set_upstream_vault_action(&mut pool);
+    register_update_to_latest_info_action(&mut pool);
     pool
 }
