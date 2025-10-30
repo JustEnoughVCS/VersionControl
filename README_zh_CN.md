@@ -1,7 +1,7 @@
 <p align="center">
-  <a href="https://github.com/JustEnoughVCS/VersionControl">
-    <img alt="JustEnoughVCS" src="docs/images/Header_Large.png" width="100%">
-  </a>
+    <a href="https://github.com/JustEnoughVCS/VersionControl">
+        <img alt="JustEnoughVCS" src="docs/images/Header_Large.png" width="100%">
+    </a>
 </p>
 
 <h1 align="center">JustEnoughVCS</h1>
