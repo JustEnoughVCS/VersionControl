@@ -1,21 +1,36 @@
-# Just Enough VCS
+<p align="center">
+  <a href="https://github.com/JustEnoughVCS/VersionControl">
+    <img alt="JustEnoughVCS" src="docs/images/Header_Large.png" width="100%">
+  </a>
+</p>
 
-> 轻量、跨职能、二进制友好的集中式版本控制系统
+<h1 align="center">JustEnoughVCS</h1>
+
+<p align="center">
+    轻量、跨职能、二进制友好的集中式版本控制系统
+</p>
+
+<p align="center">
+    <img src="https://img.shields.io/github/stars/JustEnoughVCS/VersionControl?style=for-the-badge">
+    <img src="https://img.shields.io/badge/Status-Development%20in%20Progress-yellow?style=for-the-badge">
+    <img src="https://img.shields.io/badge/Release-Not%20Available-lightgrey?style=for-the-badge">
+</p>
 
 > [!WARNING]
-> JustEnoughVCS 目前正在积极开发中。
+> JustEnoughVCS 目前正在积极开发中，功能尚不完整
 >
-> 本软件处于开发阶段，功能尚不完整。
+> 若您对我们的项目感兴趣，推荐直接联系我们。
 
 ​	`JustEnoughVCS` 是一个为**跨职能团队**设计的轻量级版本控制系统。它允许每个成员以**最适合其职能角色**的文件结构查看和组织文件，使团队能够专注于内容创作本身。它主要服务于大量二进制资产的协作场景，如**游戏开发**和**多媒体设计**。
+
+- [虚拟文件系统](#虚拟文件系统)
+- [表系统](#表系统)
 
 ## 我的设计哲学 - 也是我的拙见 😃
 
 ​	`JustEnoughVCS` 遵循 "**Just Enough**" 的理念，旨在通过架构设计来实现协作安全。它以**虚拟文件系统**和**表隔离**为核心，为每个创作者提供专注、无干扰的工作空间，让协作变得自然且简单。
 
-![img](docs/images/FRAMEWORK_CANVAS.png)
-
-## 虚拟文件系统 (Virtual File System)
+## 虚拟文件系统
 
 ​	虚拟文件系统是 `JustEnoughVCS` 的基础。每个文件由一个全局唯一的 `VirtualFileId` 标识，与其物理路径解耦。它全面记录：
 
@@ -31,7 +46,7 @@
 -   **无冲突协作**：严格遵守 **"先获取，后编辑"** 原则。文件对所有人**可见**但仅对持有者**可写**，从而防止冲突。
 -   **获取前验证**：在获取文件之前，本地文件的哈希值和版本号会被严格验证，以确保编辑从最新版本开始。
 
-## 表系统 (Sheet System)
+## 表系统
 
 ​	表系统充当连接**虚拟文件**与成员**本地工作区**的桥梁。它建立从 `VirtualFileId` 到本地 `SheetPath` 的映射，为每个职能角色（例如，程序员、艺术家、设计师）或个体成员创建定制化的文件视图。
 

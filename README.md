@@ -1,19 +1,34 @@
-# Just Enough VCS
+<p align="center">
+  <a href="https://github.com/JustEnoughVCS/VersionControl">
+      <img alt="JustEnoughVCS" src="docs/images/Header_Large.png" width="100%">
+  </a>
+</p>
 
-> A Lightweight, Cross-Functional, Binary-Friendly Centralized VCS.
+<h1 align="center">JustEnoughVCS</h1>
+
+<p align="center">
+  A Lightweight, Cross-Functional, Binary-Friendly Centralized VCS.
+</p>
+
+<p align="center">
+    <img src="https://img.shields.io/github/stars/JustEnoughVCS/VersionControl?style=for-the-badge">
+    <img src="https://img.shields.io/badge/Status-Development%20in%20Progress-yellow?style=for-the-badge">
+    <img src="https://img.shields.io/badge/Release-Not%20Available-lightgrey?style=for-the-badge">
+</p>
 
 > [!WARNING]
-> JustEnoughVCS is currently under active development.
+> JustEnoughVCS is currently under active development, and features are not yet complete.
 >
-> This software is in the development stage, and its features are not yet complete.
+> If you are interested in our project, we recommend contacting us directly.
 
 ​	`JustEnoughVCS` is a lightweight version control system designed for **cross-functional teams**. It allows each member to view and organize files in a file structure **best suited to their functional role**, enabling the team to focus on content creation itself. It primarily serves collaborative scenarios involving large volumes of binary assets, such as **game development** and **multimedia design**.
+
+- [Virtual File System](#virtual-file-system)
+- [Sheet System](#sheet-system)
 
 ## My Design Philosophy - Also My Humble Opinion 😃
 
 ​	`JustEnoughVCS` adheres to the "**Just Enough**" philosophy, aiming to achieve collaborative security through architectural design. Centered around a **Virtual File System** and **Sheet Isolation**, it provides each creator with a focused, distraction-free workspace, making collaboration natural and simple.
-
-![img](docs/images/FRAMEWORK_CANVAS.png)
 
 ## Virtual File System
 
