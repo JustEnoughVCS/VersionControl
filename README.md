@@ -1,13 +1,13 @@
 <p align="center">
-  <a href="https://github.com/JustEnoughVCS/VersionControl">
+    <a href="https://github.com/JustEnoughVCS/VersionControl">
       <img alt="JustEnoughVCS" src="docs/images/Header_Large.png" width="100%">
-  </a>
+    </a>
 </p>
 
 <h1 align="center">JustEnoughVCS</h1>
 
 <p align="center">
-  A Lightweight, Cross-Functional, Binary-Friendly Centralized VCS.
+    A Lightweight, Cross-Functional, Binary-Friendly Centralized VCS.
 </p>
 
 <p align="center">
