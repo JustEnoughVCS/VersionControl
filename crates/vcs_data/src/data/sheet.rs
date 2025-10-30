@@ -35,7 +35,7 @@ impl PartialEq for InputPackage {
     }
 }
 
-const SHEET_NAME: &str = "{sheet-name}";
+const SHEET_NAME: &str = "{sheet_name}";
 
 pub struct Sheet<'a> {
     /// The name of the current sheet
@@ -48,7 +48,7 @@ pub struct Sheet<'a> {
     pub(crate) vault_reference: &'a Vault,
 }
 
-#[derive(Default, Serialize, Deserialize, ConfigFile)]
+#[derive(Default, Serialize, Deserialize, ConfigFile, Clone)]
 pub struct SheetData {
     /// The holder of the current sheet, who has full operation rights to the sheet mapping
     pub(crate) holder: MemberId,
@@ -61,6 +61,10 @@ pub struct SheetData {
 }
 
 impl<'a> Sheet<'a> {
+    pub fn name(&self) -> &SheetName {
+        &self.name
+    }
+
     /// Get the holder of this sheet
     pub fn holder(&self) -> &MemberId {
         &self.data.holder
@@ -343,5 +347,15 @@ impl<'a> Sheet<'a> {
         }
 
         common_components.into_iter().collect()
+    }
+
+    /// Clone the data of the sheet
+    pub fn clone_data(&self) -> SheetData {
+        self.data.clone()
+    }
+
+    /// Convert the sheet into its data representation
+    pub fn to_data(self) -> SheetData {
+        self.data
     }
 }

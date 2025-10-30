@@ -9,13 +9,16 @@ use vcs_data::data::{
 };
 
 use crate::{
-    actions::local_actions::register_set_upstream_vault_action,
+    actions::local_actions::{
+        register_set_upstream_vault_action, register_update_to_latest_info_action,
+    },
     connection::protocol::RemoteActionInvoke,
 };
 
 fn register_actions(pool: &mut ActionPool) {
     // Pool register here
     register_set_upstream_vault_action(pool);
+    register_update_to_latest_info_action(pool);
 }
 
 pub fn client_action_pool() -> ActionPool {
@@ -52,7 +55,9 @@ async fn on_proc_begin(
     let local_workspace = match LocalWorkspace::init_current_dir(local_config) {
         Some(workspace) => workspace,
         None => {
-            return Err(TcpTargetError::NotFound("Failed to initialize local workspace.".to_string()));
+            return Err(TcpTargetError::NotFound(
+                "Failed to initialize local workspace.".to_string(),
+            ));
         }
     };
     let local_workspace_arc = Arc::new(local_workspace);

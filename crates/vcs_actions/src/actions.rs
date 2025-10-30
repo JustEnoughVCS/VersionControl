@@ -5,7 +5,7 @@ use tcp_connection::{error::TcpTargetError, instance::ConnectionInstance};
 use tokio::sync::Mutex;
 use vcs_data::{
     constants::SERVER_PATH_MEMBER_PUB,
-    data::{local::LocalWorkspace, user::UserDirectory, vault::Vault},
+    data::{local::LocalWorkspace, member::MemberId, user::UserDirectory, vault::Vault},
 };
 
 pub mod local_actions;
@@ -57,11 +57,11 @@ pub fn try_get_user_directory(ctx: &ActionContext) -> Result<Arc<UserDirectory>,
     Ok(user_directory)
 }
 
-/// Authenticate member based on whether the process is running locally or remotely
+/// Authenticate member based on context and return MemberId
 pub async fn auth_member(
     ctx: &ActionContext,
     instance: &Arc<Mutex<ConnectionInstance>>,
-) -> Result<(), TcpTargetError> {
+) -> Result<MemberId, TcpTargetError> {
     // Start Challenge (Remote)
     if ctx.is_proc_on_remote() {
         let vault = try_get_vault(ctx)?;
@@ -72,7 +72,7 @@ pub async fn auth_member(
             .await;
 
         return match result {
-            Ok(pass) => {
+            Ok((pass, member_id)) => {
                 if !pass {
                     // Send false to inform the client that authentication failed
                     instance.lock().await.write(false).await?;
@@ -82,7 +82,7 @@ pub async fn auth_member(
                 } else {
                     // Send true to inform the client that authentication was successful
                     instance.lock().await.write(true).await?;
-                    Ok(())
+                    Ok(member_id)
                 }
             }
             Err(e) => Err(e),
@@ -106,7 +106,7 @@ pub async fn auth_member(
         // Read result
         let challenge_result = instance.lock().await.read::<bool>().await?;
         if challenge_result {
-            return Ok(());
+            return Ok(member_name.clone());
         } else {
             return Err(TcpTargetError::Authentication(
                 "Authenticate failed.".to_string(),

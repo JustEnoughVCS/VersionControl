@@ -35,13 +35,13 @@ impl ConnectionInstance {
     /// * `public_key_dir` - Directory containing public key files for verification
     ///
     /// # Returns
-    /// * `Ok(true)` - Challenge verification successful
-    /// * `Ok(false)` - Challenge verification failed
+    /// * `Ok((true, "KeyId"))` - Challenge verification successful
+    /// * `Ok((false, "KeyId"))` - Challenge verification failed
     /// * `Err(TcpTargetError)` - Error during challenge process
     pub async fn challenge(
         &mut self,
         public_key_dir: impl AsRef<Path>,
-    ) -> Result<bool, TcpTargetError> {
+    ) -> Result<(bool, String), TcpTargetError> {
         // Generate random challenge
         let mut challenge = [0u8; 32];
         rand::rngs::OsRng
@@ -76,7 +76,7 @@ impl ConnectionInstance {
         // Load appropriate public key
         let public_key_path = public_key_dir.as_ref().join(format!("{}.pem", key_id));
         if !public_key_path.exists() {
-            return Ok(false);
+            return Ok((false, key_id));
         }
 
         let public_key_pem = tokio::fs::read_to_string(&public_key_path).await?;
@@ -103,7 +103,7 @@ impl ConnectionInstance {
             false
         };
 
-        Ok(verified)
+        Ok((verified, key_id))
     }
 
     /// Accepts a challenge from the target machine to verify connection security
