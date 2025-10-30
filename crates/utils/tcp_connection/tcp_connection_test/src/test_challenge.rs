@@ -69,8 +69,9 @@ impl ServerHandle<ExampleChallengeClientHandle> for ExampleChallengeServerHandle
     async fn process(mut instance: ConnectionInstance) {
         // Challenge with correct key
         let key_dir = current_dir().unwrap().join("res").join("key");
-        let result = instance.challenge(key_dir).await.unwrap();
+        let (result, key_id) = instance.challenge(key_dir).await.unwrap();
         assert!(result);
+        assert_eq!(key_id, "test_key");
 
         // Send response
         instance
@@ -80,8 +81,9 @@ impl ServerHandle<ExampleChallengeClientHandle> for ExampleChallengeServerHandle
 
         // Challenge again
         let key_dir = current_dir().unwrap().join("res").join("key");
-        let result = instance.challenge(key_dir).await.unwrap();
+        let (result, key_id) = instance.challenge(key_dir).await.unwrap();
         assert!(!result);
+        assert_eq!(key_id, "test_key");
 
         // Send response
         instance
@@ -91,8 +93,9 @@ impl ServerHandle<ExampleChallengeClientHandle> for ExampleChallengeServerHandle
 
         // Challenge again
         let key_dir = current_dir().unwrap().join("res").join("key");
-        let result = instance.challenge(key_dir).await.unwrap();
+        let (result, key_id) = instance.challenge(key_dir).await.unwrap();
         assert!(!result);
+        assert_eq!(key_id, "test_key__");
 
         // Send response
         instance
