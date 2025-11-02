@@ -1,10 +1,14 @@
-# 欢迎您的贡献！
+# 欢迎您对该项目作出贡献！
 
-欢迎您对 `JustEnoughVCS` 进行贡献！开始之前，请阅读本指南以确保您的贡献流程顺利。
+**写在前面**：
+
+感谢您对 JustEnoughVCS 的关注和支持！如果您希望为项目做出贡献，请先仔细阅读本指南。
+
+我们非常欢迎并重视每一位贡献 者的提交，但为了确保贡献流程的顺畅高效，请按照规范的方式进行提交。
 
 
 
-## 一、选择您的方向
+## 第一步：选择您需要贡献的模块
 
 `JustEnoughVCS` 采用模块化架构，将核心功能与客户端工具分离为不同的代码库：
 
@@ -22,21 +26,21 @@
 
 
 
-## 二、部署项目
+## 第二步：部署项目
 
 请分叉你需要修改的库到您的 GitHub 账户，然后使用 SSH 克隆至本地。
 
-对于非 `VersionControl` 部分，请将 核心 部分同时以 HTTP 的方式克隆至同级目录，以确保该部分可以引用到 `VersionControl` 仓库。
+对于非 `VersionControl` 部分，请将 核心 部分克隆至同级目录，以确保该部分可以引用到 `VersionControl` 仓库。
 
 结构如下：
 
 ```
 .
-├── <前端名称>
-│   ├── src/           # 前端源代码
-│   ├── Cargo.toml     # Rust 项目配置
-│   └── README.md      # 项目说明文档
-└── VersionControl/    # 核心库引用
+├── <前端名称>          # 前端 & 拓展
+│   ├── src/
+│   ├── Cargo.toml
+│   └── README.md
+└── VersionControl/    # 核心库
     ├── src/
     ├── Cargo.toml
     ├── CONTRIBUTING.md
@@ -46,37 +50,53 @@
 
 
 
-## 三、部署开发环境
+> [!NOTE]
+>
+> 目前不使用 `git submodule` 的原因是核心库和前端需要大量的同步修改
+>
+> 项目稳定后会转变为 `git submodule` 方式
+
+
+
+## 第三步：部署开发环境
 
 开发环境的配置请参考对应仓库中的文档。
 
 `JustEnoughVCS` 在不同前端方向的技术选型不一样。
 
-例如：`CommandLine` 部分采用 Rust + Clap 构成命令行程序；而 `MyVault` 图形界面部分采用 Avalonia + .NET。
+例如：`CommandLine` 部分采用 Rust + Clap 构成命令行程序；而图形界面部分采用 Avalonia + .NET。
 
 
 
-## 四、提交您的 PR
+## 第四步：提交您的 PR
 
 在此之前，请确保：
 
-1. 在您的分叉仓库中创建功能分支
+1. 在您的分叉仓库中创建功能分支，并基于该仓库的 `dev` 或 `docs` 分支进行开发
 2. 实现您的功能或修复
-3. 编写适当的测试用例，并通过测试
-5. 提交清晰的提交信息
-6. 创建 Pull Request 到主仓库
-
-### 注意事项
-
-- 请确保您的代码遵循项目的编码规范
-- 在提交 PR 前，请同步主仓库的最新更改
-- 对于重大更改，建议先在 Issues 中讨论设计方案
+3. 在 COMMIT 信息中描述您的更改，并推送至您的分叉
+4. 创建 Pull Request 到主仓库的 `dev` 或 `docs` 分支
 
 
 
-## 最后、开源协议
+### 注意：我们不会接受的 PR
 
-`JustEnoughVCS` 不同项目的开源协议并不相同，例如当前的 `VersionControl` 使用的就是最宽松的 MIT License （详见 LICENSE-MIT.md 文件）；而 `MyVault` 则使用的 `GPLv3` 的协议。
+我们预期外的修改：
+
+1. 没有在 Issues 栏目中讨论过的大型更改
+2. 不降反增心智复杂度的功能
+
+错误的合并分支：
+
+1. 合并到 `dev` 分支的文档内容修改
+2. 合并到 `docs` 分支的代码内容修改
+3. 合并到 `main` 分支的修改
+
+
+
+## 开源协议
+
+`JustEnoughVCS` 不同项目的开源协议并不相同，例如当前的 `VersionControl` 使用的是 MIT License （详见 LICENSE-MIT.md 文件）；而 GUI部分 则使用的 `GPLv3` 的协议。
 
 
 

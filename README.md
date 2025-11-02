@@ -1,13 +1,13 @@
 <p align="center">
     <a href="https://github.com/JustEnoughVCS/VersionControl">
-      <img alt="JustEnoughVCS" src="docs/images/Header_Large.png" width="100%">
+        <img alt="JustEnoughVCS" src="docs/images/Header_Large.png" width="100%">
     </a>
 </p>
 
 <h1 align="center">JustEnoughVCS</h1>
 
 <p align="center">
-    A Lightweight, Cross-Functional, Binary-Friendly Centralized VCS.
+    Lightweight and Binary-Friendly Centralized Version Control System
 </p>
 
 <p align="center">
@@ -17,65 +17,89 @@
 </p>
 
 > [!WARNING]
-> JustEnoughVCS is currently under active development, and features are not yet complete.
+> JustEnoughVCS core features are still under development and not yet usable
 >
-> If you are interested in our project, we recommend contacting us directly.
+> If you are interested in our project, we recommend contacting us directly. [Contact and Support](#Support)
 
-​	`JustEnoughVCS` is a lightweight version control system designed for **cross-functional teams**. It allows each member to view and organize files in a file structure **best suited to their functional role**, enabling the team to focus on content creation itself. It primarily serves collaborative scenarios involving large volumes of binary assets, such as **game development** and **multimedia design**.
 
-- [Virtual File System](#virtual-file-system)
-- [Sheet System](#sheet-system)
 
-## My Design Philosophy - Also My Humble Opinion 😃
+## Introduction
 
-​	`JustEnoughVCS` adheres to the "**Just Enough**" philosophy, aiming to achieve collaborative security through architectural design. Centered around a **Virtual File System** and **Sheet Isolation**, it provides each creator with a focused, distraction-free workspace, making collaboration natural and simple.
+JustEnoughVCS simplifies binary collaboration by allowing only one person to edit a file at a time. Its architecture keeps you updated on file status, versions, and other relevant information.
 
-## Virtual File System
+### 1. Personal View
 
-​	The Virtual File System is the foundation of `JustEnoughVCS`. Each file is identified by a globally unique `VirtualFileId`, decoupled from its physical path. It comprehensively records:
+Each member has their own sheet[^sheet] that maps assets to directory structures. This allows personalized file views. Members can focus on their own workspace without worrying about others moving files or affecting others with their own moves.
 
--   **All historical versions**
--   **Description information for each modification**
--   **Version number sequence**
--   **Current latest version**
--   **Current file holder (the member with edit permissions)**
+### 2. Asset "Read" and "Write"
 
-### Features
+JustEnoughVCS has an intuitive permission model: visible assets can be read, held assets can be modified.
 
--   **Traceable History**: Easily view the history of any version and support rollback.
--   **Conflict-Free Collaboration**: Strictly adheres to the **"Acquire First, Edit Later"** principle. Files are **visible** to everyone but **writable** only by the holder, thus preventing conflicts.
--   **Pre-Acquisition Validation**: Before acquiring a file, the hash value and version number of the local file are strictly validated to ensure editing starts from the latest version.
+[^sheet]: Sheet: A member's personal file structure. Members can have multiple sheets, but only one can be edited in a local workspace[^local_workspace] at a time.
+[^local_workspace]: Local Workspace: The local directory where members edit files.
 
-## Sheet System
+### 3. Visibility Propagation
 
-​	The Sheet System acts as a bridge connecting **virtual files** with members' **local workspaces**. It establishes a mapping from `VirtualFileId` to a local `SheetPath`, creating customized file views for each functional role (e.g., programmer, artist, designer) or individual member.
+To **share an asset with everyone**, export[^export] its mapping to the reference sheet[^ref_sheet]. After vault[^vault] administrator approval, it becomes visible to all members, who can then import[^import] it to receive updates.
 
-Sheets are divided into two types, primarily differing in permission management:
+To share with **specific sheets**, export the asset visibility to those sheets. After approval from the sheet holders, they can receive your updates.
 
--   **Reference Sheet**: Stores files commonly used across the team, serving as a shared resource library. All members can acquire files from it into their own sheets. Members can submit their own files to the Reference Sheet; after approval by an administrator, they are added to the Reference Sheet for other members to import into their own sheets.
--   **Member Sheet**: A member's own sheet, used to manage personal projects, tasks, and assets. The member has full management rights over the **sheet structure** (such as adding, moving mappings, etc.), but **edit rights** for the file itself remain exclusive to the file's holder, following the "Acquire First, Edit Later" principle. Typically, newly tracked files automatically grant ownership to the tracker.
+[^export]: Export: The method for transferring asset mappings in JVCS.
+[^import]: Import: The method for obtaining asset mappings in JVCS.
+[^ref_sheet]: Reference Sheet: A sheet curated by the vault[^vault] administrator, serving as the team's "asset index".
+[^vault]: Vault: The asset repository in JVCS where all assets are stored.
 
-### Transferring Files Between Sheets
+### 4. Editing Rights Transfer
 
-​	Through the **Import/Export mechanism** provided by the Sheet System, members can copy a file's **mapping relationship** from one sheet to another. This mechanism transfers the file's **mapping relationship** (i.e., the binding of `VirtualFileId` to a path), not the file entity itself. The file entity always resides in the Virtual File System. This mechanism supports cross-sheet collaboration, such as submitting completed work to the team for sharing, or recommending a file to a specific member for further processing.
+The first member to track an asset becomes its initial holder with full editing rights. To transfer rights, the holder releases them, allowing another member to hold the asset. The latest version is synchronized during this process.
 
--   **Export**: A member can directly export files from their own sheet to the target sheet's (e.g., Reference Sheet or another member's sheet) pending import area.
--   **Import**: The owner of the target sheet receives a list of files pending import. The owner can review and selectively import them (i.e., add the mapping) into their own sheet. During this process, the file's **edit rights remain unchanged**; it simply makes the file "visible" in the recipient's sheet.
 
-This mechanism ensures the **controllability** of file transfer, as the recipient has the right to decide whether to accept the imported file mapping, thereby maintaining the cleanliness and order of their respective workspaces.
+
+> [!NOTE]
+>
+> This collaboration model manages binary asset structure and versioning, but is not suitable for program development.
+>
+> Git already serves that purpose well.
+
+
+
+## Roadmap
+
+### Core Library
+
+- [ ] Incremental file updates and storage
+- [ ] Multiple reference sheets
+
+
+
+### Extension Tools
+
+- [ ] Command Line Tool -> [CommandLine](https://github.com/JustEnoughVCS/CommandLine ) (Currently Private)
+- [ ] Declarative Asset Management -> [AssetsConfig](https://github.com/JustEnoughVCS/AssetsConfig) (Currently Private)
+- [ ] File Merger -> [BinMerger](https://github.com/JustEnoughVCS/BinMerger) (Currently Private)
+
+
 
 ## Support
 
-Encountered any issues or have suggestions while using JustEnoughVCS?
+Encountered issues or have suggestions while using JustEnoughVCS?
 
--   Please submit them to the https://github.com/JustEnoughVCS/VersionControl/issues page, and we will promptly address your feedback.
+-   Please submit them to https://github.com/JustEnoughVCS/VersionControl/issues, and we'll address your feedback promptly.
+
+> [!NOTE]
+>
+> The project is in early development. Instead of creating Issues, we recommend contacting [@Weicao-CatilGrass](https://github.com/Weicao-CatilGrass) directly.
+>
+> Creating Issues will be more appropriate once basic features are more complete.
+
+
 
 ## License
 
 This project is licensed under the **MIT License**.
 
-For the complete license terms, please refer to the ./LICENSE-MIT.md file in the project root directory.
+For complete license terms, see ./LICENSE-MIT.md in the project root.
 
 ---
 
-Finally, thank you for your interest in `JustEnoughVCS`!
+Thank you for your interest in `JustEnoughVCS`!
