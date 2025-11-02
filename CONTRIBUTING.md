@@ -1,10 +1,14 @@
 # Welcome to Contributing!
 
-Welcome to contributing to `JustEnoughVCS`! Before you begin, please read this guide to ensure a smooth contribution process.
+**Before You Begin**:
+
+Thank you for your interest in and support of JustEnoughVCS! If you wish to contribute to the project, please read this guide carefully first.
+
+We warmly welcome and value every contributor's submission, but to ensure a smooth and efficient contribution process, please follow the standardized approach.
 
 
 
-## 1. Choose Your Direction
+## 1. Choose Your Module
 
 `JustEnoughVCS` uses a modular architecture that separates core functionality from client tools into different repositories:
 
@@ -26,23 +30,31 @@ Please first understand which module of `JustEnoughVCS` you want to contribute t
 
 Fork the repository you want to modify to your GitHub account, then clone it locally using SSH.
 
-For non-`VersionControl` parts, please also clone the core repository using HTTP into a sibling directory to ensure it can reference the `VersionControl` repository.
+For non-`VersionControl` parts, please also clone the core repository into a sibling directory to ensure it can reference the `VersionControl` repository.
 
 Structure should look like this:
 
 ```
 .
-├── <frontend-name>
-│   ├── src/           # Frontend source code
-│   ├── Cargo.toml     # Rust project configuration
-│   └── README.md      # Project documentation
-└── VersionControl/    # Core library reference
+├── <frontend-name>    # Frontend & Extensions
+│   ├── src/
+│   ├── Cargo.toml
+│   └── README.md
+└── VersionControl/    # Core library
     ├── src/
     ├── Cargo.toml
     ├── CONTRIBUTING.md
     ├── LICENSE-MIT.md
     └── README.md
 ```
+
+
+
+> [!NOTE]
+>
+> We currently don't use `git submodule` because the core library and frontends require extensive synchronized modifications
+>
+> This will transition to `git submodule` approach once the project stabilizes
 
 
 
@@ -60,24 +72,32 @@ For example: The `CommandLine` part uses Rust + Clap to build the command-line p
 
 Before submitting, please ensure:
 
-1. Create a feature branch in your forked repository
+1. Create a feature branch in your forked repository, and develop based on the repository's `dev` or `docs` branch
 2. Implement your feature or fix
-3. Write appropriate test cases and pass all tests
-4. Submit clear commit messages
-5. Create a Pull Request to the main repository
-
-### Notes
-
-- Ensure your code follows the project's coding standards
-- Sync with the latest changes from the main repository before submitting PR
-- For major changes, it's recommended to discuss the design approach in Issues first
+3. Describe your changes in the COMMIT message and push to your fork
+4. Create a Pull Request to the main repository's `dev` or `docs` branch
 
 
 
-## Finally, Open Source Licenses
+### Note: PRs We Cannot Accept
 
-Different `JustEnoughVCS` projects use different open source licenses. For example, the current `VersionControl` uses the very permissive MIT License (see LICENSE-MIT.md file), while `MyVault` uses the `GPLv3` license.
+Changes we don't expect:
+
+1. Major changes that haven't been discussed in the Issues section
+2. Features that increase rather than reduce mental complexity
+
+Wrong merge branches:
+
+1. Documentation changes merged to the `dev` branch
+2. Code changes merged to the `docs` branch
+3. Changes merged to the `main` branch
 
 
 
-Thank you for your support of `JustEnoughVCS`!
+## Open Source Licenses
+
+Different `JustEnoughVCS` projects use different open source licenses. For example, the current `VersionControl` uses the MIT License (see LICENSE-MIT.md file), while the GUI part uses the `GPLv3` license.
+
+
+
+Finally, thank you for your support of `JustEnoughVCS`!
