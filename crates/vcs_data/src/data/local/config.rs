@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use std::path::Path;
 use std::path::PathBuf;
-use string_proc::format_processer::FormatProcesser;
 use string_proc::snake_case;
 
 use crate::constants::CLIENT_FILE_WORKSPACE;
@@ -13,7 +12,6 @@ use crate::constants::CLIENT_PATH_LOCAL_DRAFT;
 use crate::constants::CLIENT_PATH_WORKSPACE_ROOT;
 use crate::constants::PORT;
 use crate::current::current_local_path;
-use crate::data::local::latest_info;
 use crate::data::local::latest_info::LatestInfo;
 use crate::data::member::MemberId;
 use crate::data::sheet::SheetName;
@@ -113,7 +111,7 @@ impl LocalConfig {
 
         if draft_folder.exists() {
             // Exists
-            // Move the contents of the draft folder to the local path
+            // Move the contents of the draft folder to the local path with rollback support
             self.move_draft_to_local(&draft_folder, &local_path).await?;
         }
 
@@ -145,7 +143,7 @@ impl LocalConfig {
                 .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         }
 
-        // Move all files and folders (except .jv folder) to the draft folder
+        // Move all files and folders (except .jv folder) to the draft folder with rollback support
         self.move_local_to_draft(&local_path, &draft_folder).await?;
 
         // Clear the sheet in use
@@ -187,44 +185,65 @@ impl LocalConfig {
         Ok(())
     }
 
-    /// Move contents from draft folder to local path
+    /// Move contents from draft folder to local path with rollback support
     async fn move_draft_to_local(
         &self,
         draft_folder: &Path,
         local_path: &Path,
     ) -> Result<(), std::io::Error> {
-        let draft_entries = std::fs::read_dir(draft_folder)
+        let draft_entries: Vec<_> = std::fs::read_dir(draft_folder)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?
+            .collect::<Result<Vec<_>, _>>()
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
 
-        for entry in draft_entries {
-            let entry = entry.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        let mut moved_items: Vec<MovedItem> = Vec::new();
+
+        for entry in &draft_entries {
             let entry_path = entry.path();
             let target_path = local_path.join(entry_path.file_name().unwrap());
 
             // Move each file/directory from draft folder to local path
-            std::fs::rename(&entry_path, &target_path)
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+            std::fs::rename(&entry_path, &target_path).map_err(|e| {
+                // Rollback all previously moved items
+                for moved_item in &moved_items {
+                    let _ = std::fs::rename(&moved_item.target, &moved_item.source);
+                }
+                std::io::Error::new(std::io::ErrorKind::Other, e)
+            })?;
+
+            moved_items.push(MovedItem {
+                source: entry_path.clone(),
+                target: target_path.clone(),
+            });
         }
 
         // Remove the now-empty draft folder
-        std::fs::remove_dir(draft_folder)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        std::fs::remove_dir(draft_folder).map_err(|e| {
+            // Rollback all moved items if folder removal fails
+            for moved_item in &moved_items {
+                let _ = std::fs::rename(&moved_item.target, &moved_item.source);
+            }
+            std::io::Error::new(std::io::ErrorKind::Other, e)
+        })?;
 
         Ok(())
     }
 
-    /// Move contents from local path to draft folder (except .jv folder)
+    /// Move contents from local path to draft folder with rollback support (except .jv folder)
     async fn move_local_to_draft(
         &self,
         local_path: &Path,
         draft_folder: &Path,
     ) -> Result<(), std::io::Error> {
         let jv_folder = local_path.join(CLIENT_PATH_WORKSPACE_ROOT);
-        let entries = std::fs::read_dir(local_path)
+        let entries: Vec<_> = std::fs::read_dir(local_path)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?
+            .collect::<Result<Vec<_>, _>>()
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
 
-        for entry in entries {
-            let entry = entry.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        let mut moved_items: Vec<MovedItem> = Vec::new();
+
+        for entry in &entries {
             let entry_path = entry.path();
 
             // Skip the .jv folder
@@ -238,8 +257,18 @@ impl LocalConfig {
             let target_path = draft_folder.join(entry_path.file_name().unwrap());
 
             // Move each file/directory from local path to draft folder
-            std::fs::rename(&entry_path, &target_path)
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+            std::fs::rename(&entry_path, &target_path).map_err(|e| {
+                // Rollback all previously moved items
+                for moved_item in &moved_items {
+                    let _ = std::fs::rename(&moved_item.target, &moved_item.source);
+                }
+                std::io::Error::new(std::io::ErrorKind::Other, e)
+            })?;
+
+            moved_items.push(MovedItem {
+                source: entry_path.clone(),
+                target: target_path.clone(),
+            });
         }
 
         Ok(())
@@ -253,6 +282,11 @@ impl LocalConfig {
     /// Check if the local workspace is stained.
     pub fn stained(&self) -> bool {
         self.stained_uuid.is_some()
+    }
+
+    /// Get the UUID of the vault that the local workspace is stained with.
+    pub fn stained_uuid(&self) -> Option<VaultUuid> {
+        self.stained_uuid
     }
 
     /// Stain the local workspace with the given UUID.
@@ -298,4 +332,10 @@ impl LocalConfig {
 
         Some(self.draft_folder(sheet_name, current_dir))
     }
+}
+
+#[derive(Clone)]
+struct MovedItem {
+    source: PathBuf,
+    target: PathBuf,
 }
