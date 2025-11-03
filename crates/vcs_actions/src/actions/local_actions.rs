@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use action_system::{action::ActionContext, macros::action_gen};
 use cfg_file::config::ConfigFile;
-use log::{info, warn};
+use log::info;
 use serde::{Deserialize, Serialize};
 use tcp_connection::error::TcpTargetError;
 use vcs_data::data::{
@@ -21,10 +21,15 @@ use crate::actions::{
 pub enum SetUpstreamVaultActionResult {
     // Success
     DirectedAndStained,
+    Redirected,
 
     // Fail
     AlreadyStained,
     AuthorizeFailed(String),
+    RedirectFailed(String),
+    SameUpstream,
+
+    Done,
 }
 
 #[action_gen]
@@ -47,6 +52,7 @@ pub async fn set_upstream_vault_action(
             .await
             .write(*vault.config().vault_uuid())
             .await?;
+        return Ok(SetUpstreamVaultActionResult::Done);
     }
 
     if ctx.is_proc_on_local() {
@@ -72,7 +78,27 @@ pub async fn set_upstream_vault_action(
             info!("Workspace stained!");
             return Ok(SetUpstreamVaultActionResult::DirectedAndStained);
         } else {
-            warn!("Workspace already stained!");
+            // Local workspace is already stained, redirecting
+            let Some(stained_uuid) = mut_local_config.stained_uuid() else {
+                return Ok(SetUpstreamVaultActionResult::RedirectFailed(
+                    "Stained uuid not found".to_string(),
+                ));
+            };
+            let local_upstream = mut_local_config.upstream_addr();
+
+            // Address changed, but same UUID.
+            if vault_uuid == stained_uuid {
+                if local_upstream != upstream {
+                    // Set the upstream address
+                    mut_local_config.set_vault_addr(upstream);
+
+                    // Store the updated config
+                    LocalConfig::write(&mut_local_config).await?;
+                    return Ok(SetUpstreamVaultActionResult::Redirected);
+                } else {
+                    return Ok(SetUpstreamVaultActionResult::SameUpstream);
+                }
+            }
             return Ok(SetUpstreamVaultActionResult::AlreadyStained);
         }
     }
