@@ -130,7 +130,7 @@ impl Vault {
 
         // Create the sheet file
         let sheet_data = SheetData {
-            holder: holder.clone(),
+            holder: Some(holder.clone()),
             inputs: Vec::new(),
             mapping: HashMap::new(),
         };

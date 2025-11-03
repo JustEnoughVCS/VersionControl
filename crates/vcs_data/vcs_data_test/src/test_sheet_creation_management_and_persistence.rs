@@ -36,8 +36,8 @@ async fn test_sheet_creation_management_and_persistence() -> Result<(), std::io:
     let sheet = vault.create_sheet(&sheet_name, &member_id).await?;
 
     // Verify sheet properties
-    assert_eq!(sheet.holder(), &member_id);
-    assert_eq!(sheet.holder(), &member_id);
+    assert_eq!(sheet.holder(), Some(&member_id));
+    assert_eq!(sheet.holder(), Some(&member_id));
     assert!(sheet.inputs().is_empty());
     assert!(sheet.mapping().is_empty());
 
@@ -100,7 +100,7 @@ async fn test_sheet_creation_management_and_persistence() -> Result<(), std::io:
 
     // Verify persistence by reloading the sheet
     let reloaded_sheet = vault.sheet(&sheet_name).await?;
-    assert_eq!(reloaded_sheet.holder(), &member_id);
+    assert_eq!(reloaded_sheet.holder(), Some(&member_id));
     assert_eq!(reloaded_sheet.inputs().len(), 1);
     assert_eq!(reloaded_sheet.mapping().len(), 3);
 
@@ -129,16 +129,16 @@ async fn test_sheet_creation_management_and_persistence() -> Result<(), std::io:
     // One sheet should be the test sheet, the other should be the ref sheet with host as holder
     let test_sheet_holder = all_sheets
         .iter()
-        .find(|s| s.holder() == &member_id)
+        .find(|s| s.holder() == Some(&member_id))
         .map(|s| s.holder())
         .unwrap();
     let ref_sheet_holder = all_sheets
         .iter()
-        .find(|s| s.holder() == &"host".to_string())
+        .find(|s| s.holder() == Some(&"host".to_string()))
         .map(|s| s.holder())
         .unwrap();
-    assert_eq!(test_sheet_holder, &member_id);
-    assert_eq!(ref_sheet_holder, &"host".to_string());
+    assert_eq!(test_sheet_holder, Some(&member_id));
+    assert_eq!(ref_sheet_holder, Some(&"host".to_string()));
 
     // Test 8: Safe deletion (move to trash)
     vault.delete_sheet_safely(&sheet_name).await?;
@@ -150,8 +150,8 @@ async fn test_sheet_creation_management_and_persistence() -> Result<(), std::io:
 
     // Test 9: Restore sheet from trash
     let restored_sheet = vault.sheet(&sheet_name).await?;
-    assert_eq!(restored_sheet.holder(), &member_id);
-    assert_eq!(restored_sheet.holder(), &member_id);
+    assert_eq!(restored_sheet.holder(), Some(&member_id));
+    assert_eq!(restored_sheet.holder(), Some(&member_id));
 
     // Verify sheet is back in normal listing
     let sheet_names_after_restore = vault.sheet_names()?;

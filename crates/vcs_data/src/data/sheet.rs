@@ -51,7 +51,7 @@ pub struct Sheet<'a> {
 #[derive(Default, Serialize, Deserialize, ConfigFile, Clone)]
 pub struct SheetData {
     /// The holder of the current sheet, who has full operation rights to the sheet mapping
-    pub(crate) holder: MemberId,
+    pub(crate) holder: Option<MemberId>,
 
     /// Inputs
     pub(crate) inputs: Vec<InputPackage>,
@@ -66,8 +66,8 @@ impl<'a> Sheet<'a> {
     }
 
     /// Get the holder of this sheet
-    pub fn holder(&self) -> &MemberId {
-        &self.data.holder
+    pub fn holder(&self) -> Option<&MemberId> {
+        self.data.holder.as_ref()
     }
 
     /// Get the inputs of this sheet
@@ -143,10 +143,11 @@ impl<'a> Sheet<'a> {
     /// Add (or Edit) a mapping entry to the sheet
     ///
     /// This operation performs safety checks to ensure the member has the right to add the mapping:
-    /// 1. If the virtual file ID doesn't exist in the vault, the mapping is added directly
-    /// 2. If the virtual file exists, check if the member has edit rights to the virtual file
-    /// 3. If member has edit rights, the mapping is not allowed to be modified and returns an error
-    /// 4. If member doesn't have edit rights, the mapping is allowed (member is giving up the file)
+    /// 1. The sheet must have a holder (member) to perform this operation
+    /// 2. If the virtual file ID doesn't exist in the vault, the mapping is added directly
+    /// 3. If the virtual file exists, check if the member has edit rights to the virtual file
+    /// 4. If member has edit rights, the mapping is not allowed to be modified and returns an error
+    /// 5. If member doesn't have edit rights, the mapping is allowed (member is giving up the file)
     ///
     /// Note: Full validation adds overhead - avoid frequent calls
     pub async fn add_mapping(
@@ -161,10 +162,18 @@ impl<'a> Sheet<'a> {
             return Ok(());
         }
 
+        // Check if the sheet has a holder
+        let Some(holder) = self.holder() else {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::PermissionDenied,
+                "This sheet has no holder",
+            ));
+        };
+
         // Check if the holder has edit rights to the virtual file
         match self
             .vault_reference
-            .has_virtual_file_edit_right(self.holder(), &virtual_file_id)
+            .has_virtual_file_edit_right(holder, &virtual_file_id)
             .await
         {
             Ok(false) => {
@@ -191,9 +200,10 @@ impl<'a> Sheet<'a> {
     /// Remove a mapping entry from the sheet
     ///
     /// This operation performs safety checks to ensure the member has the right to remove the mapping:
-    /// 1. Member must NOT have edit rights to the virtual file to release it (ensuring clear ownership)
-    /// 2. If the virtual file doesn't exist, the mapping is removed but no ID is returned
-    /// 3. If member has no edit rights and the file exists, returns the removed virtual file ID
+    /// 1. The sheet must have a holder (member) to perform this operation
+    /// 2. Member must NOT have edit rights to the virtual file to release it (ensuring clear ownership)
+    /// 3. If the virtual file doesn't exist, the mapping is removed but no ID is returned
+    /// 4. If member has no edit rights and the file exists, returns the removed virtual file ID
     ///
     /// Note: Full validation adds overhead - avoid frequent calls
     pub async fn remove_mapping(&mut self, sheet_path: &SheetPathBuf) -> Option<VirtualFileId> {
@@ -212,10 +222,15 @@ impl<'a> Sheet<'a> {
             return None;
         }
 
+        // Check if the sheet has a holder
+        let Some(holder) = self.holder() else {
+            return None;
+        };
+
         // Check if the holder has edit rights to the virtual file
         match self
             .vault_reference
-            .has_virtual_file_edit_right(self.holder(), virtual_file_id)
+            .has_virtual_file_edit_right(holder, virtual_file_id)
             .await
         {
             Ok(false) => {

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     constants::CLIENT_FILE_LATEST_INFO,
     data::{
-        member::Member,
+        member::{Member, MemberId},
         sheet::{SheetData, SheetName},
     },
 };
@@ -16,7 +16,7 @@ pub struct LatestInfo {
     /// My sheets, indicating which sheets I can edit
     pub my_sheets: Vec<SheetName>,
     /// Other sheets, indicating which sheets I can export files to (these sheets are not readable to me)
-    pub other_sheets: Vec<SheetName>,
+    pub other_sheets: Vec<SheetInfo>,
     /// Reference sheet data, indicating what files I can get from the reference sheet
     pub ref_sheet_content: SheetData,
 
@@ -26,3 +26,9 @@ pub struct LatestInfo {
 }
 
 impl LatestInfo {}
+
+#[derive(Default, Serialize, Deserialize)]
+pub struct SheetInfo {
+    pub sheet_name: SheetName,
+    pub holder_name: Option<MemberId>,
+}

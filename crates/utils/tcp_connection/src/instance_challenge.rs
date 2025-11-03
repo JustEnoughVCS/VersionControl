@@ -132,7 +132,21 @@ impl ConnectionInstance {
         self.stream.read_exact(&mut challenge).await?;
 
         // Load private key
-        let private_key_pem = tokio::fs::read_to_string(&private_key_file).await?;
+        let private_key_pem = tokio::fs::read_to_string(&private_key_file)
+            .await
+            .map_err(|e| {
+                TcpTargetError::NotFound(format!(
+                    "Read private key \"{}\" failed: \"{}\"",
+                    private_key_file
+                        .as_ref()
+                        .display()
+                        .to_string()
+                        .split("/")
+                        .last()
+                        .unwrap_or("UNKNOWN"),
+                    e
+                ))
+            })?;
 
         // Sign the challenge with supported key types
         let signature = if let Ok(rsa_key) = RsaPrivateKey::from_pkcs1_pem(&private_key_pem) {

@@ -42,6 +42,7 @@ pub const SERVER_FILE_README: &str = "./README.md";
 
 // Client
 pub const CLIENT_PATH_WORKSPACE_ROOT: &str = "./.jv/";
+pub const CLIENT_FOLDER_WORKSPACE_ROOT_NAME: &str = ".jv";
 
 // Client - Workspace (Main)
 pub const CLIENT_FILE_WORKSPACE: &str = "./.jv/workspace.toml";
@@ -51,6 +52,9 @@ pub const CLIENT_FILE_LATEST_INFO: &str = "./.jv/latest.json";
 
 // Client - Sheets
 pub const CLIENT_FILE_SHEET_COPY: &str = "./.jv/sheets/{sheet_name}.copy.json";
+
+// Client - Local Draft
+pub const CLIENT_PATH_LOCAL_DRAFT: &str = "./.jv/drafts/{sheet_name}/";
 
 // Client - Other
 pub const CLIENT_FILE_IGNOREFILES: &str = "IGNORE_RULES.toml";
