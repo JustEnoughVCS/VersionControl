@@ -9,16 +9,24 @@ use vcs_data::data::{
 };
 
 use crate::{
-    actions::local_actions::{
-        register_set_upstream_vault_action, register_update_to_latest_info_action,
+    actions::{
+        local_actions::{
+            register_set_upstream_vault_action, register_update_to_latest_info_action,
+        },
+        sheet_actions::register_make_sheet_action,
     },
     connection::protocol::RemoteActionInvoke,
 };
 
 fn register_actions(pool: &mut ActionPool) {
     // Pool register here
+
+    // Local Actions
     register_set_upstream_vault_action(pool);
     register_update_to_latest_info_action(pool);
+
+    // Sheet Actions
+    register_make_sheet_action(pool);
 }
 
 pub fn client_action_pool() -> ActionPool {
