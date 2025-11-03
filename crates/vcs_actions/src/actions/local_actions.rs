@@ -6,7 +6,10 @@ use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use tcp_connection::error::TcpTargetError;
 use vcs_data::data::{
-    local::{config::LocalConfig, latest_info::LatestInfo},
+    local::{
+        config::LocalConfig,
+        latest_info::{LatestInfo, SheetInfo},
+    },
     vault::config::VaultUuid,
 };
 
@@ -108,10 +111,16 @@ pub async fn update_to_latest_info_action(
         let mut member_visible = Vec::new();
 
         for sheet in vault.sheets().await? {
-            if sheet.holder() == &member_id {
+            if sheet.holder().is_some() && sheet.holder().unwrap() == &member_id {
                 member_owned.push(sheet.name().clone());
             } else {
-                member_visible.push(sheet.name().clone());
+                member_visible.push(SheetInfo {
+                    sheet_name: sheet.name().clone(),
+                    holder_name: match sheet.holder() {
+                        Some(holder) => Some(holder.clone()),
+                        None => None,
+                    },
+                });
             }
         }
 
