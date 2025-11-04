@@ -18,4 +18,4 @@
 /.obsidian/
 
 # Target directory
-/target/
+**/target/
