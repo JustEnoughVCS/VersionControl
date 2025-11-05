@@ -116,3 +116,12 @@ pub async fn auth_member(
 
     Err(TcpTargetError::NoResult("Auth failed.".to_string()))
 }
+
+/// The macro to write and return a result.
+#[macro_export]
+macro_rules! write_and_return {
+    ($instance:expr, $result:expr) => {{
+        $instance.lock().await.write($result).await?;
+        return Ok($result);
+    }};
+}
