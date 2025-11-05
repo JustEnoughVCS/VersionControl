@@ -54,7 +54,7 @@ pub const CLIENT_FILE_LATEST_INFO: &str = "./.jv/latest.json";
 pub const CLIENT_FILE_SHEET_COPY: &str = "./.jv/sheets/{sheet_name}.copy.json";
 
 // Client - Local Draft
-pub const CLIENT_PATH_LOCAL_DRAFT: &str = "./.jv/drafts/{sheet_name}/";
+pub const CLIENT_PATH_LOCAL_DRAFT: &str = "./.jv/drafts/{account}_{sheet_name}/";
 
 // Client - Other
 pub const CLIENT_FILE_IGNOREFILES: &str = "IGNORE_RULES.toml";
