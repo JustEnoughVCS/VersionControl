@@ -89,6 +89,16 @@ impl<'a> Sheet<'a> {
         &self.data.mapping
     }
 
+    /// Forget the holder of this sheet
+    pub fn forget_holder(&mut self) {
+        self.data.holder = None;
+    }
+
+    /// Set the holder of this sheet
+    pub fn set_holder(&mut self, holder: MemberId) {
+        self.data.holder = Some(holder);
+    }
+
     /// Add an input package to the sheet
     pub fn add_input(&mut self, input_package: InputPackage) -> Result<(), std::io::Error> {
         if self.data.inputs.iter().any(|input| input == &input_package) {

@@ -1,6 +1,7 @@
 use cfg_file::ConfigFile;
 use cfg_file::config::ConfigFile;
 use serde::{Deserialize, Serialize};
+use std::io::Error;
 use std::net::SocketAddr;
 use std::path::Path;
 use std::path::PathBuf;
@@ -17,6 +18,7 @@ use crate::data::member::MemberId;
 use crate::data::sheet::SheetName;
 use crate::data::vault::config::VaultUuid;
 
+const ACCOUNT: &str = "{account}";
 const SHEET_NAME: &str = "{sheet_name}";
 
 #[derive(Serialize, Deserialize, ConfigFile)]
@@ -68,8 +70,15 @@ impl LocalConfig {
     }
 
     /// Set the currently used account
-    pub fn set_current_account(&mut self, account: MemberId) {
+    pub fn set_current_account(&mut self, account: MemberId) -> Result<(), std::io::Error> {
+        if self.sheet_in_use().is_some() {
+            return Err(Error::new(
+                std::io::ErrorKind::DirectoryNotEmpty,
+                "Please exit the current sheet before switching accounts",
+            ));
+        }
         self.using_account = account;
+        Ok(())
     }
 
     /// Set the currently used sheet
@@ -107,7 +116,7 @@ impl LocalConfig {
         self.check_local_path_empty(&local_path).await?;
 
         // Get the draft folder path
-        let draft_folder = self.draft_folder(&sheet, &local_path);
+        let draft_folder = self.draft_folder(&self.using_account, &sheet, &local_path);
 
         if draft_folder.exists() {
             // Exists
@@ -135,7 +144,7 @@ impl LocalConfig {
         let sheet_name = self.sheet_in_use().as_ref().unwrap().clone();
 
         // Get the draft folder path
-        let draft_folder = self.draft_folder(&sheet_name, &local_path);
+        let draft_folder = self.draft_folder(&self.using_account, &sheet_name, &local_path);
 
         // Create the draft folder if it doesn't exist
         if !draft_folder.exists() {
@@ -312,11 +321,15 @@ impl LocalConfig {
     /// Get draft folder
     pub fn draft_folder(
         &self,
+        account: &MemberId,
         sheet_name: &SheetName,
         local_workspace_path: impl Into<PathBuf>,
     ) -> PathBuf {
+        let account_str = snake_case!(account.as_str());
         let sheet_name_str = snake_case!(sheet_name.as_str());
-        let draft_path = CLIENT_PATH_LOCAL_DRAFT.replace(SHEET_NAME, &sheet_name_str);
+        let draft_path = CLIENT_PATH_LOCAL_DRAFT
+            .replace(ACCOUNT, &account_str)
+            .replace(SHEET_NAME, &sheet_name_str);
         local_workspace_path.into().join(draft_path)
     }
 
@@ -330,7 +343,7 @@ impl LocalConfig {
             return None;
         };
 
-        Some(self.draft_folder(sheet_name, current_dir))
+        Some(self.draft_folder(&self.using_account, sheet_name, current_dir))
     }
 }
 

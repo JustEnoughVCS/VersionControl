@@ -13,7 +13,7 @@ use crate::{
         local_actions::{
             register_set_upstream_vault_action, register_update_to_latest_info_action,
         },
-        sheet_actions::register_make_sheet_action,
+        sheet_actions::{register_drop_sheet_action, register_make_sheet_action},
     },
     connection::protocol::RemoteActionInvoke,
 };
@@ -27,6 +27,7 @@ fn register_actions(pool: &mut ActionPool) {
 
     // Sheet Actions
     register_make_sheet_action(pool);
+    register_drop_sheet_action(pool);
 }
 
 pub fn client_action_pool() -> ActionPool {
