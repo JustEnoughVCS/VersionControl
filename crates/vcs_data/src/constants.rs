@@ -48,17 +48,20 @@ pub const CLIENT_FOLDER_WORKSPACE_ROOT_NAME: &str = ".jv";
 pub const CLIENT_FILE_WORKSPACE: &str = "./.jv/workspace.toml";
 
 // Client - Latest Information
-pub const CLIENT_FILE_LATEST_INFO: &str = "./.jv/latest.json";
+pub const CLIENT_FILE_LATEST_INFO: &str = "./.jv/.latest.json";
 
-// Client - Sheets
-pub const CLIENT_FILE_SHEET_COPY: &str = "./.jv/sheets/{sheet_name}.copy.json";
+// Client - Local
+pub const CLIENT_PATH_LOCAL_DRAFT: &str = "./.jv/drafts/{account}/{sheet_name}/";
+pub const CLIENT_FILE_LOCAL_SHEET: &str = "./.jv/sheets/{account}/{sheet_name}_local.toml";
+pub const CLIENT_FILE_CACHED_SHEET: &str = "./.jv/sheets/{account}/{sheet_name}.toml";
+pub const CLIENT_FILE_MEMBER_HELD: &str = "./.jv/helds/{account}_held.toml";
 
-// Client - Local Draft
-pub const CLIENT_PATH_LOCAL_DRAFT: &str = "./.jv/drafts/{account}_{sheet_name}/";
+pub const CLIENT_FILE_LOCAL_SHEET_NOSET: &str = "./.jv/.temp/wrong_local_sheet.toml";
+pub const CLIENT_FILE_MEMBER_HELD_NOSET: &str = "./.jv/.temp/wrong_member_held.toml";
 
 // Client - Other
 pub const CLIENT_FILE_IGNOREFILES: &str = "IGNORE_RULES.toml";
-pub const CLIENT_FILE_README: &str = "./README.md";
+pub const CLIENT_FILE_TODOLIST: &str = "./TODO.md";
 
 // -------------------------------------------------------------------------------------
 

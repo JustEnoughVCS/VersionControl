@@ -51,7 +51,7 @@ pub struct VirtualFileMeta {
     histories: Vec<VirtualFileVersion>,
 }
 
-#[derive(Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct VirtualFileVersionDescription {
     /// The member who created this version
     pub creator: MemberId,

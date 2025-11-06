@@ -50,6 +50,9 @@ pub struct Sheet<'a> {
 
 #[derive(Default, Serialize, Deserialize, ConfigFile, Clone)]
 pub struct SheetData {
+    /// The write count of the current sheet
+    pub(crate) write_count: i32,
+
     /// The holder of the current sheet, who has full operation rights to the sheet mapping
     pub(crate) holder: Option<MemberId>,
 
@@ -87,6 +90,11 @@ impl<'a> Sheet<'a> {
     /// Get the mapping of this sheet
     pub fn mapping(&self) -> &HashMap<SheetPathBuf, VirtualFileId> {
         &self.data.mapping
+    }
+
+    /// Get the write count of this sheet
+    pub fn write_count(&self) -> i32 {
+        self.data.write_count
     }
 
     /// Forget the holder of this sheet
@@ -263,7 +271,11 @@ impl<'a> Sheet<'a> {
     /// Why not use a reference?
     /// Because I don't want a second instance of the sheet to be kept in memory.
     /// If needed, please deserialize and reload it.
-    pub async fn persist(self) -> Result<(), std::io::Error> {
+    pub async fn persist(mut self) -> Result<(), std::io::Error> {
+        self.data.write_count += 1;
+        if self.data.write_count > i32::MAX {
+            self.data.write_count = 0;
+        }
         SheetData::write_to(&self.data, self.sheet_path()).await
     }
 
@@ -382,5 +394,12 @@ impl<'a> Sheet<'a> {
     /// Convert the sheet into its data representation
     pub fn to_data(self) -> SheetData {
         self.data
+    }
+}
+
+impl SheetData {
+    /// Get the write count of this sheet data
+    pub fn write_count(&self) -> i32 {
+        self.write_count
     }
 }
