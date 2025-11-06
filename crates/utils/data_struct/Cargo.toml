@@ -1,0 +1,10 @@
+[package]
+name = "data_struct"
+edition = "2024"
+version.workspace = true
+
+[features]
+
+[dependencies]
+serde = { version = "1.0.228", features = ["derive"] }
+ahash = "0.8.12"
