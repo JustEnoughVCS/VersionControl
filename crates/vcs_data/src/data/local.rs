@@ -2,15 +2,19 @@ use std::{env::current_dir, path::PathBuf, sync::Arc};
 
 use cfg_file::config::ConfigFile;
 use tokio::{fs, sync::Mutex};
+use vcs_docs::docs::READMES_LOCAL_WORKSPACE_TODOLIST;
 
 use crate::{
-    constants::{CLIENT_FILE_README, CLIENT_FILE_WORKSPACE},
+    constants::{CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE},
     current::{current_local_path, find_local_path},
     data::local::config::LocalConfig,
 };
 
+pub mod cached_sheet;
 pub mod config;
 pub mod latest_info;
+pub mod local_sheet;
+pub mod member_held;
 
 pub struct LocalWorkspace {
     config: Arc<Mutex<LocalConfig>>,
@@ -60,41 +64,22 @@ impl LocalWorkspace {
         LocalConfig::write_to(&config, local_path.join(CLIENT_FILE_WORKSPACE)).await?;
 
         // 2. Setup README.md
-        let readme_content = "\
-# JustEnoughVCS Local Workspace
+        let readme_content = READMES_LOCAL_WORKSPACE_TODOLIST.trim().to_string();
+        fs::write(local_path.join(CLIENT_FILE_TODOLIST), readme_content).await?;
 
-This directory is a **Local Workspace** managed by `JustEnoughVCS`. All files and subdirectories within this scope can be version-controlled using the `JustEnoughVCS` CLI or GUI tools, with the following exceptions:
+        // On Windows, set the .jv directory as hidden
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::fs::MetadataExt;
+            use winapi_util::file::set_hidden;
 
-- The `.jv` directory
-- Any files or directories excluded via `.jgnore` or `.gitignore`
-
-> ⚠️ **Warning**
->
-> Files in this workspace will be uploaded to the upstream server. Please ensure you fully trust this server before proceeding.
-
-## Access Requirements
-
-To use `JustEnoughVCS` with this workspace, you must have:
-
-- **A registered user ID** with the upstream server
-- **Your private key** properly configured locally
-- **Your public key** stored in the server's public key directory
-
-Without these credentials, the server will reject all access requests.
-
-## Support
-
-- **Permission or access issues?** → Contact your server administrator
-- **Tooling problems or bugs?** → Reach out to the development team via [GitHub Issues](https://github.com/JustEnoughVCS/VersionControl/issues)
-- **Documentation**: Visit our repository for full documentation
-
-------
-
-*Thank you for using JustEnoughVCS!*
-".to_string()
-        .trim()
-        .to_string();
-        fs::write(local_path.join(CLIENT_FILE_README), readme_content).await?;
+            let jv_dir = local_path.join(".jv");
+            if jv_dir.exists() {
+                if let Err(e) = set_hidden(&jv_dir, true) {
+                    eprintln!("Warning: Failed to set .jv directory as hidden: {}", e);
+                }
+            }
+        }
 
         Ok(())
     }
