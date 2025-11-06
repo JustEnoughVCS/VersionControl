@@ -1,4 +1,4 @@
-[submodule "docs/Documents"]
- path = docs/Documents
- url = https://github.com/JustEnoughVCS/Documents
- branch = main
+[submodule "built-in-documents"]
+	path = docs/Documents
+	url = https://github.com/JustEnoughVCS/Documents
+    branch = main
