@@ -6,6 +6,9 @@ pub mod vcs {
 
     pub extern crate vcs_actions;
     pub use vcs_actions::*;
+
+    pub extern crate vcs_docs;
+    pub use vcs_docs::*;
 }
 
 pub mod system {
@@ -15,6 +18,20 @@ pub mod system {
 }
 
 pub mod utils {
+    // Feature `cfg_file`
+    #[cfg(feature = "cfg_file")]
+    pub mod cfg_file {
+        extern crate cfg_file;
+        pub use cfg_file::*;
+    }
+
+    // Feature `data_struct`
+    #[cfg(feature = "data_struct")]
+    pub mod data_struct {
+        extern crate data_struct;
+        pub use data_struct::*;
+    }
+
     // Feature `tcp_connection`
     #[cfg(feature = "tcp_connection")]
     pub mod tcp_connection {
@@ -27,12 +44,5 @@ pub mod utils {
     pub mod string_proc {
         extern crate string_proc;
         pub use string_proc::*;
-    }
-
-    // Feature `cfg_file`
-    #[cfg(feature = "cfg_file")]
-    pub mod cfg_file {
-        extern crate cfg_file;
-        pub use cfg_file::*;
     }
 }
