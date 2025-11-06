@@ -2,7 +2,7 @@ use std::io::Error;
 
 use cfg_file::config::ConfigFile;
 use vcs_data::{
-    constants::{CLIENT_FILE_README, CLIENT_FILE_WORKSPACE, USER_FILE_KEY, USER_FILE_MEMBER},
+    constants::{CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE, USER_FILE_KEY, USER_FILE_MEMBER},
     data::{
         local::{LocalWorkspace, config::LocalConfig},
         member::Member,
@@ -22,7 +22,7 @@ async fn test_local_workspace_setup_and_account_management() -> Result<(), std::
     // Check if the following files are created in `dir`:
     // Files: CLIENT_FILE_WORKSPACE, CLIENT_FILE_README
     assert!(dir.join(CLIENT_FILE_WORKSPACE).exists());
-    assert!(dir.join(CLIENT_FILE_README).exists());
+    assert!(dir.join(CLIENT_FILE_TODOLIST).exists());
 
     // Get local workspace
     let config = LocalConfig::read_from(dir.join(CLIENT_FILE_WORKSPACE)).await?;
