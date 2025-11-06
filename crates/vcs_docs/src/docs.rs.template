@@ -1,0 +1,26 @@
+// Auto-generated code.
+
+--- TEMPLATE DOCUMENT BEGIN ---
+/// From {{DOCUMENT_PATH}}
+pub const {{DOCUMENT_CONSTANT_NAME}}: &str = "{{DOCUMENT_CONTENT}}";
+
+--- TEMPLATE DOCUMENT END ---
+
+// Get document content by name
+pub fn document(name: impl AsRef<str>) -> Option<String> {
+    match name.as_ref() {
+--- TEMPLATE FUNC BEGIN ---
+        "{{DOCUMENT_PATH_SNAKE_CASE}}" => Some({{DOCUMENT_CONSTANT_NAME}}.to_string()),
+--- TEMPLATE FUNC END ---
+        _ => None,
+    }
+}
+
+// Get list of all available document names
+pub fn documents() -> Vec<String> {
+    vec![
+--- TEMPLATE LIST BEGIN ---
+        "{{DOCUMENT_PATH_SNAKE_CASE}}".to_string(),
+--- TEMPLATE LIST END ---
+    ]
+}

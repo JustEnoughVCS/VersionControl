@@ -1,0 +1,6 @@
+[package]
+name = "vcs_docs"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
