@@ -5,8 +5,9 @@ license-file = "LICENSE-MIT.md"
 authors = ["Weicao-CatilGrass (GitHub)"]
 
 [features]
-all = ["cfg_file", "tcp_connection", "string_proc", "vcs"]
+all = ["cfg_file", "data_struct", "tcp_connection", "string_proc", "vcs"]
 cfg_file = []
+data_struct = []
 tcp_connection = []
 string_proc = []
 vcs = []
@@ -18,6 +19,8 @@ members = [
     "crates/utils/cfg_file",
     "crates/utils/cfg_file/cfg_file_derive",
     "crates/utils/cfg_file/cfg_file_test",
+
+    "crates/utils/data_struct",
 
     "crates/utils/tcp_connection",
     "crates/utils/tcp_connection/tcp_connection_test",
@@ -31,6 +34,8 @@ members = [
     "crates/vcs_data/vcs_data_test",
 
     "crates/vcs_actions",
+
+    "crates/vcs_docs",
 ]
 
 [workspace.package]
@@ -57,10 +62,12 @@ strip = "symbols"
 
 [dependencies]
 cfg_file = { path = "crates/utils/cfg_file" }
+data_struct = { path = "crates/utils/data_struct" }
 tcp_connection = { path = "crates/utils/tcp_connection" }
 string_proc = { path = "crates/utils/string_proc" }
 
 action_system = { path = "crates/system_action" }
 
+vcs_docs = { path = "crates/vcs_docs" }
 vcs_data = { path = "crates/vcs_data" }
 vcs_actions = { path = "crates/vcs_actions" }

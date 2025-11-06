@@ -6,12 +6,14 @@ version.workspace = true
 [dependencies]
 
 # Utils
-tcp_connection = { path = "../utils/tcp_connection" }
 cfg_file = { path = "../utils/cfg_file", features = ["default"] }
+data_struct = { path = "../utils/data_struct" }
+tcp_connection = { path = "../utils/tcp_connection" }
 string_proc = { path = "../utils/string_proc" }
 
 # Core
 action_system = { path = "../system_action" }
+vcs_docs = { path = "../vcs_docs" }
 
 # Identity
 uuid = { version = "1.18.1", features = ["v4", "serde"] }
@@ -24,3 +26,9 @@ tokio = { version = "1.48.0", features = ["full"] }
 
 # Filesystem
 dirs = "6.0.0"
+
+# Time
+chrono = "0.4.42"
+
+# Win API
+winapi-util = "0.1.11"
