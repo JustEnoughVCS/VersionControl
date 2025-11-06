@@ -14,6 +14,7 @@ use crate::{
             register_set_upstream_vault_action, register_update_to_latest_info_action,
         },
         sheet_actions::{register_drop_sheet_action, register_make_sheet_action},
+        virtual_file_actions::register_track_file_action,
     },
     connection::protocol::RemoteActionInvoke,
 };
@@ -28,6 +29,9 @@ fn register_actions(pool: &mut ActionPool) {
     // Sheet Actions
     register_make_sheet_action(pool);
     register_drop_sheet_action(pool);
+
+    // Virtual File Actions
+    register_track_file_action(pool);
 }
 
 pub fn client_action_pool() -> ActionPool {

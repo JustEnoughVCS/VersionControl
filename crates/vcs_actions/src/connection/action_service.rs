@@ -1,4 +1,5 @@
 use std::{
+    env::set_current_dir,
     net::SocketAddr,
     path::PathBuf,
     sync::Arc,
@@ -25,6 +26,11 @@ pub async fn server_entry(
     vault_path: impl Into<PathBuf>,
     port_override: u16,
 ) -> Result<(), TcpTargetError> {
+    let vault_path = vault_path.into();
+
+    // Set to vault path
+    set_current_dir(&vault_path).map_err(|e| TcpTargetError::Io(e.to_string()))?;
+
     // Read the vault cfg
     let vault_cfg = VaultConfig::read().await?;
 
@@ -32,7 +38,7 @@ pub async fn server_entry(
     let listener = create_tcp_listener(&vault_cfg, port_override).await?;
 
     // Initialize the vault
-    let vault: Arc<Vault> = init_vault(vault_cfg, vault_path.into()).await?;
+    let vault: Arc<Vault> = init_vault(vault_cfg, vault_path).await?;
 
     // Lock the vault
     vault
