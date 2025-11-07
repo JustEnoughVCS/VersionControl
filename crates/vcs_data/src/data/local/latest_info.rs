@@ -9,6 +9,9 @@ use crate::{
     },
 };
 
+/// # Latest Info
+/// Locally cached latest information,
+/// used to cache personal information from upstream for querying and quickly retrieving member information.
 #[derive(Default, Serialize, Deserialize, ConfigFile)]
 #[cfg_file(path = CLIENT_FILE_LATEST_INFO)]
 pub struct LatestInfo {

@@ -15,6 +15,10 @@ use crate::{
 const SHEET_NAME: &str = "{sheet_name}";
 const ACCOUNT_NAME: &str = "{account}";
 
+/// # Cached Sheet
+/// The cached sheet is a read-only version cloned from the upstream repository to the local environment,
+/// automatically generated during update operations,
+/// which records the latest Sheet information stored locally to accelerate data access and reduce network requests.
 pub struct CachedSheet;
 
 impl CachedSheet {
