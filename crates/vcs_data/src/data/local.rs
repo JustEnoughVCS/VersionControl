@@ -1,13 +1,20 @@
-use std::{env::current_dir, path::PathBuf, sync::Arc};
+use std::{collections::HashMap, env::current_dir, path::PathBuf, sync::Arc};
 
 use cfg_file::config::ConfigFile;
 use tokio::{fs, sync::Mutex};
 use vcs_docs::docs::READMES_LOCAL_WORKSPACE_TODOLIST;
 
 use crate::{
-    constants::{CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE},
+    constants::{CLIENT_FILE_LOCAL_SHEET, CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE},
     current::{current_local_path, find_local_path},
-    data::local::config::LocalConfig,
+    data::{
+        local::{
+            config::LocalConfig,
+            local_sheet::{LocalSheet, LocalSheetData},
+        },
+        member::MemberId,
+        sheet::SheetName,
+    },
 };
 
 pub mod cached_sheet;
@@ -15,6 +22,9 @@ pub mod config;
 pub mod latest_info;
 pub mod local_sheet;
 pub mod member_held;
+
+const SHEET_NAME: &str = "{sheet_name}";
+const ACCOUNT_NAME: &str = "{account}";
 
 pub struct LocalWorkspace {
     config: Arc<Mutex<LocalConfig>>,
@@ -93,5 +103,47 @@ impl LocalWorkspace {
     pub async fn setup_local_workspace_current_dir() -> Result<(), std::io::Error> {
         Self::setup_local_workspace(current_dir()?).await?;
         Ok(())
+    }
+
+    /// Get the path to a local sheet.
+    pub fn local_sheet_path(&self, member: &MemberId, sheet: &SheetName) -> PathBuf {
+        let result = self.local_path.join(
+            CLIENT_FILE_LOCAL_SHEET
+                .replace(ACCOUNT_NAME, member)
+                .replace(SHEET_NAME, sheet),
+        );
+        result
+    }
+
+    /// Read or initialize a local sheet.
+    pub async fn local_sheet(
+        &self,
+        member: &MemberId,
+        sheet: &SheetName,
+    ) -> Result<LocalSheet<'_>, std::io::Error> {
+        let local_sheet_path = self.local_sheet_path(member, sheet);
+
+        if !local_sheet_path.exists() {
+            let sheet_data = LocalSheetData {
+                mapping: HashMap::new(),
+            };
+            LocalSheetData::write_to(&sheet_data, local_sheet_path).await?;
+            return Ok(LocalSheet {
+                local_workspace: self,
+                member: member.clone(),
+                sheet_name: sheet.clone(),
+                data: sheet_data,
+            });
+        }
+
+        let data = LocalSheetData::read_from(&local_sheet_path).await?;
+        let local_sheet = LocalSheet {
+            local_workspace: self,
+            member: member.clone(),
+            sheet_name: sheet.clone(),
+            data,
+        };
+
+        Ok(local_sheet)
     }
 }

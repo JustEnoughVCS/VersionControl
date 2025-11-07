@@ -28,8 +28,6 @@ pub struct LatestInfo {
     pub vault_members: Vec<Member>,
 }
 
-impl LatestInfo {}
-
 #[derive(Default, Serialize, Deserialize)]
 pub struct SheetInfo {
     pub sheet_name: SheetName,

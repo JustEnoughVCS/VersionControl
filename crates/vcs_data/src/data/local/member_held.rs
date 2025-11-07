@@ -8,6 +8,8 @@ use crate::{
     data::{member::MemberId, vault::virtual_file::VirtualFileId},
 };
 
+/// # Member Held Information
+/// Records the files held by the member, used for permission validation
 #[derive(Debug, Default, Clone, Serialize, Deserialize, ConfigFile)]
 #[cfg_file(path = CLIENT_FILE_MEMBER_HELD_NOSET)]
 pub struct MemberHeld {
