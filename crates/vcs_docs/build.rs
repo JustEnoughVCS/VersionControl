@@ -65,6 +65,7 @@ fn main() -> io::Result<()> {
         // Generate constant name from relative path
         let document_constant_name = relative_path
             .replace('/', "_")
+            .replace('\\', "_")
             .replace('-', "_")
             .replace(".md", "")
             .replace(".txt", "")
@@ -73,6 +74,7 @@ fn main() -> io::Result<()> {
         // Generate snake_case name for function matching
         let document_path_snake_case = relative_path
             .replace('/', "_")
+            .replace('\\', "_")
             .replace('-', "_")
             .replace(".md", "")
             .replace(".txt", "")
