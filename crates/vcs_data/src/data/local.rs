@@ -78,18 +78,8 @@ impl LocalWorkspace {
         fs::write(local_path.join(CLIENT_FILE_TODOLIST), readme_content).await?;
 
         // On Windows, set the .jv directory as hidden
-        #[cfg(target_os = "windows")]
-        {
-            use std::os::windows::fs::MetadataExt;
-            use winapi_util::file::set_hidden;
-
-            let jv_dir = local_path.join(".jv");
-            if jv_dir.exists() {
-                if let Err(e) = set_hidden(&jv_dir, true) {
-                    eprintln!("Warning: Failed to set .jv directory as hidden: {}", e);
-                }
-            }
-        }
+        let jv_dir = local_path.join(".jv");
+        let _ = hide_folder::hide_folder(&jv_dir);
 
         Ok(())
     }
@@ -145,5 +135,79 @@ impl LocalWorkspace {
         };
 
         Ok(local_sheet)
+    }
+}
+
+mod hide_folder {
+    use std::io;
+    use std::path::Path;
+
+    #[cfg(windows)]
+    use std::os::windows::ffi::OsStrExt;
+    #[cfg(windows)]
+    use winapi::um::fileapi::{GetFileAttributesW, SetFileAttributesW, INVALID_FILE_ATTRIBUTES};
+
+    pub fn hide_folder(path: &Path) -> io::Result<()> {
+        if !path.is_dir() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Path must be a directory",
+            ));
+        }
+
+        if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
+            if !file_name.starts_with('.') {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "Directory name must start with '.'",
+                ));
+            }
+        } else {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Invalid directory name",
+            ));
+        }
+
+        hide_folder_impl(path)
+    }
+
+    #[cfg(windows)]
+    fn hide_folder_impl(path: &Path) -> io::Result<()> {
+        // Convert to Windows wide string format
+        let path_str: Vec<u16> = path.as_os_str()
+            .encode_wide()
+            .chain(Some(0))
+            .collect();
+
+        // Get current attributes
+        let attrs = unsafe { GetFileAttributesW(path_str.as_ptr()) };
+        if attrs == INVALID_FILE_ATTRIBUTES {
+            return Err(io::Error::last_os_error());
+        }
+
+        // Add hidden attribute flag
+        let new_attrs = attrs | winapi::um::winnt::FILE_ATTRIBUTE_HIDDEN;
+
+        // Set new attributes
+        let success = unsafe { SetFileAttributesW(path_str.as_ptr(), new_attrs) };
+        if success == 0 {
+            return Err(io::Error::last_os_error());
+        }
+
+        Ok(())
+    }
+
+    #[cfg(unix)]
+    fn hide_folder_impl(_path: &Path) -> io::Result<()> {
+        Ok(())
+    }
+
+    #[cfg(not(any(windows, unix)))]
+    fn hide_folder_impl(_path: &Path) -> io::Result<()> {
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "Unsupported operating system",
+        ))
     }
 }

@@ -30,5 +30,5 @@ dirs = "6.0.0"
 # Time
 chrono = "0.4.42"
 
-# Win API
-winapi-util = "0.1.11"
+# Windows API
+winapi = { version = "0.3.9", features = ["fileapi", "winbase", "winnt"] }
