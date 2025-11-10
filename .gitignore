@@ -23,9 +23,9 @@
 
 **/target/
 
-##################
-### SUBMODULES ###
-##################
+#################
+### DOCUMENTS ###
+#################
 
 # JustEnoughVCS Docs
 /docs/Documents
