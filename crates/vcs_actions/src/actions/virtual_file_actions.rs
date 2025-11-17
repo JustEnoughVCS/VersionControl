@@ -4,7 +4,7 @@ use action_system::{action::ActionContext, macros::action_gen};
 use cfg_file::config::ConfigFile;
 use serde::{Deserialize, Serialize};
 use tcp_connection::{error::TcpTargetError, instance::ConnectionInstance};
-use tokio::{sync::Mutex, time::Instant};
+use tokio::sync::Mutex;
 use vcs_data::data::{
     local::{
         cached_sheet::CachedSheet, file_status::AnalyzeResult, local_sheet::LocalMappingMetadata,
@@ -107,22 +107,26 @@ pub async fn track_file_action(
             .modified
             .intersection(&relative_pathes)
             .cloned()
-            .collect::<HashSet<_>>();
+            .collect::<Vec<_>>();
 
         // Filter out created files
         let created_task = analyzed
             .created
             .intersection(&relative_pathes)
             .cloned()
-            .collect::<HashSet<_>>();
+            .collect::<Vec<_>>();
 
         // Filter out modified files that need to be updated
-        let update_task: HashSet<PathBuf> = {
+        let update_task: Vec<PathBuf> = {
             let result = modified.iter().filter_map(|p| {
-                if let Ok(data) = local_sheet.mapping_data(p) {
-                    let id = data.mapping_vfid();
+                if let (Ok(local_data), Some(cached_data)) =
+                    (local_sheet.mapping_data(p), cached_sheet.mapping().get(p))
+                {
+                    let id = local_data.mapping_vfid();
+                    let local_ver = local_data.version_when_updated();
                     if let Some(held_member) = member_held.file_holder(id) {
-                        if held_member == &member_id {
+                        // Check if holder and version match
+                        if held_member == &member_id && local_ver == &cached_data.version {
                             return Some(p.clone());
                         }
                     }
@@ -133,14 +137,12 @@ pub async fn track_file_action(
         };
 
         // Filter out files that do not exist locally or have version inconsistencies and need to be synchronized
-        let sync_task: HashSet<PathBuf> = {
-            let other = relative_pathes
-                .difference(&created_task)
+        let sync_task: Vec<PathBuf> = {
+            let other: Vec<PathBuf> = relative_pathes
+                .iter()
+                .filter(|p| !created_task.contains(p) && !update_task.contains(p))
                 .cloned()
-                .collect::<HashSet<_>>()
-                .difference(&update_task)
-                .cloned()
-                .collect::<HashSet<_>>();
+                .collect();
 
             let result = other.iter().filter_map(|p| {
                 // In cached sheet
@@ -167,7 +169,7 @@ pub async fn track_file_action(
         };
 
         // Package tasks
-        let tasks: (HashSet<PathBuf>, HashSet<PathBuf>, HashSet<PathBuf>) =
+        let tasks: (Vec<PathBuf>, Vec<PathBuf>, Vec<PathBuf>) =
             (created_task, update_task, sync_task);
 
         // Send to remote
@@ -230,11 +232,7 @@ pub async fn track_file_action(
 
     if ctx.is_proc_on_remote() {
         // Read tasks
-        let (created_task, update_task, sync_task): (
-            HashSet<PathBuf>,
-            HashSet<PathBuf>,
-            HashSet<PathBuf>,
-        ) = {
+        let (created_task, update_task, sync_task): (Vec<PathBuf>, Vec<PathBuf>, Vec<PathBuf>) = {
             let mut mut_instance = instance.lock().await;
             mut_instance.read_large_msgpack(1024u16).await?
         };
@@ -311,7 +309,7 @@ async fn proc_create_tasks_local(
     instance: Arc<Mutex<ConnectionInstance>>,
     member_id: &MemberId,
     sheet_name: &SheetName,
-    relative_paths: HashSet<PathBuf>,
+    relative_paths: Vec<PathBuf>,
 ) -> Result<CreateTaskResult, TcpTargetError> {
     let workspace = try_get_local_workspace(&ctx)?;
     let mut mut_instance = instance.lock().await;
@@ -380,7 +378,7 @@ async fn proc_create_tasks_remote(
     instance: Arc<Mutex<ConnectionInstance>>,
     member_id: &MemberId,
     sheet_name: &SheetName,
-    relative_paths: HashSet<PathBuf>,
+    relative_paths: Vec<PathBuf>,
 ) -> Result<CreateTaskResult, TcpTargetError> {
     let vault = try_get_vault(&ctx)?;
     let mut mut_instance = instance.lock().await;
@@ -445,7 +443,7 @@ async fn proc_update_tasks_local(
     instance: Arc<Mutex<ConnectionInstance>>,
     member_id: &MemberId,
     sheet_name: &SheetName,
-    relative_paths: HashSet<PathBuf>,
+    relative_paths: Vec<PathBuf>,
 ) -> Result<UpdateTaskResult, TcpTargetError> {
     Ok(UpdateTaskResult::Success(Vec::new()))
 }
@@ -455,7 +453,7 @@ async fn proc_update_tasks_remote(
     instance: Arc<Mutex<ConnectionInstance>>,
     member_id: &MemberId,
     sheet_name: &SheetName,
-    relative_paths: HashSet<PathBuf>,
+    relative_paths: Vec<PathBuf>,
 ) -> Result<UpdateTaskResult, TcpTargetError> {
     Ok(UpdateTaskResult::Success(Vec::new()))
 }
@@ -465,7 +463,7 @@ async fn proc_sync_tasks_local(
     instance: Arc<Mutex<ConnectionInstance>>,
     member_id: &MemberId,
     sheet_name: &SheetName,
-    relative_paths: HashSet<PathBuf>,
+    relative_paths: Vec<PathBuf>,
 ) -> Result<SyncTaskResult, TcpTargetError> {
     Ok(SyncTaskResult::Success(Vec::new()))
 }
@@ -475,7 +473,7 @@ async fn proc_sync_tasks_remote(
     instance: Arc<Mutex<ConnectionInstance>>,
     member_id: &MemberId,
     sheet_name: &SheetName,
-    relative_paths: HashSet<PathBuf>,
+    relative_paths: Vec<PathBuf>,
 ) -> Result<SyncTaskResult, TcpTargetError> {
     Ok(SyncTaskResult::Success(Vec::new()))
 }
