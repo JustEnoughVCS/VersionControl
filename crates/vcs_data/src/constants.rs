@@ -51,17 +51,18 @@ pub const CLIENT_FILE_WORKSPACE: &str = "./.jv/workspace.toml";
 pub const CLIENT_FILE_LATEST_INFO: &str = "./.jv/.{account}_latest.json";
 
 // Client - Local
-pub const CLIENT_SUFFIX_LOCAL_SHEET_FILE: &str = ".json";
-pub const CLIENT_SUFFIX_CACHED_SHEET_FILE: &str = ".json";
+pub const CLIENT_SUFFIX_LOCAL_SHEET_FILE: &str = ".toml";
+pub const CLIENT_SUFFIX_CACHED_SHEET_FILE: &str = ".toml";
 pub const CLIENT_PATH_LOCAL_DRAFT: &str = "./.jv/drafts/{account}/{sheet_name}/";
 pub const CLIENT_PATH_LOCAL_SHEET: &str = "./.jv/local/";
 pub const CLIENT_PATH_CACHED_SHEET: &str = "./.jv/cached/";
-pub const CLIENT_FILE_LOCAL_SHEET: &str = "./.jv/local/{account}/{sheet_name}.json";
-pub const CLIENT_FILE_CACHED_SHEET: &str = "./.jv/cached/{sheet_name}.json";
-pub const CLIENT_FILE_MEMBER_HELD: &str = "./.jv/helds/{account}.json";
+pub const CLIENT_FILE_LOCAL_SHEET: &str = "./.jv/local/{account}/{sheet_name}.toml";
+pub const CLIENT_FILE_CACHED_SHEET: &str = "./.jv/cached/{sheet_name}.toml";
+pub const CLIENT_FILE_MEMBER_HELD: &str = "./.jv/helds/{account}.toml";
 
-pub const CLIENT_FILE_LOCAL_SHEET_NOSET: &str = "./.jv/.temp/wrong_local_sheet.toml";
-pub const CLIENT_FILE_MEMBER_HELD_NOSET: &str = "./.jv/.temp/wrong_member_held.toml";
+pub const CLIENT_FILE_LOCAL_SHEET_NOSET: &str = "./.jv/.temp/wrong.json";
+pub const CLIENT_FILE_MEMBER_HELD_NOSET: &str = "./.jv/.temp/wrong.json";
+pub const CLIENT_FILE_LATEST_INFO_NOSET: &str = "./.jv/.temp/wrong.json";
 
 // Client - Other
 pub const CLIENT_FILE_IGNOREFILES: &str = "IGNORE_RULES.toml";
