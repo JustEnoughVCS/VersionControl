@@ -1,4 +1,7 @@
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::{
+    path::PathBuf,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use cfg_file::ConfigFile;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
