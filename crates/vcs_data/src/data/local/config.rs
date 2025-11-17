@@ -97,7 +97,12 @@ impl LocalConfig {
         let local_path = self.get_local_path().await?;
 
         // Get latest info
-        let Ok(latest_info) = LatestInfo::read().await else {
+        let Ok(latest_info) = LatestInfo::read_from(LatestInfo::latest_info_path(
+            &local_path,
+            &self.current_account(),
+        ))
+        .await
+        else {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::NotFound,
                 "No latest info found",

@@ -1,9 +1,4 @@
-use std::{
-    collections::HashMap,
-    io::{Error, ErrorKind},
-    net::SocketAddr,
-    path::PathBuf,
-};
+use std::{collections::HashMap, io::ErrorKind, net::SocketAddr, path::PathBuf};
 
 use action_system::{action::ActionContext, macros::action_gen};
 use cfg_file::config::ConfigFile;
@@ -191,13 +186,18 @@ pub async fn update_to_latest_info_action(
         }
 
         if ctx.is_proc_on_local() {
+            let workspace = try_get_local_workspace(&ctx)?;
             let mut latest_info = instance
                 .lock()
                 .await
                 .read_large_msgpack::<LatestInfo>(512 as u16)
                 .await?;
             latest_info.update_instant = Some(Instant::now());
-            LatestInfo::write(&latest_info).await?;
+            LatestInfo::write_to(
+                &latest_info,
+                LatestInfo::latest_info_path(workspace.local_path(), &member_id),
+            )
+            .await?;
         }
     }
 
@@ -206,7 +206,13 @@ pub async fn update_to_latest_info_action(
     // Sync Remote Sheets
     {
         if ctx.is_proc_on_local() {
-            let Ok(latest_info) = LatestInfo::read().await else {
+            let workspace = try_get_local_workspace(&ctx)?;
+            let Ok(latest_info) = LatestInfo::read_from(LatestInfo::latest_info_path(
+                workspace.local_path(),
+                &member_id,
+            ))
+            .await
+            else {
                 return Err(TcpTargetError::NotFound(
                     "Latest info not found.".to_string(),
                 ));
@@ -301,7 +307,14 @@ pub async fn update_to_latest_info_action(
     // Sync Held Info
     {
         if ctx.is_proc_on_local() {
-            let Ok(latest_info) = LatestInfo::read().await else {
+            let workspace = try_get_local_workspace(&ctx)?;
+
+            let Ok(latest_info) = LatestInfo::read_from(LatestInfo::latest_info_path(
+                workspace.local_path(),
+                &member_id,
+            ))
+            .await
+            else {
                 return Err(TcpTargetError::NotFound(
                     "Latest info not found.".to_string(),
                 ));

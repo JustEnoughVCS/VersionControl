@@ -48,7 +48,7 @@ pub const CLIENT_FOLDER_WORKSPACE_ROOT_NAME: &str = ".jv";
 pub const CLIENT_FILE_WORKSPACE: &str = "./.jv/workspace.toml";
 
 // Client - Latest Information
-pub const CLIENT_FILE_LATEST_INFO: &str = "./.jv/.latest.json";
+pub const CLIENT_FILE_LATEST_INFO: &str = "./.jv/.{account}_latest.json";
 
 // Client - Local
 pub const CLIENT_SUFFIX_LOCAL_SHEET_FILE: &str = ".json";
