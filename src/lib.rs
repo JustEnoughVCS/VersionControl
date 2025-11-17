@@ -32,6 +32,13 @@ pub mod utils {
         pub use data_struct::*;
     }
 
+    // Feature `sha1_hash`
+    #[cfg(feature = "sha1_hash")]
+    pub mod sha1_hash {
+        extern crate sha1_hash;
+        pub use sha1_hash::*;
+    }
+
     // Feature `tcp_connection`
     #[cfg(feature = "tcp_connection")]
     pub mod tcp_connection {

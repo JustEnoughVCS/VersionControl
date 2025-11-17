@@ -22,7 +22,7 @@ use crate::{
 pub type VirtualFileId = String;
 pub type VirtualFileVersion = String;
 
-const VF_PREFIX: &str = "vf_";
+const VF_PREFIX: &str = "vf-";
 const ID_PARAM: &str = "{vf_id}";
 const ID_INDEX: &str = "{vf_index}";
 const VERSION_PARAM: &str = "{vf_version}";
@@ -244,8 +244,6 @@ impl Vault {
                 }
                 fs::rename(receive_path, move_path).await?;
 
-                //
-
                 Ok(new_id)
             }
             Err(e) => {
@@ -444,6 +442,13 @@ impl VirtualFileMeta {
         &self.histories
     }
 
+    /// Get the latest version of the virtual file
+    pub fn version_latest(&self) -> VirtualFileVersion {
+        // After creating a virtual file in `update_virtual_file_from_connection`,
+        // the Vec will never be empty, so unwrap is allowed here
+        self.histories.last().unwrap().clone()
+    }
+
     /// Get the total number of versions for this virtual file
     pub fn version_len(&self) -> i32 {
         self.histories.len() as i32
@@ -469,5 +474,26 @@ impl VirtualFileMeta {
     /// Returns None if the version number is out of range
     pub fn version_name(&self, version_num: i32) -> Option<VirtualFileVersion> {
         self.histories.get(version_num as usize).cloned()
+    }
+
+    /// Get the member who holds the edit right of the file
+    pub fn hold_member(&self) -> &MemberId {
+        &self.hold_member
+    }
+
+    /// Get the version descriptions for all versions
+    pub fn version_descriptions(
+        &self,
+    ) -> &HashMap<VirtualFileVersion, VirtualFileVersionDescription> {
+        &self.version_description
+    }
+
+    /// Get the version description for a given version
+    pub fn version_description(
+        &self,
+        version: VirtualFileVersion,
+    ) -> Option<&VirtualFileVersionDescription> {
+        let desc = self.version_descriptions();
+        desc.get(&version)
     }
 }

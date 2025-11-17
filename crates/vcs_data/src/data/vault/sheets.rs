@@ -133,6 +133,7 @@ impl Vault {
             holder: Some(holder.clone()),
             inputs: Vec::new(),
             mapping: HashMap::new(),
+            id_mapping: None,
             write_count: 0,
         };
         SheetData::write_to(&sheet_data, sheet_file_path).await?;

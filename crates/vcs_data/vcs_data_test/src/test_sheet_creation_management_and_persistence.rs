@@ -58,10 +58,14 @@ async fn test_sheet_creation_management_and_persistence() -> Result<(), std::io:
     let lib_rs_id = VirtualFileId::new();
 
     sheet
-        .add_mapping(main_rs_path.clone(), main_rs_id.clone())
+        .add_mapping(
+            main_rs_path.clone(),
+            main_rs_id.clone(),
+            "1.0.0".to_string(),
+        )
         .await?;
     sheet
-        .add_mapping(lib_rs_path.clone(), lib_rs_id.clone())
+        .add_mapping(lib_rs_path.clone(), lib_rs_id.clone(), "1.0.0".to_string())
         .await?;
 
     // Use output_mappings to generate the InputPackage
@@ -88,12 +92,19 @@ async fn test_sheet_creation_management_and_persistence() -> Result<(), std::io:
     let virtual_file_id = VirtualFileId::new();
 
     sheet
-        .add_mapping(mapping_path.clone(), virtual_file_id.clone())
+        .add_mapping(
+            mapping_path.clone(),
+            virtual_file_id.clone(),
+            "1.0.0".to_string(),
+        )
         .await?;
 
     // Verify mapping was added
     assert_eq!(sheet.mapping().len(), 3);
-    assert_eq!(sheet.mapping().get(&mapping_path), Some(&virtual_file_id));
+    assert_eq!(
+        sheet.mapping().get(&mapping_path).map(|meta| &meta.id),
+        Some(&virtual_file_id)
+    );
 
     // Test 4: Persist sheet to disk
     sheet.persist().await?;
@@ -270,10 +281,14 @@ async fn test_sheet_data_serialization() -> Result<(), std::io::Error> {
     let lib_rs_id = VirtualFileId::new();
 
     sheet
-        .add_mapping(main_rs_path.clone(), main_rs_id.clone())
+        .add_mapping(
+            main_rs_path.clone(),
+            main_rs_id.clone(),
+            "1.0.0".to_string(),
+        )
         .await?;
     sheet
-        .add_mapping(lib_rs_path.clone(), lib_rs_id.clone())
+        .add_mapping(lib_rs_path.clone(), lib_rs_id.clone(), "1.0.0".to_string())
         .await?;
 
     // Use output_mappings to generate the InputPackage
@@ -288,6 +303,7 @@ async fn test_sheet_data_serialization() -> Result<(), std::io::Error> {
         .add_mapping(
             vcs_data::data::sheet::SheetPathBuf::from("output/build.exe"),
             build_exe_id,
+            "1.0.0".to_string(),
         )
         .await?;
 

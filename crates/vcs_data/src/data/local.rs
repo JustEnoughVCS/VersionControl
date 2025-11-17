@@ -1,16 +1,25 @@
-use std::{collections::HashMap, env::current_dir, path::PathBuf, sync::Arc};
+use std::{
+    collections::HashMap,
+    env::current_dir,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use cfg_file::config::ConfigFile;
+use string_proc::format_path::format_path;
 use tokio::{fs, sync::Mutex};
 use vcs_docs::docs::READMES_LOCAL_WORKSPACE_TODOLIST;
 
 use crate::{
-    constants::{CLIENT_FILE_LOCAL_SHEET, CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE},
+    constants::{
+        CLIENT_FILE_LOCAL_SHEET, CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE,
+        CLIENT_PATH_LOCAL_SHEET,
+    },
     current::{current_local_path, find_local_path},
     data::{
         local::{
             config::LocalConfig,
-            local_sheet::{LocalSheet, LocalSheetData},
+            local_sheet::{LocalSheet, LocalSheetData, LocalSheetPathBuf},
         },
         member::MemberId,
         sheet::SheetName,
@@ -19,7 +28,9 @@ use crate::{
 
 pub mod cached_sheet;
 pub mod config;
+pub mod file_status;
 pub mod latest_info;
+pub mod local_files;
 pub mod local_sheet;
 pub mod member_held;
 
@@ -116,6 +127,7 @@ impl LocalWorkspace {
         if !local_sheet_path.exists() {
             let sheet_data = LocalSheetData {
                 mapping: HashMap::new(),
+                vfs: HashMap::new(),
             };
             LocalSheetData::write_to(&sheet_data, local_sheet_path).await?;
             return Ok(LocalSheet {
@@ -136,6 +148,40 @@ impl LocalWorkspace {
 
         Ok(local_sheet)
     }
+
+    /// Collect all theet names
+    pub async fn local_sheet_paths(&self) -> Result<Vec<LocalSheetPathBuf>, std::io::Error> {
+        let local_sheet_path = self.local_path.join(CLIENT_PATH_LOCAL_SHEET);
+        let mut sheet_paths = Vec::new();
+
+        async fn collect_sheet_paths(
+            dir: &Path,
+            suffix: &str,
+            paths: &mut Vec<LocalSheetPathBuf>,
+        ) -> Result<(), std::io::Error> {
+            if dir.is_dir() {
+                let mut entries = fs::read_dir(dir).await?;
+                while let Some(entry) = entries.next_entry().await? {
+                    let path = entry.path();
+
+                    if path.is_dir() {
+                        Box::pin(collect_sheet_paths(&path, suffix, paths)).await?;
+                    } else if path.is_file() {
+                        if let Some(extension) = path.extension() {
+                            if extension == suffix.trim_start_matches('.') {
+                                let formatted_path = format_path(path)?;
+                                paths.push(formatted_path);
+                            }
+                        }
+                    }
+                }
+            }
+            Ok(())
+        }
+
+        collect_sheet_paths(&local_sheet_path, ".json", &mut sheet_paths).await?;
+        Ok(sheet_paths)
+    }
 }
 
 mod hide_folder {
@@ -145,7 +191,7 @@ mod hide_folder {
     #[cfg(windows)]
     use std::os::windows::ffi::OsStrExt;
     #[cfg(windows)]
-    use winapi::um::fileapi::{GetFileAttributesW, SetFileAttributesW, INVALID_FILE_ATTRIBUTES};
+    use winapi::um::fileapi::{GetFileAttributesW, INVALID_FILE_ATTRIBUTES, SetFileAttributesW};
 
     pub fn hide_folder(path: &Path) -> io::Result<()> {
         if !path.is_dir() {
@@ -175,10 +221,7 @@ mod hide_folder {
     #[cfg(windows)]
     fn hide_folder_impl(path: &Path) -> io::Result<()> {
         // Convert to Windows wide string format
-        let path_str: Vec<u16> = path.as_os_str()
-            .encode_wide()
-            .chain(Some(0))
-            .collect();
+        let path_str: Vec<u16> = path.as_os_str().encode_wide().chain(Some(0)).collect();
 
         // Get current attributes
         let attrs = unsafe { GetFileAttributesW(path_str.as_ptr()) };

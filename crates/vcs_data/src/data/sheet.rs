@@ -8,7 +8,10 @@ use crate::{
     constants::SERVER_FILE_SHEET,
     data::{
         member::MemberId,
-        vault::{Vault, virtual_file::VirtualFileId},
+        vault::{
+            Vault,
+            virtual_file::{VirtualFileId, VirtualFileVersion},
+        },
     },
 };
 
@@ -26,7 +29,7 @@ pub struct InputPackage {
     pub from: SheetName,
 
     /// Files in this input package with their relative paths and virtual file IDs
-    pub files: Vec<(InputRelativePathBuf, VirtualFileId)>,
+    pub files: Vec<(InputRelativePathBuf, SheetMappingMetadata)>,
 }
 
 impl PartialEq for InputPackage {
@@ -60,7 +63,16 @@ pub struct SheetData {
     pub(crate) inputs: Vec<InputPackage>,
 
     /// Mapping of sheet paths to virtual file IDs
-    pub(crate) mapping: HashMap<SheetPathBuf, VirtualFileId>,
+    pub(crate) mapping: HashMap<SheetPathBuf, SheetMappingMetadata>,
+
+    /// Mapping of virtual file Ids to sheet paths
+    pub(crate) id_mapping: Option<HashMap<VirtualFileId, SheetPathBuf>>,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize, ConfigFile, Clone, Eq, PartialEq)]
+pub struct SheetMappingMetadata {
+    pub id: VirtualFileId,
+    pub version: VirtualFileVersion,
 }
 
 impl<'a> Sheet<'a> {
@@ -88,8 +100,13 @@ impl<'a> Sheet<'a> {
     }
 
     /// Get the mapping of this sheet
-    pub fn mapping(&self) -> &HashMap<SheetPathBuf, VirtualFileId> {
+    pub fn mapping(&self) -> &HashMap<SheetPathBuf, SheetMappingMetadata> {
         &self.data.mapping
+    }
+
+    /// Get the id_mapping of this sheet data
+    pub fn id_mapping(&self) -> &Option<HashMap<VirtualFileId, SheetPathBuf>> {
+        &self.data.id_mapping
     }
 
     /// Get the write count of this sheet
@@ -150,9 +167,13 @@ impl<'a> Sheet<'a> {
         };
 
         // Insert to sheet
-        for (relative_path, virtual_file_id) in input.files {
-            self.add_mapping(insert_to.join(relative_path), virtual_file_id)
-                .await?;
+        for (relative_path, virtual_file_meta) in input.files {
+            self.add_mapping(
+                insert_to.join(relative_path),
+                virtual_file_meta.id,
+                virtual_file_meta.version,
+            )
+            .await?;
         }
 
         Ok(())
@@ -172,11 +193,18 @@ impl<'a> Sheet<'a> {
         &mut self,
         sheet_path: SheetPathBuf,
         virtual_file_id: VirtualFileId,
+        version: VirtualFileVersion,
     ) -> Result<(), std::io::Error> {
         // Check if the virtual file exists in the vault
         if self.vault_reference.virtual_file(&virtual_file_id).is_err() {
             // Virtual file doesn't exist, add the mapping directly
-            self.data.mapping.insert(sheet_path, virtual_file_id);
+            self.data.mapping.insert(
+                sheet_path,
+                SheetMappingMetadata {
+                    id: virtual_file_id,
+                    version: version,
+                },
+            );
             return Ok(());
         }
 
@@ -194,16 +222,22 @@ impl<'a> Sheet<'a> {
             .has_virtual_file_edit_right(holder, &virtual_file_id)
             .await
         {
-            Ok(false) => {
-                // Holder doesn't have rights, add the mapping (member is giving up the file)
-                self.data.mapping.insert(sheet_path, virtual_file_id);
+            Ok(true) => {
+                // Holder has edit rights, add the mapping (member has permission to modify the file)
+                self.data.mapping.insert(
+                    sheet_path,
+                    SheetMappingMetadata {
+                        id: virtual_file_id,
+                        version,
+                    },
+                );
                 Ok(())
             }
-            Ok(true) => {
-                // Holder has edit rights, don't allow modifying the mapping
+            Ok(false) => {
+                // Holder doesn't have edit rights, don't allow modifying the mapping
                 Err(std::io::Error::new(
                     std::io::ErrorKind::PermissionDenied,
-                    "Member has edit rights to the virtual file, cannot modify mapping",
+                    "Member doesn't have edit rights to the virtual file, cannot modify mapping",
                 ))
             }
             Err(_) => {
@@ -224,8 +258,11 @@ impl<'a> Sheet<'a> {
     /// 4. If member has no edit rights and the file exists, returns the removed virtual file ID
     ///
     /// Note: Full validation adds overhead - avoid frequent calls
-    pub async fn remove_mapping(&mut self, sheet_path: &SheetPathBuf) -> Option<VirtualFileId> {
-        let virtual_file_id = match self.data.mapping.get(sheet_path) {
+    pub async fn remove_mapping(
+        &mut self,
+        sheet_path: &SheetPathBuf,
+    ) -> Option<SheetMappingMetadata> {
+        let virtual_file_meta = match self.data.mapping.get(sheet_path) {
             Some(id) => id,
             None => {
                 // The mapping entry doesn't exist, nothing to remove
@@ -234,7 +271,11 @@ impl<'a> Sheet<'a> {
         };
 
         // Check if the virtual file exists in the vault
-        if self.vault_reference.virtual_file(virtual_file_id).is_err() {
+        if self
+            .vault_reference
+            .virtual_file(&virtual_file_meta.id)
+            .is_err()
+        {
             // Virtual file doesn't exist, remove the mapping and return None
             self.data.mapping.remove(sheet_path);
             return None;
@@ -248,7 +289,7 @@ impl<'a> Sheet<'a> {
         // Check if the holder has edit rights to the virtual file
         match self
             .vault_reference
-            .has_virtual_file_edit_right(holder, virtual_file_id)
+            .has_virtual_file_edit_right(holder, &virtual_file_meta.id)
             .await
         {
             Ok(false) => {
@@ -273,6 +314,18 @@ impl<'a> Sheet<'a> {
     /// If needed, please deserialize and reload it.
     pub async fn persist(mut self) -> Result<(), std::io::Error> {
         self.data.write_count += 1;
+
+        // Update id mapping
+        self.data.id_mapping = Some(HashMap::new());
+        for map in self.data.mapping.iter() {
+            self.data
+                .id_mapping
+                .as_mut()
+                .unwrap()
+                .insert(map.1.id.clone(), map.0.clone());
+        }
+
+        // Add write count
         if self.data.write_count > i32::MAX {
             self.data.write_count = 0;
         }
@@ -401,5 +454,25 @@ impl SheetData {
     /// Get the write count of this sheet data
     pub fn write_count(&self) -> i32 {
         self.write_count
+    }
+
+    /// Get the holder of this sheet data
+    pub fn holder(&self) -> Option<&MemberId> {
+        self.holder.as_ref()
+    }
+
+    /// Get the inputs of this sheet data
+    pub fn inputs(&self) -> &Vec<InputPackage> {
+        &self.inputs
+    }
+
+    /// Get the mapping of this sheet data
+    pub fn mapping(&self) -> &HashMap<SheetPathBuf, SheetMappingMetadata> {
+        &self.mapping
+    }
+
+    /// Get the id_mapping of this sheet data
+    pub fn id_mapping(&self) -> &Option<HashMap<VirtualFileId, SheetPathBuf>> {
+        &self.id_mapping
     }
 }

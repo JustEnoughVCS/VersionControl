@@ -3,6 +3,7 @@ use std::path::PathBuf;
 /// Format path str
 pub fn format_path_str(path: impl Into<String>) -> Result<String, std::io::Error> {
     let path_str = path.into();
+    let ends_with_slash = path_str.ends_with('/');
 
     // ANSI Strip
     let cleaned = strip_ansi_escapes::strip(&path_str);
@@ -27,10 +28,43 @@ pub fn format_path_str(path: impl Into<String>) -> Result<String, std::io::Error
         .filter(|c| !unfriendly_chars.contains(c))
         .collect();
 
-    if result.ends_with('/') {
-        Ok(result)
+    // Handle ".." path components
+    let path_buf = PathBuf::from(&result);
+    let normalized_path = normalize_path(&path_buf);
+    result = normalized_path.to_string_lossy().replace('\\', "/");
+
+    // Restore trailing slash if original path had one
+    if ends_with_slash && !result.ends_with('/') {
+        result.push('/');
+    }
+
+    Ok(result)
+}
+
+/// Normalize path by resolving ".." components without requiring file system access
+fn normalize_path(path: &PathBuf) -> PathBuf {
+    let mut components = Vec::new();
+
+    for component in path.components() {
+        match component {
+            std::path::Component::ParentDir => {
+                if !components.is_empty() {
+                    components.pop();
+                }
+            }
+            std::path::Component::CurDir => {
+                // Skip current directory components
+            }
+            _ => {
+                components.push(component);
+            }
+        }
+    }
+
+    if components.is_empty() {
+        PathBuf::from(".")
     } else {
-        Ok(result)
+        components.iter().collect()
     }
 }
 
@@ -57,6 +91,10 @@ mod tests {
         assert_eq!(
             format_path_str("/home/user/file.txt")?,
             "/home/user/file.txt"
+        );
+        assert_eq!(
+            format_path_str("/home/my_user/DOCS/JVCS_TEST/Workspace/../Vault/")?,
+            "/home/my_user/DOCS/JVCS_TEST/Vault/"
         );
 
         Ok(())

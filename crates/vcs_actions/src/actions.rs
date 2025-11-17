@@ -1,11 +1,18 @@
 use std::sync::Arc;
 
 use action_system::action::ActionContext;
+use cfg_file::config::ConfigFile;
 use tcp_connection::{error::TcpTargetError, instance::ConnectionInstance};
 use tokio::sync::Mutex;
 use vcs_data::{
     constants::SERVER_PATH_MEMBER_PUB,
-    data::{local::LocalWorkspace, member::MemberId, user::UserDirectory, vault::Vault},
+    data::{
+        local::{LocalWorkspace, config::LocalConfig},
+        member::MemberId,
+        sheet::SheetName,
+        user::UserDirectory,
+        vault::Vault,
+    },
 };
 
 pub mod local_actions;
@@ -115,6 +122,71 @@ pub async fn auth_member(
     }
 
     Err(TcpTargetError::NoResult("Auth failed.".to_string()))
+}
+
+/// Get the current sheet name based on the context (local or remote).
+/// This function handles the communication between local and remote instances
+/// to verify and retrieve the current sheet name.
+///
+/// On local:
+/// - Reads the current sheet from local configuration
+/// - Sends the sheet name to remote for verification
+/// - Returns the sheet name if remote confirms it exists
+///
+/// On remote:
+/// - Receives sheet name from local
+/// - Verifies the sheet exists in the vault
+/// - Sends confirmation back to local
+///
+/// Returns the verified sheet name or an error if the sheet doesn't exist
+pub async fn get_current_sheet_name(
+    ctx: &ActionContext,
+    instance: &Arc<Mutex<ConnectionInstance>>,
+    member_id: &MemberId,
+) -> Result<SheetName, TcpTargetError> {
+    let mut mut_instance = instance.lock().await;
+    if ctx.is_proc_on_local() {
+        let config = LocalConfig::read().await?;
+        if let Some(sheet_name) = config.sheet_in_use() {
+            // Send sheet name
+            mut_instance.write_msgpack(sheet_name).await?;
+
+            // Read result
+            if mut_instance.read_msgpack::<bool>().await? {
+                return Ok(sheet_name.clone());
+            } else {
+                return Err(TcpTargetError::NotFound("Sheet not found".to_string()));
+            }
+        }
+        // Send empty sheet_name
+        mut_instance.write_msgpack("".to_string()).await?;
+
+        // Read result, since we know it's impossible to pass here, we just consume this result
+        let _ = mut_instance.read_msgpack::<bool>().await?;
+
+        return Err(TcpTargetError::NotFound("Sheet not found".to_string()));
+    }
+    if ctx.is_proc_on_remote() {
+        let vault = try_get_vault(&ctx)?;
+
+        // Read sheet name
+        let sheet_name: SheetName = mut_instance.read_msgpack().await?;
+
+        // Check if sheet exists
+        if let Ok(sheet) = vault.sheet(&sheet_name).await {
+            if let Some(holder) = sheet.holder() {
+                if holder == member_id {
+                    // Tell local the check is passed
+                    mut_instance.write_msgpack(true).await?;
+                    return Ok(sheet_name.clone());
+                }
+            }
+        }
+        // Tell local the check is not passed
+        mut_instance.write_msgpack(false).await?;
+        return Err(TcpTargetError::NotFound("Sheet not found".to_string()));
+    }
+    return Err(TcpTargetError::NoResult("NoResult".to_string()));
 }
 
 /// The macro to write and return a result.
