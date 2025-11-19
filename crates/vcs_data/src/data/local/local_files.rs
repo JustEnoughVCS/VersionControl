@@ -25,7 +25,10 @@ impl RelativeFiles {
 }
 
 /// Read the relative paths within the project from the input file list
-pub async fn get_relative_paths(local_path: PathBuf, paths: Vec<PathBuf>) -> Option<RelativeFiles> {
+pub async fn get_relative_paths(
+    local_path: &PathBuf,
+    paths: &Vec<PathBuf>,
+) -> Option<RelativeFiles> {
     // Get Relative Paths
     let Ok(paths) = format_input_paths_and_ignore_outside_paths(&local_path, &paths).await else {
         return None;
