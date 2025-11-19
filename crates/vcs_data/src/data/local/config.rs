@@ -21,7 +21,7 @@ use crate::data::vault::config::VaultUuid;
 const ACCOUNT: &str = "{account}";
 const SHEET_NAME: &str = "{sheet_name}";
 
-#[derive(Serialize, Deserialize, ConfigFile)]
+#[derive(Serialize, Deserialize, ConfigFile, Clone)]
 #[cfg_file(path = CLIENT_FILE_WORKSPACE)]
 pub struct LocalConfig {
     /// The upstream address, representing the upstream address of the local workspace,

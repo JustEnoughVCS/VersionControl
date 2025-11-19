@@ -105,8 +105,8 @@ impl<'a> Sheet<'a> {
     }
 
     /// Get the muttable mapping of this sheet
-    pub fn mapping_mut(&self) -> &HashMap<SheetPathBuf, SheetMappingMetadata> {
-        &self.data.mapping
+    pub fn mapping_mut(&mut self) -> &mut HashMap<SheetPathBuf, SheetMappingMetadata> {
+        &mut self.data.mapping
     }
 
     /// Get the id_mapping of this sheet data
