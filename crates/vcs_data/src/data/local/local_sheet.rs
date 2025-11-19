@@ -116,9 +116,19 @@ impl LocalMappingMetadata {
         &self.hash_when_updated
     }
 
+    /// Setter for hash_when_updated
+    pub fn set_hash_when_updated(&mut self, hash: String) {
+        self.hash_when_updated = hash;
+    }
+
     /// Getter for date_when_updated
     pub fn time_when_updated(&self) -> &SystemTime {
         &self.time_when_updated
+    }
+
+    /// Setter for time_when_updated
+    pub fn set_time_when_updated(&mut self, time: SystemTime) {
+        self.time_when_updated = time;
     }
 
     /// Getter for size_when_updated
@@ -126,9 +136,19 @@ impl LocalMappingMetadata {
         self.size_when_updated
     }
 
+    /// Setter for size_when_updated
+    pub fn set_size_when_updated(&mut self, size: u64) {
+        self.size_when_updated = size;
+    }
+
     /// Getter for version_desc_when_updated
     pub fn version_desc_when_updated(&self) -> &VirtualFileVersionDescription {
         &self.version_desc_when_updated
+    }
+
+    /// Setter for version_desc_when_updated
+    pub fn set_version_desc_when_updated(&mut self, version_desc: VirtualFileVersionDescription) {
+        self.version_desc_when_updated = version_desc;
     }
 
     /// Getter for version_when_updated
@@ -136,9 +156,19 @@ impl LocalMappingMetadata {
         &self.version_when_updated
     }
 
+    /// Setter for version_when_updated
+    pub fn set_version_when_updated(&mut self, version: VirtualFileVersion) {
+        self.version_when_updated = version;
+    }
+
     /// Getter for mapping_vfid
     pub fn mapping_vfid(&self) -> &VirtualFileId {
         &self.mapping_vfid
+    }
+
+    /// Setter for mapping_vfid
+    pub fn set_mapping_vfid(&mut self, vfid: VirtualFileId) {
+        self.mapping_vfid = vfid;
     }
 
     /// Getter for last_modifiy_check_time
@@ -146,9 +176,19 @@ impl LocalMappingMetadata {
         &self.last_modifiy_check_time
     }
 
+    /// Setter for last_modifiy_check_time
+    pub fn set_last_modifiy_check_time(&mut self, time: SystemTime) {
+        self.last_modifiy_check_time = time;
+    }
+
     /// Getter for last_modifiy_check_result
     pub fn last_modifiy_check_result(&self) -> bool {
         self.last_modifiy_check_result
+    }
+
+    /// Setter for last_modifiy_check_result
+    pub fn set_last_modifiy_check_result(&mut self, result: bool) {
+        self.last_modifiy_check_result = result;
     }
 }
 
