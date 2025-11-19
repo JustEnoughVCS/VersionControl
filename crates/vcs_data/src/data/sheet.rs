@@ -104,6 +104,11 @@ impl<'a> Sheet<'a> {
         &self.data.mapping
     }
 
+    /// Get the muttable mapping of this sheet
+    pub fn mapping_mut(&self) -> &HashMap<SheetPathBuf, SheetMappingMetadata> {
+        &self.data.mapping
+    }
+
     /// Get the id_mapping of this sheet data
     pub fn id_mapping(&self) -> &Option<HashMap<VirtualFileId, SheetPathBuf>> {
         &self.data.id_mapping
@@ -469,6 +474,11 @@ impl SheetData {
     /// Get the mapping of this sheet data
     pub fn mapping(&self) -> &HashMap<SheetPathBuf, SheetMappingMetadata> {
         &self.mapping
+    }
+
+    /// Get the muttable mapping of this sheet data
+    pub fn mapping_mut(&mut self) -> &mut HashMap<SheetPathBuf, SheetMappingMetadata> {
+        &mut self.mapping
     }
 
     /// Get the id_mapping of this sheet data
