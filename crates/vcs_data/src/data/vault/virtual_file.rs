@@ -6,7 +6,7 @@ use std::{
 
 use cfg_file::{ConfigFile, config::ConfigFile};
 use serde::{Deserialize, Serialize};
-use string_proc::snake_case;
+use string_proc::{dot_case, snake_case};
 use tcp_connection::instance::ConnectionInstance;
 use tokio::fs;
 use uuid::Uuid;
@@ -204,7 +204,7 @@ impl Vault {
         instance: &mut ConnectionInstance,
         member_id: &MemberId,
     ) -> Result<VirtualFileId, std::io::Error> {
-        const FIRST_VERSION: &str = "0";
+        const FIRST_VERSION: &str = "0.1.0";
         let receive_path = self.virtual_file_temp_path();
         let new_id = format!("{}{}", VF_PREFIX, Uuid::new_v4());
         let move_path = self.virtual_file_real_path(&new_id, &FIRST_VERSION.to_string());
@@ -278,7 +278,7 @@ impl Vault {
         new_version: &VirtualFileVersion,
         description: VirtualFileVersionDescription,
     ) -> Result<(), std::io::Error> {
-        let new_version = snake_case!(new_version.clone());
+        let new_version = dot_case!(new_version.clone());
         let mut meta = self.virtual_file_meta(virtual_file_id).await?;
 
         // Check if the member has edit right
