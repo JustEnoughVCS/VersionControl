@@ -13,7 +13,7 @@ use vcs_docs::docs::READMES_LOCAL_WORKSPACE_TODOLIST;
 use crate::{
     constants::{
         CLIENT_FILE_LOCAL_SHEET, CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE,
-        CLIENT_PATH_LOCAL_SHEET,
+        CLIENT_PATH_LOCAL_SHEET, CLIENT_SUFFIX_LOCAL_SHEET_FILE,
     },
     current::{current_local_path, find_local_path},
     data::{
@@ -29,10 +29,10 @@ use crate::{
 pub mod cached_sheet;
 pub mod config;
 pub mod file_status;
+pub mod latest_file_data;
 pub mod latest_info;
 pub mod local_files;
 pub mod local_sheet;
-pub mod member_held;
 
 const SHEET_NAME: &str = "{sheet_name}";
 const ACCOUNT_NAME: &str = "{account}";
@@ -179,7 +179,12 @@ impl LocalWorkspace {
             Ok(())
         }
 
-        collect_sheet_paths(&local_sheet_path, ".json", &mut sheet_paths).await?;
+        collect_sheet_paths(
+            &local_sheet_path,
+            CLIENT_SUFFIX_LOCAL_SHEET_FILE,
+            &mut sheet_paths,
+        )
+        .await?;
         Ok(sheet_paths)
     }
 }

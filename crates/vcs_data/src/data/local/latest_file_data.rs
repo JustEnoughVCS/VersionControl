@@ -4,7 +4,7 @@ use cfg_file::ConfigFile;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    constants::{CLIENT_FILE_MEMBER_HELD, CLIENT_FILE_MEMBER_HELD_NOSET},
+    constants::{CLIENT_FILE_LATEST_DATA, CLIENT_FILE_MEMBER_HELD_NOSET},
     current::current_local_path,
     data::{
         member::MemberId,
@@ -37,14 +37,14 @@ pub enum HeldStatus {
 
 impl LatestFileData {
     /// Get the path to the file holding the held status information for the given member.
-    pub fn held_file_path(account: &MemberId) -> Result<PathBuf, std::io::Error> {
+    pub fn data_path(account: &MemberId) -> Result<PathBuf, std::io::Error> {
         let Some(local_path) = current_local_path() else {
             return Err(Error::new(
                 std::io::ErrorKind::NotFound,
                 "Workspace not found.",
             ));
         };
-        Ok(local_path.join(CLIENT_FILE_MEMBER_HELD.replace(ACCOUNT, account)))
+        Ok(local_path.join(CLIENT_FILE_LATEST_DATA.replace(ACCOUNT, account)))
     }
 
     /// Get the member who holds the file with the given ID.
@@ -55,16 +55,25 @@ impl LatestFileData {
         })
     }
 
+    /// Get the version of the file with the given ID.
+    pub fn file_version(&self, vfid: &VirtualFileId) -> Option<&VirtualFileVersion> {
+        self.versions.get(vfid)
+    }
+
     /// Update the held status of the files.
-    pub fn update_held_status(&mut self, map: HashMap<VirtualFileId, Option<MemberId>>) {
-        for (vfid, member_id) in map {
+    pub fn update_info(
+        &mut self,
+        map: HashMap<VirtualFileId, (Option<MemberId>, VirtualFileVersion)>,
+    ) {
+        for (vfid, (member_id, version)) in map {
             self.held_status.insert(
-                vfid,
+                vfid.clone(),
                 match member_id {
                     Some(member_id) => HeldStatus::HeldWith(member_id),
                     None => HeldStatus::NotHeld,
                 },
             );
+            self.versions.insert(vfid, version);
         }
     }
 }
