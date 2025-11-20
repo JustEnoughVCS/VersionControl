@@ -10,8 +10,8 @@ use vcs_docs::docs::READMES_VAULT_README;
 
 use crate::{
     constants::{
-        SERVER_FILE_README, SERVER_FILE_VAULT, SERVER_PATH_MEMBER_PUB, SERVER_PATH_MEMBERS,
-        SERVER_PATH_SHEETS, SERVER_PATH_VF_ROOT, VAULT_HOST_NAME,
+        REF_SHEET_NAME, SERVER_FILE_README, SERVER_FILE_VAULT, SERVER_PATH_MEMBER_PUB,
+        SERVER_PATH_MEMBERS, SERVER_PATH_SHEETS, SERVER_PATH_VF_ROOT, VAULT_HOST_NAME,
     },
     current::{current_vault_path, find_vault_path},
     data::{member::Member, vault::config::VaultConfig},
@@ -91,7 +91,7 @@ impl Vault {
 
         // 7. Setup reference sheet
         vault
-            .create_sheet(&"ref".to_string(), &VAULT_HOST_NAME.to_string())
+            .create_sheet(&REF_SHEET_NAME.to_string(), &VAULT_HOST_NAME.to_string())
             .await?;
 
         // Final, generate README.md

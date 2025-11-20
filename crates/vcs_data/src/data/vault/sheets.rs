@@ -5,7 +5,7 @@ use string_proc::snake_case;
 use tokio::fs;
 
 use crate::{
-    constants::SERVER_PATH_SHEETS,
+    constants::{SERVER_PATH_SHEETS, SERVER_SUFFIX_SHEET_FILE_NO_DOT},
     data::{
         member::MemberId,
         sheet::{Sheet, SheetData, SheetName},
@@ -55,7 +55,9 @@ impl Vault {
 
             // Check if it's a YAML file
             if path.is_file()
-                && path.extension().is_some_and(|ext| ext == "yaml")
+                && path
+                    .extension()
+                    .is_some_and(|ext| ext == SERVER_SUFFIX_SHEET_FILE_NO_DOT)
                 && let Some(file_stem) = path.file_stem().and_then(|s| s.to_str())
             {
                 // Create a new SheetName and add it to the result list
@@ -214,7 +216,10 @@ impl Vault {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_millis();
-        let trash_file_name = format!("{}_{}.yaml", sheet_name, timestamp);
+        let trash_file_name = format!(
+            "{}_{}.{}",
+            sheet_name, timestamp, SERVER_SUFFIX_SHEET_FILE_NO_DOT
+        );
         let trash_path = trash_dir.join(trash_file_name);
 
         // Move the sheet file to the trash

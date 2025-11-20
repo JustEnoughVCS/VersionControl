@@ -15,9 +15,11 @@ pub const VAULT_HOST_NAME: &str = "host";
 pub const SERVER_FILE_VAULT: &str = "./vault.toml";
 
 // Server - Sheets
+pub const SERVER_SUFFIX_SHEET_FILE: &str = ".json";
+pub const SERVER_SUFFIX_SHEET_FILE_NO_DOT: &str = "json";
 pub const REF_SHEET_NAME: &str = "ref";
 pub const SERVER_PATH_SHEETS: &str = "./sheets/";
-pub const SERVER_FILE_SHEET: &str = "./sheets/{sheet_name}.yaml";
+pub const SERVER_FILE_SHEET: &str = "./sheets/{sheet_name}.json";
 
 // Server - Members
 pub const SERVER_PATH_MEMBERS: &str = "./members/";
@@ -30,7 +32,10 @@ pub const SERVER_PATH_VF_TEMP: &str = "./.temp/{temp_name}";
 pub const SERVER_PATH_VF_ROOT: &str = "./storage/";
 pub const SERVER_PATH_VF_STORAGE: &str = "./storage/{vf_index}/{vf_id}/";
 pub const SERVER_FILE_VF_VERSION_INSTANCE: &str = "./storage/{vf_index}/{vf_id}/{vf_version}.rf";
-pub const SERVER_FILE_VF_META: &str = "./storage/{vf_index}/{vf_id}/meta.yaml";
+pub const SERVER_FILE_VF_META: &str = "./storage/{vf_index}/{vf_id}/meta.json";
+
+// Server - Updates
+pub const SERVER_FILE_UPDATES: &str = "./.updates.txt";
 
 // Server - Service
 pub const SERVER_FILE_LOCKFILE: &str = "./.lock";
@@ -45,20 +50,20 @@ pub const CLIENT_PATH_WORKSPACE_ROOT: &str = "./.jv/";
 pub const CLIENT_FOLDER_WORKSPACE_ROOT_NAME: &str = ".jv";
 
 // Client - Workspace (Main)
-pub const CLIENT_FILE_WORKSPACE: &str = "./.jv/workspace.toml";
+pub const CLIENT_FILE_WORKSPACE: &str = "./.jv/workspace.json";
 
 // Client - Latest Information
-pub const CLIENT_FILE_LATEST_INFO: &str = "./.jv/.{account}_latest.json";
+pub const CLIENT_FILE_LATEST_INFO: &str = "./.jv/members/{account}/vault.yaml";
 
 // Client - Local
-pub const CLIENT_SUFFIX_LOCAL_SHEET_FILE: &str = ".toml";
-pub const CLIENT_SUFFIX_CACHED_SHEET_FILE: &str = ".toml";
+pub const CLIENT_SUFFIX_LOCAL_SHEET_FILE: &str = ".ron";
+pub const CLIENT_SUFFIX_CACHED_SHEET_FILE: &str = ".ron";
 pub const CLIENT_PATH_LOCAL_DRAFT: &str = "./.jv/drafts/{account}/{sheet_name}/";
 pub const CLIENT_PATH_LOCAL_SHEET: &str = "./.jv/local/";
 pub const CLIENT_PATH_CACHED_SHEET: &str = "./.jv/cached/";
-pub const CLIENT_FILE_LOCAL_SHEET: &str = "./.jv/local/{account}/{sheet_name}.toml";
-pub const CLIENT_FILE_CACHED_SHEET: &str = "./.jv/cached/{sheet_name}.toml";
-pub const CLIENT_FILE_MEMBER_HELD: &str = "./.jv/helds/{account}.toml";
+pub const CLIENT_FILE_LOCAL_SHEET: &str = "./.jv/local/{account}/{sheet_name}.ron";
+pub const CLIENT_FILE_CACHED_SHEET: &str = "./.jv/cached/{sheet_name}.ron";
+pub const CLIENT_FILE_LATEST_DATA: &str = "./.jv/members/{account}/file.yaml";
 
 pub const CLIENT_FILE_LOCAL_SHEET_NOSET: &str = "./.jv/.temp/wrong.json";
 pub const CLIENT_FILE_MEMBER_HELD_NOSET: &str = "./.jv/.temp/wrong.json";
