@@ -6,18 +6,24 @@ use serde::{Deserialize, Serialize};
 use crate::{
     constants::{CLIENT_FILE_MEMBER_HELD, CLIENT_FILE_MEMBER_HELD_NOSET},
     current::current_local_path,
-    data::{member::MemberId, vault::virtual_file::VirtualFileId},
+    data::{
+        member::MemberId,
+        vault::virtual_file::{VirtualFileId, VirtualFileVersion},
+    },
 };
 
 const ACCOUNT: &str = "{account}";
 
-/// # Member Held Information
-/// Records the files held by the member, used for permission validation
+/// # Latest file data
+/// Records the file holder and the latest version for permission and update checks
 #[derive(Debug, Default, Clone, Serialize, Deserialize, ConfigFile)]
 #[cfg_file(path = CLIENT_FILE_MEMBER_HELD_NOSET)]
-pub struct MemberHeld {
+pub struct LatestFileData {
     /// File holding status
     held_status: HashMap<VirtualFileId, HeldStatus>,
+
+    /// File version
+    versions: HashMap<VirtualFileId, VirtualFileVersion>,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -29,7 +35,7 @@ pub enum HeldStatus {
     WantedToKnow, // Holding status is unknown, notify server must inform client
 }
 
-impl MemberHeld {
+impl LatestFileData {
     /// Get the path to the file holding the held status information for the given member.
     pub fn held_file_path(account: &MemberId) -> Result<PathBuf, std::io::Error> {
         let Some(local_path) = current_local_path() else {
