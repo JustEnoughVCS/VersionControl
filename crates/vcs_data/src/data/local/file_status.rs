@@ -55,9 +55,9 @@ impl<'a> AnalyzeResult<'a> {
 
         // Current member, sheet
         let (member, sheet_name) = {
-            let lock = workspace.config.lock().await;
-            let member = lock.current_account();
-            let Some(sheet) = lock.sheet_in_use().clone() else {
+            let mut_workspace = workspace.config.lock().await;
+            let member = mut_workspace.current_account();
+            let Some(sheet) = mut_workspace.sheet_in_use().clone() else {
                 return Err(Error::new(std::io::ErrorKind::NotFound, "Sheet not found"));
             };
             (member, sheet)
@@ -119,8 +119,14 @@ impl<'a> AnalyzeResult<'a> {
             local_sheet,
             cached_sheet_data,
         };
-        Self::analyze_moved(&mut result, &file_relative_paths, &analyze_ctx).await?;
-        Self::analyze_modified(&mut result, &file_relative_paths, &mut analyze_ctx).await?;
+        Self::analyze_moved(&mut result, &file_relative_paths, &analyze_ctx, &workspace).await?;
+        Self::analyze_modified(
+            &mut result,
+            &file_relative_paths,
+            &mut analyze_ctx,
+            &workspace,
+        )
+        .await?;
 
         Ok(result)
     }
@@ -131,6 +137,7 @@ impl<'a> AnalyzeResult<'a> {
         result: &mut AnalyzeResult<'_>,
         file_relative_paths: &HashSet<PathBuf>,
         analyze_ctx: &AnalyzeContext<'a>,
+        workspace: &LocalWorkspace,
     ) -> Result<(), std::io::Error> {
         let local_sheet_paths: HashSet<&PathBuf> = match &analyze_ctx.local_sheet {
             Some(local_sheet) => local_sheet.data.mapping.keys().collect(),
@@ -138,20 +145,23 @@ impl<'a> AnalyzeResult<'a> {
         };
         let file_relative_paths_ref: HashSet<&PathBuf> = file_relative_paths.iter().collect();
 
-        // 在本地表存在但实际不存在的文件，为丢失
+        // Files that exist in the local sheet but not in reality are considered lost
         let mut lost_files: HashSet<&PathBuf> = local_sheet_paths
             .difference(&file_relative_paths_ref)
             .cloned()
             .collect();
 
-        // 在本地表不存在但实际存在的文件，记录为新建
+        // Files that exist in reality but not in the local sheet are recorded as newly created
         let mut new_files: HashSet<&PathBuf> = file_relative_paths_ref
             .difference(&local_sheet_paths)
             .cloned()
             .collect();
 
-        // 计算新增的文件 Hash
-        let new_files_for_hash: Vec<PathBuf> = new_files.iter().map(|p| (*p).clone()).collect();
+        // Calculate hashes for new files
+        let new_files_for_hash: Vec<PathBuf> = new_files
+            .iter()
+            .map(|p| workspace.local_path.join(p))
+            .collect();
         let file_hashes: HashSet<(PathBuf, String)> =
             match calc_sha1_multi::<PathBuf, Vec<PathBuf>>(new_files_for_hash, 8192).await {
                 Ok(hash) => hash,
@@ -161,7 +171,7 @@ impl<'a> AnalyzeResult<'a> {
             .map(|r| (r.file_path.clone(), r.hash.to_string()))
             .collect();
 
-        // 建立丢失文件的 Hash 映射表
+        // Build hash mapping table for lost files
         let mut lost_files_hash_mapping: HashMap<String, FromRelativePathBuf> =
             match &analyze_ctx.local_sheet {
                 Some(local_sheet) => lost_files
@@ -175,28 +185,28 @@ impl<'a> AnalyzeResult<'a> {
                 None => HashMap::new(),
             };
 
-        // 如果这些 Hash 能对应缺失文件的 Hash，那么这对新增和丢失项将被合并为移动项
+        // If these hashes correspond to the hashes of missing files, then this pair of new and lost items will be merged into moved items
         let mut moved_files: HashSet<(FromRelativePathBuf, ToRelativePathBuf)> = HashSet::new();
         for (new_path, new_hash) in file_hashes {
-            // 如果新的 Hash 值命中映射，则添加移动项
+            // If the new hash value hits the mapping, add a moved item
             if let Some(lost_path) = lost_files_hash_mapping.remove(&new_hash) {
-                // 移除该新增项和丢失项
+                // Remove this new item and lost item
                 lost_files.remove(&lost_path);
                 new_files.remove(&new_path);
 
-                // 建立移动项
+                // Create moved item
                 moved_files.insert((lost_path.clone(), new_path));
             }
         }
 
-        // 进入模糊匹配，将其他未匹配的可能移动项进行匹配
-        // 如果 新增 和 缺失 数量总和能被 2 整除，则说明还存在文件被移动的可能，考虑尝试模糊匹配
+        // Enter fuzzy matching to match other potentially moved items that haven't been matched
+        // If the total number of new and lost files is divisible by 2, it indicates there might still be files that have been moved, consider trying fuzzy matching
         if new_files.len() + lost_files.len() % 2 == 0 {
-            // 尝试模糊匹配
+            // Try fuzzy matching
             // ...
         }
 
-        // 将结果收集，并设置结果
+        // Collect results and set the result
         result.created = new_files.iter().map(|p| (*p).clone()).collect();
         result.lost = lost_files.iter().map(|p| (*p).clone()).collect();
         result.moved = moved_files
@@ -224,6 +234,7 @@ impl<'a> AnalyzeResult<'a> {
         result: &mut AnalyzeResult<'_>,
         file_relative_paths: &HashSet<PathBuf>,
         analyze_ctx: &mut AnalyzeContext<'a>,
+        workspace: &LocalWorkspace,
     ) -> Result<(), std::io::Error> {
         let local_sheet = &mut analyze_ctx.local_sheet.as_mut().unwrap();
         let local_path = local_sheet.local_workspace.local_path().clone();
@@ -244,7 +255,8 @@ impl<'a> AnalyzeResult<'a> {
             }
 
             // Calculate hash
-            let hash_calc = match sha1_hash::calc_sha1(path, 2048).await {
+            let hash_calc = match sha1_hash::calc_sha1(workspace.local_path.join(path), 2048).await
+            {
                 Ok(hash) => hash,
                 Err(e) => return Err(Error::new(std::io::ErrorKind::Other, e)),
             };

@@ -6,17 +6,22 @@ use log::info;
 use serde::{Deserialize, Serialize};
 use tcp_connection::error::TcpTargetError;
 use tokio::time::Instant;
-use vcs_data::data::{
-    local::{
-        cached_sheet::CachedSheet,
-        config::LocalConfig,
-        latest_info::{LatestInfo, SheetInfo},
-        local_sheet::LocalSheetData,
-        member_held::MemberHeld,
+use vcs_data::{
+    constants::{CLIENT_PATH_CACHED_SHEET, CLIENT_PATH_LOCAL_SHEET},
+    data::{
+        local::{
+            cached_sheet::CachedSheet,
+            config::LocalConfig,
+            latest_file_data::LatestFileData,
+            latest_info::{LatestInfo, SheetInfo},
+        },
+        member::MemberId,
+        sheet::{SheetData, SheetName},
+        vault::{
+            config::VaultUuid,
+            virtual_file::{VirtualFileId, VirtualFileVersion},
+        },
     },
-    member::MemberId,
-    sheet::{SheetData, SheetName},
-    vault::{config::VaultUuid, virtual_file::VirtualFileId},
 };
 
 use crate::actions::{
@@ -236,6 +241,11 @@ pub async fn update_to_latest_info_action(
 
             if len < 1 {
                 // Don't return here, continue to next section
+                // But we need to consume the false marker from the server
+                if ctx.is_proc_on_local() {
+                    let mut mut_instance = instance.lock().await;
+                    let _: bool = mut_instance.read_msgpack().await?;
+                }
             } else {
                 // Send data to local
                 if ctx.is_proc_on_remote() {
@@ -336,21 +346,21 @@ pub async fn update_to_latest_info_action(
                 .await?;
 
             // Receive information and write to local
-            let result: HashMap<VirtualFileId, Option<MemberId>> =
+            let result: HashMap<VirtualFileId, (Option<MemberId>, VirtualFileVersion)> =
                 mut_instance.read_large_msgpack(1024u16).await?;
 
             // Read configuration file
-            let path = MemberHeld::held_file_path(&member_id)?;
-            let mut member_held = match MemberHeld::read_from(&path).await {
+            let path = LatestFileData::data_path(&member_id)?;
+            let mut latest_file_data = match LatestFileData::read_from(&path).await {
                 Ok(r) => r,
-                Err(_) => MemberHeld::default(),
+                Err(_) => LatestFileData::default(),
             };
 
             // Write the received information
-            member_held.update_held_status(result);
+            latest_file_data.update_info(result);
 
             // Write
-            MemberHeld::write_to(&member_held, &path).await?;
+            LatestFileData::write_to(&latest_file_data, &path).await?;
         }
 
         if ctx.is_proc_on_remote() {
@@ -362,7 +372,8 @@ pub async fn update_to_latest_info_action(
                 mut_instance.read_large_msgpack(1024u16).await?;
 
             // Organize the information
-            let mut result: HashMap<VirtualFileId, Option<MemberId>> = HashMap::new();
+            let mut result: HashMap<VirtualFileId, (Option<MemberId>, VirtualFileVersion)> =
+                HashMap::new();
             for id in holder_wants_know {
                 let Ok(meta) = vault.virtual_file_meta(&id).await else {
                     continue;
@@ -370,9 +381,9 @@ pub async fn update_to_latest_info_action(
                 result.insert(
                     id,
                     if meta.hold_member().is_empty() {
-                        None
+                        (None, "".to_string())
                     } else {
-                        Some(meta.hold_member().to_string())
+                        (Some(meta.hold_member().to_string()), meta.version_latest())
                     },
                 );
             }
@@ -385,25 +396,24 @@ pub async fn update_to_latest_info_action(
     // Sync cached sheet to local sheet
     if ctx.is_proc_on_local() {
         let workspace = try_get_local_workspace(&ctx)?;
-        let local_sheet_paths =
-            extract_sheet_names_from_paths(workspace.local_sheet_paths().await?)?;
+        let cached_sheet_path = workspace.local_path().join(CLIENT_PATH_CACHED_SHEET);
+        let local_sheet_path = workspace.local_path().join(CLIENT_PATH_LOCAL_SHEET);
+        if !local_sheet_path.exists() || !cached_sheet_path.exists() {
+            // No need to sync
+            return Ok(UpdateToLatestInfoResult::Success);
+        }
+
         let cached_sheet_paths =
             extract_sheet_names_from_paths(CachedSheet::cached_sheet_paths().await?)?;
 
-        // Match cached sheets and local heets, and sync content
+        // Match cached sheets and local sheets, and sync content
         for (cached_sheet_name, _cached_sheet_path) in cached_sheet_paths {
-            // Get local sheet path by cached_sheet_name
-            let Some(local_sheet_path) = local_sheet_paths.get(&cached_sheet_name) else {
-                continue;
-            };
-
             // Read cached sheet and local sheet
             let cached_sheet = CachedSheet::cached_sheet_data(&cached_sheet_name).await?;
-            let Ok(local_sheet_data) = LocalSheetData::read_from(local_sheet_path).await else {
+            let Ok(mut local_sheet) = workspace.local_sheet(&member_id, &cached_sheet_name).await
+            else {
                 continue;
             };
-            let mut local_sheet =
-                local_sheet_data.wrap_to_local_sheet(&workspace, "".to_string(), "".to_string());
 
             // Read cached id mapping
             let Some(cached_sheet_id_mapping) = cached_sheet.id_mapping() else {
@@ -437,7 +447,7 @@ pub async fn update_to_latest_info_action(
                     },
                     _ => {}
                 }
-                local_sheet.write_to_path(&local_sheet_path).await?
+                local_sheet.write().await?;
             }
         }
     }
