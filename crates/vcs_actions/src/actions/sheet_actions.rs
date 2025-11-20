@@ -193,3 +193,20 @@ pub async fn drop_sheet_action(
 
     Err(TcpTargetError::NoResult("No result.".to_string()))
 }
+
+// #[derive(Serialize, Deserialize)]
+// pub enum AlignSheetActionResult {
+//     Success,
+// }
+
+// #[derive(Serialize, Deserialize)]
+// pub struct AlignSheetActionArguments {
+//     pub
+// }
+
+// #[action_gen]
+// pub async fn align_sheet_action(
+//     ctx: ActionContext,
+//     args: AlignSheetActionArgument,
+// ) -> Result<DropSheetActionResult, TcpTargetError> {
+// }
