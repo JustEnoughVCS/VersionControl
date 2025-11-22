@@ -12,7 +12,8 @@ use vcs_docs::docs::READMES_LOCAL_WORKSPACE_TODOLIST;
 
 use crate::{
     constants::{
-        CLIENT_FILE_LOCAL_SHEET, CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE,
+        CLIENT_CONTENT_GITIGNORE, CLIENT_FILE_GITIGNORE, CLIENT_FILE_LOCAL_SHEET,
+        CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE, CLIENT_FOLDER_WORKSPACE_ROOT_NAME,
         CLIENT_PATH_LOCAL_SHEET, CLIENT_SUFFIX_LOCAL_SHEET_FILE,
     },
     current::{current_local_path, find_local_path},
@@ -84,12 +85,19 @@ impl LocalWorkspace {
         let config = LocalConfig::default();
         LocalConfig::write_to(&config, local_path.join(CLIENT_FILE_WORKSPACE)).await?;
 
-        // 2. Setup README.md
+        // 2. Setup SETUP.md
         let readme_content = READMES_LOCAL_WORKSPACE_TODOLIST.trim().to_string();
         fs::write(local_path.join(CLIENT_FILE_TODOLIST), readme_content).await?;
 
+        // 3. Setup .gitignore
+        fs::write(
+            local_path.join(CLIENT_FILE_GITIGNORE),
+            CLIENT_CONTENT_GITIGNORE,
+        )
+        .await?;
+
         // On Windows, set the .jv directory as hidden
-        let jv_dir = local_path.join(".jv");
+        let jv_dir = local_path.join(CLIENT_FOLDER_WORKSPACE_ROOT_NAME);
         let _ = hide_folder::hide_folder(&jv_dir);
 
         Ok(())
