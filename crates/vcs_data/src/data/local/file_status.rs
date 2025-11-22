@@ -188,6 +188,11 @@ impl<'a> AnalyzeResult<'a> {
         // If these hashes correspond to the hashes of missing files, then this pair of new and lost items will be merged into moved items
         let mut moved_files: HashSet<(FromRelativePathBuf, ToRelativePathBuf)> = HashSet::new();
         for (new_path, new_hash) in file_hashes {
+            let new_path = new_path
+                .strip_prefix(&workspace.local_path)
+                .map(|p| p.to_path_buf())
+                .unwrap_or(new_path);
+
             // If the new hash value hits the mapping, add a moved item
             if let Some(lost_path) = lost_files_hash_mapping.remove(&new_hash) {
                 // Remove this new item and lost item
