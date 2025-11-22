@@ -11,6 +11,18 @@ pub struct Sha1Result {
     pub hash: String,
 }
 
+/// Calc SHA1 hash of a string
+pub fn calc_sha1_string<S: AsRef<str>>(input: S) -> String {
+    let mut hasher = Sha1::new();
+    hasher.update(input.as_ref().as_bytes());
+    let hash_result = hasher.finalize();
+
+    hash_result
+        .iter()
+        .map(|b| format!("{:02x}", b))
+        .collect::<String>()
+}
+
 /// Calc SHA1 hash of a single file
 pub async fn calc_sha1<P: AsRef<Path>>(
     path: P,
@@ -102,6 +114,31 @@ where
 mod tests {
     use super::*;
     use std::fs;
+
+    #[test]
+    fn test_sha1_string() {
+        let test_string = "Hello, SHA1!";
+        let hash = calc_sha1_string(test_string);
+
+        let expected_hash = "de1c3daadc6f0f1626f4cf56c03e05a1e5d7b187";
+
+        assert_eq!(
+            hash, expected_hash,
+            "SHA1 hash should be consistent for same input"
+        );
+    }
+
+    #[test]
+    fn test_sha1_string_empty() {
+        let hash = calc_sha1_string("");
+
+        // SHA1 of empty string is "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+        let expected_empty_hash = "da39a3ee5e6b4b0d3255bfef95601890afd80709";
+        assert_eq!(
+            hash, expected_empty_hash,
+            "SHA1 hash mismatch for empty string"
+        );
+    }
 
     #[tokio::test]
     async fn test_sha1_accuracy() {
