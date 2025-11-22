@@ -27,6 +27,7 @@ use crate::{
     },
 };
 
+pub mod align;
 pub mod cached_sheet;
 pub mod config;
 pub mod file_status;
