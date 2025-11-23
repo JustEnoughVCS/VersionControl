@@ -35,6 +35,7 @@ pub mod latest_file_data;
 pub mod latest_info;
 pub mod local_files;
 pub mod local_sheet;
+pub mod vault_modified;
 
 const SHEET_NAME: &str = "{sheet_name}";
 const ACCOUNT_NAME: &str = "{account}";
@@ -117,7 +118,6 @@ impl LocalWorkspace {
 
     /// Get the path to a local sheet.
     pub fn local_sheet_path(&self, member: &MemberId, sheet: &SheetName) -> PathBuf {
-        
         self.local_path.join(
             CLIENT_FILE_LOCAL_SHEET
                 .replace(ACCOUNT_NAME, member)
@@ -177,10 +177,11 @@ impl LocalWorkspace {
                         Box::pin(collect_sheet_paths(&path, suffix, paths)).await?;
                     } else if path.is_file()
                         && let Some(extension) = path.extension()
-                            && extension == suffix.trim_start_matches('.') {
-                                let formatted_path = format_path(path)?;
-                                paths.push(formatted_path);
-                            }
+                        && extension == suffix.trim_start_matches('.')
+                    {
+                        let formatted_path = format_path(path)?;
+                        paths.push(formatted_path);
+                    }
                 }
             }
             Ok(())

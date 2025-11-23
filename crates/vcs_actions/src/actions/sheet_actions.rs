@@ -3,7 +3,7 @@ use std::io::ErrorKind;
 use action_system::{action::ActionContext, macros::action_gen};
 use serde::{Deserialize, Serialize};
 use tcp_connection::error::TcpTargetError;
-use vcs_data::data::sheet::SheetName;
+use vcs_data::data::{local::vault_modified::sign_vault_modified, sheet::SheetName};
 
 use crate::{
     actions::{auth_member, check_connection_instance, try_get_local_workspace, try_get_vault},
@@ -82,6 +82,9 @@ pub async fn make_sheet_action(
             .await
             .read::<MakeSheetActionResult>()
             .await?;
+        if matches!(result, MakeSheetActionResult::Success) {
+            sign_vault_modified(true).await;
+        }
         return Ok(result);
     }
 
@@ -188,6 +191,9 @@ pub async fn drop_sheet_action(
             .await
             .read::<DropSheetActionResult>()
             .await?;
+        if matches!(result, DropSheetActionResult::Success) {
+            sign_vault_modified(true).await;
+        }
         return Ok(result);
     }
 

@@ -78,6 +78,7 @@ pub const CLIENT_CONTENT_GITIGNORE: &str = "# Git support for JVCS Workspace
 # Ignore cached datas
 cached
 members";
+pub const CLIENT_FILE_VAULT_MODIFIED: &str = "./.jv/.vault_modified";
 
 // -------------------------------------------------------------------------------------
 

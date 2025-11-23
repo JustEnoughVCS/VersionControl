@@ -14,6 +14,7 @@ use vcs_data::{
             config::LocalConfig,
             latest_file_data::LatestFileData,
             latest_info::{LatestInfo, SheetInfo},
+            vault_modified::sign_vault_modified,
         },
         member::MemberId,
         sheet::{SheetData, SheetName},
@@ -448,6 +449,9 @@ pub async fn update_to_latest_info_action(
         }
     }
 
+    if ctx.is_proc_on_local() {
+        sign_vault_modified(false).await;
+    }
     Ok(UpdateToLatestInfoResult::Success)
 }
 

@@ -12,7 +12,7 @@ use tokio::sync::Mutex;
 use vcs_data::data::{
     local::{
         cached_sheet::CachedSheet, file_status::AnalyzeResult, latest_file_data::LatestFileData,
-        local_sheet::LocalMappingMetadata,
+        local_sheet::LocalMappingMetadata, vault_modified::sign_vault_modified,
     },
     member::MemberId,
     sheet::SheetName,
@@ -263,6 +263,10 @@ pub async fn track_file_action(
             },
             Err(e) => return Err(e),
         };
+
+        if success_create.len() + success_update.len() > 0 {
+            sign_vault_modified(true).await;
+        }
 
         return Ok(TrackFileActionResult::Done {
             created: success_create,
