@@ -1,5 +1,5 @@
 use std::{
-    path::PathBuf,
+    path::{Path, PathBuf},
     time::{SystemTime, UNIX_EPOCH},
 };
 
@@ -10,7 +10,6 @@ use tokio::time::Instant;
 use crate::{
     constants::{CLIENT_FILE_LATEST_INFO, CLIENT_FILE_LATEST_INFO_NOSET},
     data::{
-        local::{LocalWorkspace, config::LocalConfig},
         member::{Member, MemberId},
         sheet::{SheetData, SheetName},
     },
@@ -46,7 +45,7 @@ pub struct LatestInfo {
 
 impl LatestInfo {
     /// Get the path to the latest info file for a given workspace and member ID
-    pub fn latest_info_path(local_workspace_path: &PathBuf, member_id: &MemberId) -> PathBuf {
+    pub fn latest_info_path(local_workspace_path: &Path, member_id: &MemberId) -> PathBuf {
         local_workspace_path.join(CLIENT_FILE_LATEST_INFO.replace(ACCOUNT, member_id))
     }
 }

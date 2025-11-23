@@ -117,12 +117,12 @@ impl LocalWorkspace {
 
     /// Get the path to a local sheet.
     pub fn local_sheet_path(&self, member: &MemberId, sheet: &SheetName) -> PathBuf {
-        let result = self.local_path.join(
+        
+        self.local_path.join(
             CLIENT_FILE_LOCAL_SHEET
                 .replace(ACCOUNT_NAME, member)
                 .replace(SHEET_NAME, sheet),
-        );
-        result
+        )
     }
 
     /// Read or initialize a local sheet.
@@ -175,14 +175,12 @@ impl LocalWorkspace {
 
                     if path.is_dir() {
                         Box::pin(collect_sheet_paths(&path, suffix, paths)).await?;
-                    } else if path.is_file() {
-                        if let Some(extension) = path.extension() {
-                            if extension == suffix.trim_start_matches('.') {
+                    } else if path.is_file()
+                        && let Some(extension) = path.extension()
+                            && extension == suffix.trim_start_matches('.') {
                                 let formatted_path = format_path(path)?;
                                 paths.push(formatted_path);
                             }
-                        }
-                    }
                 }
             }
             Ok(())

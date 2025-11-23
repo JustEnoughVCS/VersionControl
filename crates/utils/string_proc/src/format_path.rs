@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Format path str
 pub fn format_path_str(path: impl Into<String>) -> Result<String, std::io::Error> {
@@ -42,7 +42,7 @@ pub fn format_path_str(path: impl Into<String>) -> Result<String, std::io::Error
 }
 
 /// Normalize path by resolving ".." components without requiring file system access
-fn normalize_path(path: &PathBuf) -> PathBuf {
+fn normalize_path(path: &Path) -> PathBuf {
     let mut components = Vec::new();
 
     for component in path.components() {

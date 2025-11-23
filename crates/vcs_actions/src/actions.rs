@@ -167,26 +167,24 @@ pub async fn get_current_sheet_name(
         return Err(TcpTargetError::NotFound("Sheet not found".to_string()));
     }
     if ctx.is_proc_on_remote() {
-        let vault = try_get_vault(&ctx)?;
+        let vault = try_get_vault(ctx)?;
 
         // Read sheet name
         let sheet_name: SheetName = mut_instance.read_msgpack().await?;
 
         // Check if sheet exists
-        if let Ok(sheet) = vault.sheet(&sheet_name).await {
-            if let Some(holder) = sheet.holder() {
-                if holder == member_id {
+        if let Ok(sheet) = vault.sheet(&sheet_name).await
+            && let Some(holder) = sheet.holder()
+                && holder == member_id {
                     // Tell local the check is passed
                     mut_instance.write_msgpack(true).await?;
                     return Ok(sheet_name.clone());
                 }
-            }
-        }
         // Tell local the check is not passed
         mut_instance.write_msgpack(false).await?;
         return Err(TcpTargetError::NotFound("Sheet not found".to_string()));
     }
-    return Err(TcpTargetError::NoResult("NoResult".to_string()));
+    Err(TcpTargetError::NoResult("NoResult".to_string()))
 }
 
 /// The macro to write and return a result.

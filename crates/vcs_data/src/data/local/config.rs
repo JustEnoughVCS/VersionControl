@@ -130,7 +130,7 @@ impl LocalConfig {
         }
 
         self.sheet_in_use = Some(sheet);
-        LocalConfig::write(&self).await?;
+        LocalConfig::write(self).await?;
 
         Ok(())
     }
@@ -153,8 +153,7 @@ impl LocalConfig {
 
         // Create the draft folder if it doesn't exist
         if !draft_folder.exists() {
-            std::fs::create_dir_all(&draft_folder)
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+            std::fs::create_dir_all(&draft_folder).map_err(std::io::Error::other)?;
         }
 
         // Move all files and folders (except .jv folder) to the draft folder with rollback support
@@ -162,7 +161,7 @@ impl LocalConfig {
 
         // Clear the sheet in use
         self.sheet_in_use = None;
-        LocalConfig::write(&self).await?;
+        LocalConfig::write(self).await?;
 
         Ok(())
     }
@@ -177,8 +176,7 @@ impl LocalConfig {
     /// Check if local path is empty (except for .jv folder)
     async fn check_local_path_empty(&self, local_path: &Path) -> Result<(), std::io::Error> {
         let jv_folder = local_path.join(CLIENT_PATH_WORKSPACE_ROOT);
-        let mut entries = std::fs::read_dir(local_path)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        let mut entries = std::fs::read_dir(local_path).map_err(std::io::Error::other)?;
 
         if entries.any(|entry| {
             if let Ok(entry) = entry {
@@ -206,9 +204,9 @@ impl LocalConfig {
         local_path: &Path,
     ) -> Result<(), std::io::Error> {
         let draft_entries: Vec<_> = std::fs::read_dir(draft_folder)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?
+            .map_err(std::io::Error::other)?
             .collect::<Result<Vec<_>, _>>()
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+            .map_err(std::io::Error::other)?;
 
         let mut moved_items: Vec<MovedItem> = Vec::new();
 
@@ -222,7 +220,7 @@ impl LocalConfig {
                 for moved_item in &moved_items {
                     let _ = std::fs::rename(&moved_item.target, &moved_item.source);
                 }
-                std::io::Error::new(std::io::ErrorKind::Other, e)
+                std::io::Error::other(e)
             })?;
 
             moved_items.push(MovedItem {
@@ -237,7 +235,7 @@ impl LocalConfig {
             for moved_item in &moved_items {
                 let _ = std::fs::rename(&moved_item.target, &moved_item.source);
             }
-            std::io::Error::new(std::io::ErrorKind::Other, e)
+            std::io::Error::other(e)
         })?;
 
         Ok(())
@@ -251,9 +249,9 @@ impl LocalConfig {
     ) -> Result<(), std::io::Error> {
         let jv_folder = local_path.join(CLIENT_PATH_WORKSPACE_ROOT);
         let entries: Vec<_> = std::fs::read_dir(local_path)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?
+            .map_err(std::io::Error::other)?
             .collect::<Result<Vec<_>, _>>()
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+            .map_err(std::io::Error::other)?;
 
         let mut moved_items: Vec<MovedItem> = Vec::new();
 
@@ -276,7 +274,7 @@ impl LocalConfig {
                 for moved_item in &moved_items {
                     let _ = std::fs::rename(&moved_item.target, &moved_item.source);
                 }
-                std::io::Error::new(std::io::ErrorKind::Other, e)
+                std::io::Error::other(e)
             })?;
 
             moved_items.push(MovedItem {
@@ -344,9 +342,7 @@ impl LocalConfig {
             return None;
         };
 
-        let Some(current_dir) = current_local_path() else {
-            return None;
-        };
+        let current_dir = current_local_path()?;
 
         Some(self.draft_folder(&self.using_account, sheet_name, current_dir))
     }

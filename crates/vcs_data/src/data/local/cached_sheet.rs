@@ -55,16 +55,14 @@ impl CachedSheet {
         while let Some(entry) = dir.next_entry().await? {
             let path = entry.path();
 
-            if path.is_file() {
-                if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
-                    if file_name.ends_with(CLIENT_SUFFIX_CACHED_SHEET_FILE) {
+            if path.is_file()
+                && let Some(file_name) = path.file_name().and_then(|n| n.to_str())
+                    && file_name.ends_with(CLIENT_SUFFIX_CACHED_SHEET_FILE) {
                         let name_without_ext = file_name
                             .trim_end_matches(CLIENT_SUFFIX_CACHED_SHEET_FILE)
                             .to_string();
                         sheet_names.push(name_without_ext);
                     }
-                }
-            }
         }
 
         Ok(sheet_names)
@@ -84,13 +82,11 @@ impl CachedSheet {
         while let Some(entry) = dir.next_entry().await? {
             let path = entry.path();
 
-            if path.is_file() {
-                if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
-                    if file_name.ends_with(CLIENT_SUFFIX_CACHED_SHEET_FILE) {
+            if path.is_file()
+                && let Some(file_name) = path.file_name().and_then(|n| n.to_str())
+                    && file_name.ends_with(CLIENT_SUFFIX_CACHED_SHEET_FILE) {
                         sheet_paths.push(format_path(workspace_path.join(path))?);
                     }
-                }
-            }
         }
 
         Ok(sheet_paths)

@@ -89,6 +89,7 @@ impl LocalSheetData {
 
 impl LocalMappingMetadata {
     /// Create a new MappingMetaData instance
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         hash_when_updated: String,
         time_when_updated: SystemTime,

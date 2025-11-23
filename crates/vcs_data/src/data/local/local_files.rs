@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use string_proc::format_path::format_path;
 use tokio::fs;
@@ -25,16 +25,13 @@ impl RelativeFiles {
 }
 
 /// Read the relative paths within the project from the input file list
-pub async fn get_relative_paths(
-    local_path: &PathBuf,
-    paths: &Vec<PathBuf>,
-) -> Option<RelativeFiles> {
+pub async fn get_relative_paths(local_path: &PathBuf, paths: &[PathBuf]) -> Option<RelativeFiles> {
     // Get Relative Paths
-    let Ok(paths) = format_input_paths_and_ignore_outside_paths(&local_path, &paths).await else {
+    let Ok(paths) = format_input_paths_and_ignore_outside_paths(local_path, paths).await else {
         return None;
     };
     let files: Vec<PathBuf> = abs_paths_to_abs_files(paths).await;
-    let Ok(files) = parse_to_relative(&local_path, files) else {
+    let Ok(files) = parse_to_relative(local_path, files) else {
         return None;
     };
     Some(RelativeFiles { files })
@@ -42,7 +39,7 @@ pub async fn get_relative_paths(
 
 /// Normalize the input paths
 async fn format_input_paths(
-    local_path: &PathBuf,
+    local_path: &Path,
     track_files: &[PathBuf],
 ) -> Result<Vec<PathBuf>, std::io::Error> {
     let current_dir = local_path;
@@ -54,8 +51,7 @@ async fn format_input_paths(
         // Skip paths that contain .jv directories
         if path.components().any(|component| {
             if let std::path::Component::Normal(name) = component {
-                name.to_str()
-                    .map_or(false, |s| s == CLIENT_FOLDER_WORKSPACE_ROOT_NAME)
+                name.to_str() == Some(CLIENT_FOLDER_WORKSPACE_ROOT_NAME)
             } else {
                 false
             }
@@ -109,10 +105,7 @@ fn parse_to_relative(
         })
         .collect();
 
-    match result {
-        Ok(paths) => Ok(paths),
-        Err(e) => Err(e),
-    }
+    result
 }
 
 /// Convert absolute paths to absolute file paths, expanding directories to their contained files

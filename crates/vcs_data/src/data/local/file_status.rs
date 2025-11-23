@@ -67,7 +67,7 @@ impl<'a> AnalyzeResult<'a> {
         let local_path = workspace.local_path();
         let file_relative_paths = {
             let mut paths = HashSet::new();
-            for entry in WalkDir::new(&local_path) {
+            for entry in WalkDir::new(local_path) {
                 let entry = match entry {
                     Ok(entry) => entry,
                     Err(_) => continue,
@@ -78,25 +78,21 @@ impl<'a> AnalyzeResult<'a> {
                     continue;
                 }
 
-                if entry.file_type().is_file() {
-                    if let Ok(relative_path) = entry.path().strip_prefix(&local_path) {
+                if entry.file_type().is_file()
+                    && let Ok(relative_path) = entry.path().strip_prefix(local_path) {
                         let format = format_path(relative_path.to_path_buf());
                         let Ok(format) = format else {
                             continue;
                         };
                         paths.insert(format);
                     }
-                }
             }
 
             paths
         };
 
         // Read local sheet
-        let local_sheet = match workspace.local_sheet(&member, &sheet_name).await {
-            Ok(v) => Some(v),
-            Err(_) => None,
-        };
+        let local_sheet = (workspace.local_sheet(&member, &sheet_name).await).ok();
 
         // Read cached sheet
         let cached_sheet_data = match CachedSheet::cached_sheet_data(&sheet_name).await {
@@ -110,7 +106,7 @@ impl<'a> AnalyzeResult<'a> {
         };
 
         // Create new result
-        let mut result = Self::none_result(&workspace);
+        let mut result = Self::none_result(workspace);
 
         // Analyze entry
         let mut analyze_ctx = AnalyzeContext {
@@ -119,12 +115,12 @@ impl<'a> AnalyzeResult<'a> {
             local_sheet,
             cached_sheet_data,
         };
-        Self::analyze_moved(&mut result, &file_relative_paths, &analyze_ctx, &workspace).await?;
+        Self::analyze_moved(&mut result, &file_relative_paths, &analyze_ctx, workspace).await?;
         Self::analyze_modified(
             &mut result,
             &file_relative_paths,
             &mut analyze_ctx,
-            &workspace,
+            workspace,
         )
         .await?;
 
@@ -165,7 +161,7 @@ impl<'a> AnalyzeResult<'a> {
         let file_hashes: HashSet<(PathBuf, String)> =
             match calc_sha1_multi::<PathBuf, Vec<PathBuf>>(new_files_for_hash, 8192).await {
                 Ok(hash) => hash,
-                Err(e) => return Err(Error::new(std::io::ErrorKind::Other, e)),
+                Err(e) => return Err(Error::other(e)),
             }
             .iter()
             .map(|r| (r.file_path.clone(), r.hash.to_string()))
@@ -222,11 +218,7 @@ impl<'a> AnalyzeResult<'a> {
                     .as_ref()
                     .and_then(|local_sheet| local_sheet.mapping_data(from).ok())
                     .map(|mapping_data| mapping_data.mapping_vfid.clone());
-                if let Some(vfid) = vfid {
-                    Some((vfid, (from.clone(), to.clone())))
-                } else {
-                    None
-                }
+                vfid.map(|vfid| (vfid, (from.clone(), to.clone())))
             })
             .collect();
 
@@ -246,7 +238,7 @@ impl<'a> AnalyzeResult<'a> {
 
         for path in file_relative_paths {
             // Get mapping data
-            let Ok(mapping_data) = local_sheet.mapping_data_mut(&path) else {
+            let Ok(mapping_data) = local_sheet.mapping_data_mut(path) else {
                 continue;
             };
 
@@ -263,7 +255,7 @@ impl<'a> AnalyzeResult<'a> {
             let hash_calc = match sha1_hash::calc_sha1(workspace.local_path.join(path), 2048).await
             {
                 Ok(hash) => hash,
-                Err(e) => return Err(Error::new(std::io::ErrorKind::Other, e)),
+                Err(e) => return Err(Error::other(e)),
             };
 
             // If hash not match, mark as modified
@@ -289,7 +281,7 @@ impl<'a> AnalyzeResult<'a> {
     /// Generate a empty AnalyzeResult
     fn none_result(local_workspace: &'a LocalWorkspace) -> AnalyzeResult<'a> {
         AnalyzeResult {
-            local_workspace: local_workspace,
+            local_workspace,
             moved: HashMap::new(),
             created: HashSet::new(),
             lost: HashSet::new(),

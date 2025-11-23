@@ -29,7 +29,7 @@ fn main() -> io::Result<()> {
     let mut documents = Vec::new();
 
     if docs_dir.exists() {
-        collect_markdown_files(&docs_dir, &mut documents)?;
+        collect_markdown_files(docs_dir, &mut documents)?;
     }
 
     // Read template file
@@ -64,18 +64,14 @@ fn main() -> io::Result<()> {
 
         // Generate constant name from relative path
         let document_constant_name = relative_path
-            .replace('/', "_")
-            .replace('\\', "_")
-            .replace('-', "_")
+            .replace(['/', '\\', '-'], "_")
             .replace(".md", "")
             .replace(".txt", "")
             .to_uppercase();
 
         // Generate snake_case name for function matching
         let document_path_snake_case = relative_path
-            .replace('/', "_")
-            .replace('\\', "_")
-            .replace('-', "_")
+            .replace(['/', '\\', '-'], "_")
             .replace(".md", "")
             .replace(".txt", "")
             .to_lowercase();
@@ -96,12 +92,12 @@ fn main() -> io::Result<()> {
             .replace(PARAM_DOCUMENT_CONSTANT_NAME, &document_constant_name);
 
         match_arms.push_str(&match_arm);
-        match_arms.push_str("\n");
+        match_arms.push('\n');
 
         // Generate list item for documents() function
         let list_item = format!("        \"{}\".to_string(),", document_path_snake_case);
         list_items.push_str(&list_item);
-        list_items.push_str("\n");
+        list_items.push('\n');
     }
 
     // Remove trailing newline from the last list item
@@ -122,23 +118,21 @@ fn main() -> io::Result<()> {
     output.push_str(&document_blocks);
 
     // Add function section
-    if let Some(func_section) = template_content.split(TEMPLATE_FUNC_BEGIN).next() {
-        if let Some(rest) = func_section.split(TEMPLATE_DOCUMENT_END).nth(1) {
+    if let Some(func_section) = template_content.split(TEMPLATE_FUNC_BEGIN).next()
+        && let Some(rest) = func_section.split(TEMPLATE_DOCUMENT_END).nth(1) {
             output.push_str(rest.trim());
-            output.push_str("\n");
+            output.push('\n');
         }
-    }
 
     // Add match arms
     output.push_str(&match_arms);
 
     // Add list items for documents() function
-    if let Some(list_section) = template_content.split(TEMPLATE_LIST_BEGIN).next() {
-        if let Some(rest) = list_section.split(TEMPLATE_FUNC_END).nth(1) {
+    if let Some(list_section) = template_content.split(TEMPLATE_LIST_BEGIN).next()
+        && let Some(rest) = list_section.split(TEMPLATE_FUNC_END).nth(1) {
             output.push_str(rest.trim());
-            output.push_str("\n");
+            output.push('\n');
         }
-    }
     output.push_str(&list_items);
 
     // Add footer
@@ -167,18 +161,15 @@ fn collect_markdown_files(dir: &Path, documents: &mut Vec<(String, String)>) -> 
             collect_markdown_files(&path, documents)?;
         } else if path
             .extension()
-            .map_or(false, |ext| ext == "md" || ext == "txt")
-        {
-            if let Ok(relative_path) = path.strip_prefix("../../docs/Documents") {
-                if let Some(relative_path_str) = relative_path.to_str() {
+            .is_some_and(|ext| ext == "md" || ext == "txt")
+            && let Ok(relative_path) = path.strip_prefix("../../docs/Documents")
+                && let Some(relative_path_str) = relative_path.to_str() {
                     let content = fs::read_to_string(&path)?;
                     documents.push((
                         relative_path_str.trim_start_matches('/').to_string(),
                         content,
                     ));
                 }
-            }
-        }
     }
     Ok(())
 }

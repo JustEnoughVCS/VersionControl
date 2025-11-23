@@ -163,10 +163,7 @@ pub async fn update_to_latest_info_action(
                 } else {
                     member_visible.push(SheetInfo {
                         sheet_name: sheet.name().clone(),
-                        holder_name: match sheet.holder() {
-                            Some(holder) => Some(holder.clone()),
-                            None => None,
-                        },
+                        holder_name: sheet.holder().cloned(),
                     });
                 }
             }
@@ -186,7 +183,7 @@ pub async fn update_to_latest_info_action(
             instance
                 .lock()
                 .await
-                .write_large_msgpack(latest_info, 512 as u16)
+                .write_large_msgpack(latest_info, 512_u16)
                 .await?;
         }
 
@@ -195,7 +192,7 @@ pub async fn update_to_latest_info_action(
             let mut latest_info = instance
                 .lock()
                 .await
-                .read_large_msgpack::<LatestInfo>(512 as u16)
+                .read_large_msgpack::<LatestInfo>(512_u16)
                 .await?;
             latest_info.update_instant = Some(Instant::now());
             LatestInfo::write_to(
@@ -257,13 +254,14 @@ pub async fn update_to_latest_info_action(
 
                     for (sheet_name, local_write_count) in local_versions.iter() {
                         let sheet = vault.sheet(sheet_name).await?;
-                        if let Some(holder) = sheet.holder() {
-                            if holder == &member_id && &sheet.write_count() != local_write_count {
-                                mut_instance.write_msgpack(true).await?;
-                                mut_instance
-                                    .write_large_msgpack((sheet_name, sheet.to_data()), 1024u16)
-                                    .await?;
-                            }
+                        if let Some(holder) = sheet.holder()
+                            && holder == &member_id
+                            && &sheet.write_count() != local_write_count
+                        {
+                            mut_instance.write_msgpack(true).await?;
+                            mut_instance
+                                .write_large_msgpack((sheet_name, sheet.to_data()), 1024u16)
+                                .await?;
                         }
                     }
                     mut_instance.write_msgpack(false).await?;
@@ -299,13 +297,14 @@ pub async fn update_to_latest_info_action(
 
             for (sheet_name, version) in local_versions.iter() {
                 let sheet = vault.sheet(sheet_name).await?;
-                if let Some(holder) = sheet.holder() {
-                    if holder == &member_id && &sheet.write_count() != version {
-                        mut_instance.write_msgpack(true).await?;
-                        mut_instance
-                            .write_large_msgpack((sheet_name, sheet.to_data()), 1024u16)
-                            .await?;
-                    }
+                if let Some(holder) = sheet.holder()
+                    && holder == &member_id
+                    && &sheet.write_count() != version
+                {
+                    mut_instance.write_msgpack(true).await?;
+                    mut_instance
+                        .write_large_msgpack((sheet_name, sheet.to_data()), 1024u16)
+                        .await?;
                 }
             }
             mut_instance.write_msgpack(false).await?;
@@ -351,10 +350,8 @@ pub async fn update_to_latest_info_action(
 
             // Read configuration file
             let path = LatestFileData::data_path(&member_id)?;
-            let mut latest_file_data = match LatestFileData::read_from(&path).await {
-                Ok(r) => r,
-                Err(_) => LatestFileData::default(),
-            };
+            let mut latest_file_data: LatestFileData =
+                LatestFileData::read_from(&path).await.unwrap_or_default();
 
             // Write the received information
             latest_file_data.update_info(result);
@@ -434,8 +431,8 @@ pub async fn update_to_latest_info_action(
 
                 // If path not match, try to move
                 let move_result = local_sheet.move_mapping(&local_path, cached_item_path);
-                match move_result {
-                    Err(e) => match e.kind() {
+                if let Err(e) = move_result {
+                    match e.kind() {
                         ErrorKind::AlreadyExists => {
                             return Ok(UpdateToLatestInfoResult::SyncCachedSheetFail(
                                 SyncCachedSheetFailReason::PathAlreadyExist(
@@ -444,8 +441,7 @@ pub async fn update_to_latest_info_action(
                             ));
                         }
                         _ => return Err(e.into()),
-                    },
-                    _ => {}
+                    }
                 }
                 local_sheet.write().await?;
             }

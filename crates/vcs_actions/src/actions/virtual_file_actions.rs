@@ -6,7 +6,6 @@ use std::{
 
 use action_system::{action::ActionContext, macros::action_gen};
 use cfg_file::config::ConfigFile;
-use log::info;
 use serde::{Deserialize, Serialize};
 use tcp_connection::{error::TcpTargetError, instance::ConnectionInstance};
 use tokio::sync::Mutex;
@@ -159,7 +158,7 @@ pub async fn track_file_action(
                         }
                     }
                 };
-                return None;
+                None
             });
             result.collect()
         };
@@ -174,9 +173,7 @@ pub async fn track_file_action(
 
             let result = other.iter().filter_map(|p| {
                 // In cached sheet
-                let Some(cached_sheet_mapping) = cached_sheet.mapping().get(p) else {
-                    return None;
-                };
+                let cached_sheet_mapping = cached_sheet.mapping().get(p)?;
 
                 // Check if path mapping at local sheet
                 if let Ok(data) = local_sheet.mapping_data(p) {
@@ -191,7 +188,7 @@ pub async fn track_file_action(
                     }
                 }
 
-                return None;
+                None
             });
             result.collect()
         };
@@ -263,9 +260,6 @@ pub async fn track_file_action(
         {
             Ok(r) => match r {
                 SyncTaskResult::Success(relative_pathes) => relative_pathes,
-                _ => {
-                    return Ok(TrackFileActionResult::SyncTaskFailed(r));
-                }
             },
             Err(e) => return Err(e),
         };
@@ -335,9 +329,6 @@ pub async fn track_file_action(
         {
             Ok(r) => match r {
                 SyncTaskResult::Success(relative_pathes) => relative_pathes,
-                _ => {
-                    return Ok(TrackFileActionResult::SyncTaskFailed(r));
-                }
             },
             Err(e) => return Err(e),
         };
@@ -360,7 +351,7 @@ async fn proc_create_tasks_local(
     relative_paths: Vec<PathBuf>,
     print_infos: bool,
 ) -> Result<CreateTaskResult, TcpTargetError> {
-    let workspace = try_get_local_workspace(&ctx)?;
+    let workspace = try_get_local_workspace(ctx)?;
     let mut mut_instance = instance.lock().await;
     let mut local_sheet = workspace.local_sheet(member_id, sheet_name).await?;
 
@@ -383,7 +374,7 @@ async fn proc_create_tasks_local(
         let full_path = workspace.local_path().join(&path);
 
         // Send file
-        if let Err(_) = mut_instance.write_file(&full_path).await {
+        if mut_instance.write_file(&full_path).await.is_err() {
             continue;
         }
 
@@ -434,7 +425,7 @@ async fn proc_create_tasks_remote(
     sheet_name: &SheetName,
     relative_paths: Vec<PathBuf>,
 ) -> Result<CreateTaskResult, TcpTargetError> {
-    let vault = try_get_vault(&ctx)?;
+    let vault = try_get_vault(ctx)?;
     let mut mut_instance = instance.lock().await;
 
     // Sheet check
@@ -501,14 +492,14 @@ async fn proc_update_tasks_local(
     print_infos: bool,
     file_update_info: HashMap<PathBuf, (NextVersion, UpdateDescription)>,
 ) -> Result<UpdateTaskResult, TcpTargetError> {
-    let workspace = try_get_local_workspace(&ctx)?;
+    let workspace = try_get_local_workspace(ctx)?;
     let mut mut_instance = instance.lock().await;
     let mut local_sheet = workspace.local_sheet(member_id, sheet_name).await?;
 
     let mut success = Vec::new();
 
     for path in relative_paths.iter() {
-        let Ok(mapping) = local_sheet.mapping_data(&path) else {
+        let Ok(mapping) = local_sheet.mapping_data(path) else {
             // Is mapping not found, write empty
             mut_instance.write_msgpack("".to_string()).await?;
             continue;
@@ -610,7 +601,7 @@ async fn proc_update_tasks_remote(
             mut_instance.write_msgpack(reason.clone()).await?;
             return Ok(UpdateTaskResult::VerifyFailed {
                 path: path.clone(),
-                reason: reason,
+                reason,
             }); // Sheet not found
         };
         let Ok(mut sheet) = vault.sheet(sheet_name).await else {
@@ -619,7 +610,7 @@ async fn proc_update_tasks_remote(
             mut_instance.write_msgpack(reason.clone()).await?;
             return Ok(UpdateTaskResult::VerifyFailed {
                 path: path.clone(),
-                reason: reason,
+                reason,
             }); // Sheet not found
         };
         let Some(mapping_data) = sheet.mapping_mut().get_mut(path) else {
@@ -628,7 +619,7 @@ async fn proc_update_tasks_remote(
             mut_instance.write_msgpack(reason.clone()).await?;
             return Ok(UpdateTaskResult::VerifyFailed {
                 path: path.clone(),
-                reason: reason,
+                reason,
             }); // Mapping not found
         };
         let Ok(vf) = vault.virtual_file(&mapping_data.id) else {
@@ -637,7 +628,7 @@ async fn proc_update_tasks_remote(
             mut_instance.write_msgpack(reason.clone()).await?;
             return Ok(UpdateTaskResult::VerifyFailed {
                 path: path.clone(),
-                reason: reason,
+                reason,
             }); // Virtual file not found
         };
         let Ok(vf_metadata) = vf.read_meta().await else {
@@ -646,7 +637,7 @@ async fn proc_update_tasks_remote(
             mut_instance.write_msgpack(reason.clone()).await?;
             return Ok(UpdateTaskResult::VerifyFailed {
                 path: path.clone(),
-                reason: reason,
+                reason,
             }); // Read virtual file metadata failed
         };
         if vf_metadata.versions().contains(next_version) {
@@ -655,7 +646,7 @@ async fn proc_update_tasks_remote(
             mut_instance.write_msgpack(reason.clone()).await?;
             return Ok(UpdateTaskResult::VerifyFailed {
                 path: path.clone(),
-                reason: reason,
+                reason,
             }); // VersionAlreadyExist
         }
         if vf_metadata.hold_member() != member_id {
@@ -664,7 +655,7 @@ async fn proc_update_tasks_remote(
             mut_instance.write_msgpack(reason.clone()).await?;
             return Ok(UpdateTaskResult::VerifyFailed {
                 path: path.clone(),
-                reason: reason,
+                reason,
             }); // Member not held it
         };
         if mapping_data.version != version {
@@ -674,7 +665,7 @@ async fn proc_update_tasks_remote(
             mut_instance.write_msgpack(reason.clone()).await?;
             return Ok(UpdateTaskResult::VerifyFailed {
                 path: path.clone(),
-                reason: reason,
+                reason,
             }); // Version does not match
         };
         mut_instance.write_msgpack(true).await?; // Verified
@@ -691,7 +682,7 @@ async fn proc_update_tasks_remote(
                 &mut mut_instance,
                 member_id,
                 &mapping_data.id,
-                &next_version,
+                next_version,
                 VirtualFileVersionDescription {
                     creator: member_id.clone(),
                     description: description.clone(),
@@ -720,22 +711,22 @@ async fn proc_update_tasks_remote(
 }
 
 async fn proc_sync_tasks_local(
-    ctx: &ActionContext,
-    instance: Arc<Mutex<ConnectionInstance>>,
-    member_id: &MemberId,
-    sheet_name: &SheetName,
-    relative_paths: Vec<PathBuf>,
-    print_infos: bool,
+    _ctx: &ActionContext,
+    _instance: Arc<Mutex<ConnectionInstance>>,
+    _member_id: &MemberId,
+    _sheet_name: &SheetName,
+    _relative_paths: Vec<PathBuf>,
+    _print_infos: bool,
 ) -> Result<SyncTaskResult, TcpTargetError> {
     Ok(SyncTaskResult::Success(Vec::new()))
 }
 
 async fn proc_sync_tasks_remote(
-    ctx: &ActionContext,
-    instance: Arc<Mutex<ConnectionInstance>>,
-    member_id: &MemberId,
-    sheet_name: &SheetName,
-    relative_paths: Vec<PathBuf>,
+    _ctx: &ActionContext,
+    _instance: Arc<Mutex<ConnectionInstance>>,
+    _member_id: &MemberId,
+    _sheet_name: &SheetName,
+    _relative_paths: Vec<PathBuf>,
 ) -> Result<SyncTaskResult, TcpTargetError> {
     Ok(SyncTaskResult::Success(Vec::new()))
 }

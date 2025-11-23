@@ -207,7 +207,7 @@ impl<'a> Sheet<'a> {
                 sheet_path,
                 SheetMappingMetadata {
                     id: virtual_file_id,
-                    version: version,
+                    version,
                 },
             );
             return Ok(());
@@ -287,9 +287,7 @@ impl<'a> Sheet<'a> {
         }
 
         // Check if the sheet has a holder
-        let Some(holder) = self.holder() else {
-            return None;
-        };
+        let holder = self.holder()?;
 
         // Check if the holder has edit rights to the virtual file
         match self
@@ -331,7 +329,7 @@ impl<'a> Sheet<'a> {
         }
 
         // Add write count
-        if self.data.write_count > i32::MAX {
+        if self.data.write_count >= i32::MAX - 1 {
             self.data.write_count = 0;
         }
         SheetData::write_to(&self.data, self.sheet_path()).await
