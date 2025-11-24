@@ -17,17 +17,14 @@ pub async fn check_vault_modified() -> bool {
     matches!(contents.trim().to_lowercase().as_str(), "true")
 }
 
-pub async fn sign_vault_modified(modified: bool) -> bool {
+pub async fn sign_vault_modified(modified: bool) {
     let Some(current_dir) = current_local_path() else {
-        return false;
+        return;
     };
 
     let record_file = current_dir.join(CLIENT_FILE_VAULT_MODIFIED);
 
     let contents = if modified { "true" } else { "false" };
 
-    match tokio::fs::write(&record_file, contents).await {
-        Ok(_) => true,
-        Err(_) => false,
-    }
+    let _ = tokio::fs::write(&record_file, contents).await;
 }
