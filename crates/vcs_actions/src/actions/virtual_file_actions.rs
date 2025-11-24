@@ -2,21 +2,30 @@ use std::{
     collections::{HashMap, HashSet},
     path::PathBuf,
     sync::Arc,
+    time::SystemTime,
 };
 
 use action_system::{action::ActionContext, macros::action_gen};
 use cfg_file::config::ConfigFile;
 use serde::{Deserialize, Serialize};
+use sha1_hash::calc_sha1;
 use tcp_connection::{error::TcpTargetError, instance::ConnectionInstance};
-use tokio::sync::Mutex;
-use vcs_data::data::{
-    local::{
-        cached_sheet::CachedSheet, file_status::AnalyzeResult, latest_file_data::LatestFileData,
-        local_sheet::LocalMappingMetadata, vault_modified::sign_vault_modified,
+use tokio::{fs, sync::Mutex};
+use vcs_data::{
+    constants::CLIENT_FILE_TEMP_FILE,
+    data::{
+        local::{
+            cached_sheet::CachedSheet, file_status::AnalyzeResult,
+            latest_file_data::LatestFileData, local_sheet::LocalMappingMetadata,
+            vault_modified::sign_vault_modified,
+        },
+        member::MemberId,
+        sheet::SheetName,
+        vault::{
+            config::VaultUuid,
+            virtual_file::{VirtualFileId, VirtualFileVersion, VirtualFileVersionDescription},
+        },
     },
-    member::MemberId,
-    sheet::SheetName,
-    vault::virtual_file::{VirtualFileId, VirtualFileVersion, VirtualFileVersionDescription},
 };
 
 use crate::actions::{
@@ -26,6 +35,8 @@ use crate::actions::{
 
 pub type NextVersion = String;
 pub type UpdateDescription = String;
+
+const TEMP_NAME: &str = "{temp_name}";
 
 #[derive(Serialize, Deserialize)]
 pub struct TrackFileActionArguments {
@@ -116,6 +127,8 @@ pub async fn track_file_action(
     if ctx.is_proc_on_local() {
         let workspace = try_get_local_workspace(&ctx)?;
         let analyzed = AnalyzeResult::analyze_local_status(&workspace).await?;
+        let latest_file_data =
+            LatestFileData::read_from(LatestFileData::data_path(&member_id)?).await?;
 
         if !analyzed.lost.is_empty() || !analyzed.moved.is_empty() {
             return Ok(TrackFileActionResult::StructureChangesNotSolved);
@@ -146,14 +159,15 @@ pub async fn track_file_action(
         // Filter out modified files that need to be updated
         let update_task: Vec<PathBuf> = {
             let result = modified.iter().filter_map(|p| {
-                if let (Ok(local_data), Some(cached_data)) =
-                    (local_sheet.mapping_data(p), cached_sheet.mapping().get(p))
-                {
+                if let Ok(local_data) = local_sheet.mapping_data(p) {
                     let id = local_data.mapping_vfid();
                     let local_ver = local_data.version_when_updated();
+                    let Some(latest_ver) = latest_file_data.file_version(id) else {
+                        return None;
+                    };
                     if let Some(held_member) = member_held.file_holder(id) {
                         // Check if holder and version match
-                        if held_member == &member_id && local_ver == &cached_data.version {
+                        if held_member == &member_id && local_ver == latest_ver {
                             return Some(p.clone());
                         }
                     }
@@ -173,19 +187,25 @@ pub async fn track_file_action(
 
             let result = other.iter().filter_map(|p| {
                 // In cached sheet
-                let cached_sheet_mapping = cached_sheet.mapping().get(p)?;
+                if !cached_sheet.mapping().contains_key(p) {
+                    return None;
+                }
 
-                // Check if path mapping at local sheet
-                if let Ok(data) = local_sheet.mapping_data(p) {
+                // In local sheet
+                let local_sheet_mapping = local_sheet.mapping_data(p).ok()?;
+                let vfid = local_sheet_mapping.mapping_vfid();
+
+                if let Some(latest_version) = &latest_file_data.file_version(vfid) {
                     // Version does not match
-                    if data.version_when_updated() != &cached_sheet_mapping.version {
+                    if &local_sheet_mapping.version_when_updated() != latest_version {
                         return Some(p.clone());
                     }
+                }
 
-                    // File modified
-                    if modified.contains(p) {
-                        return Some(p.clone());
-                    }
+                // File not held and modified
+                let holder = latest_file_data.file_holder(vfid);
+                if (holder.is_none() || &member_id != holder.unwrap()) && modified.contains(p) {
+                    return Some(p.clone());
                 }
 
                 None
@@ -568,7 +588,7 @@ async fn proc_update_tasks_local(
 
             // Print success info
             if print_infos {
-                println!("* {} ({} -> {})", path.display(), version, next_version);
+                println!("↑ {} ({} -> {})", path.display(), version, next_version);
             }
         }
     }
@@ -714,23 +734,118 @@ async fn proc_update_tasks_remote(
     Ok(UpdateTaskResult::Success(success))
 }
 
+type SyncVersionInfo = Option<(VirtualFileVersion, VirtualFileVersionDescription)>;
+
 async fn proc_sync_tasks_local(
-    _ctx: &ActionContext,
-    _instance: Arc<Mutex<ConnectionInstance>>,
-    _member_id: &MemberId,
-    _sheet_name: &SheetName,
-    _relative_paths: Vec<PathBuf>,
-    _print_infos: bool,
+    ctx: &ActionContext,
+    instance: Arc<Mutex<ConnectionInstance>>,
+    member_id: &MemberId,
+    sheet_name: &SheetName,
+    relative_paths: Vec<PathBuf>,
+    print_infos: bool,
 ) -> Result<SyncTaskResult, TcpTargetError> {
-    Ok(SyncTaskResult::Success(Vec::new()))
+    let workspace = try_get_local_workspace(ctx)?;
+    let mut mut_instance = instance.lock().await;
+    let mut success: Vec<PathBuf> = Vec::new();
+    for path in relative_paths {
+        let Some((version, description)) = mut_instance.read_msgpack::<SyncVersionInfo>().await?
+        else {
+            continue;
+        };
+
+        // Generate a temp path
+        let temp_path = workspace
+            .local_path()
+            .join(CLIENT_FILE_TEMP_FILE.replace(TEMP_NAME, &VaultUuid::new_v4().to_string()));
+
+        let copy_to = workspace.local_path().join(&path);
+
+        // Read file
+        if mut_instance.read_file(&temp_path).await.is_ok() && temp_path.exists() {
+            // Calc hash
+            let Ok(new_hash) = calc_sha1(&temp_path, 2048).await else {
+                continue;
+            };
+
+            // Calc size
+            let Ok(new_size) = fs::metadata(&path).await.map(|meta| meta.len()) else {
+                continue;
+            };
+
+            // Write file
+            if copy_to.exists() {
+                let _ = fs::remove_file(&copy_to).await;
+            }
+            fs::rename(temp_path, copy_to).await?;
+
+            // Modify local sheet
+            let mut local_sheet = workspace.local_sheet(member_id, sheet_name).await?;
+            let mapping = local_sheet.mapping_data_mut(&path)?;
+
+            let time = SystemTime::now();
+            mapping.set_hash_when_updated(new_hash.hash);
+            mapping.set_last_modifiy_check_result(false); // Mark not modified
+            mapping.set_version_when_updated(version);
+            mapping.set_version_desc_when_updated(description);
+            mapping.set_size_when_updated(new_size);
+            mapping.set_time_when_updated(time);
+            mapping.set_last_modifiy_check_time(time);
+            local_sheet.write().await?;
+
+            success.push(path.clone());
+
+            // Print success info
+            if print_infos {
+                println!("↓ {}", path.display());
+            }
+        };
+    }
+    Ok(SyncTaskResult::Success(success))
 }
 
 async fn proc_sync_tasks_remote(
-    _ctx: &ActionContext,
-    _instance: Arc<Mutex<ConnectionInstance>>,
+    ctx: &ActionContext,
+    instance: Arc<Mutex<ConnectionInstance>>,
     _member_id: &MemberId,
-    _sheet_name: &SheetName,
-    _relative_paths: Vec<PathBuf>,
+    sheet_name: &SheetName,
+    relative_paths: Vec<PathBuf>,
 ) -> Result<SyncTaskResult, TcpTargetError> {
-    Ok(SyncTaskResult::Success(Vec::new()))
+    let vault = try_get_vault(ctx)?;
+    let sheet = vault.sheet(sheet_name).await?;
+    let mut mut_instance = instance.lock().await;
+    let mut success: Vec<PathBuf> = Vec::new();
+
+    for path in relative_paths {
+        // Get mapping
+        let Some(mapping) = sheet.mapping().get(&path) else {
+            mut_instance.write_msgpack::<SyncVersionInfo>(None).await?; // (ready)
+            continue;
+        };
+        // Get virtual file
+        let Ok(vf) = vault.virtual_file(&mapping.id) else {
+            mut_instance.write_msgpack::<SyncVersionInfo>(None).await?; // (ready)
+            continue;
+        };
+        // Read metadata and get real path
+        let vf_meta = &vf.read_meta().await?;
+        let real_path = vault.virtual_file_real_path(&mapping.id, &vf_meta.version_latest());
+        let version = vf_meta.version_latest();
+        mut_instance
+            .write_msgpack::<SyncVersionInfo>(Some((
+                version.clone(),
+                vf_meta.version_description(version).cloned().unwrap_or(
+                    VirtualFileVersionDescription {
+                        creator: MemberId::default(),
+                        description: "".to_string(),
+                    },
+                ),
+            )))
+            .await?; // (ready)
+        if mut_instance.write_file(real_path).await.is_err() {
+            continue;
+        } else {
+            success.push(path);
+        }
+    }
+    Ok(SyncTaskResult::Success(success))
 }
