@@ -662,10 +662,10 @@ async fn proc_update_tasks_remote(
                 reason,
             }); // Member not held it
         };
-        if mapping_data.version != version {
+        if vf_metadata.version_latest() != version {
             mut_instance.write_msgpack(false).await?;
             let reason =
-                VerifyFailReason::VersionDismatch(version.clone(), mapping_data.version.clone());
+                VerifyFailReason::VersionDismatch(version.clone(), vf_metadata.version_latest());
             mut_instance.write_msgpack(reason.clone()).await?;
             return Ok(UpdateTaskResult::VerifyFailed {
                 path: path.clone(),
