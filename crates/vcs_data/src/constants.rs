@@ -50,20 +50,20 @@ pub const CLIENT_PATH_WORKSPACE_ROOT: &str = "./.jv/";
 pub const CLIENT_FOLDER_WORKSPACE_ROOT_NAME: &str = ".jv";
 
 // Client - Workspace (Main)
-pub const CLIENT_FILE_WORKSPACE: &str = "./.jv/workspace.json";
+pub const CLIENT_FILE_WORKSPACE: &str = "./.jv/workspace.toml";
 
 // Client - Latest Information
-pub const CLIENT_FILE_LATEST_INFO: &str = "./.jv/members/{account}/vault.yaml";
+pub const CLIENT_FILE_LATEST_INFO: &str = "./.jv/cache/latest/{account}.vault.yaml";
 
 // Client - Local
-pub const CLIENT_SUFFIX_LOCAL_SHEET_FILE: &str = ".ron";
-pub const CLIENT_SUFFIX_CACHED_SHEET_FILE: &str = ".ron";
+pub const CLIENT_SUFFIX_LOCAL_SHEET_FILE: &str = ".yaml";
+pub const CLIENT_SUFFIX_CACHED_SHEET_FILE: &str = ".yaml";
 pub const CLIENT_PATH_LOCAL_DRAFT: &str = "./.jv/drafts/{account}/{sheet_name}/";
 pub const CLIENT_PATH_LOCAL_SHEET: &str = "./.jv/local/";
-pub const CLIENT_PATH_CACHED_SHEET: &str = "./.jv/cached/";
-pub const CLIENT_FILE_LOCAL_SHEET: &str = "./.jv/local/{account}/{sheet_name}.ron";
-pub const CLIENT_FILE_CACHED_SHEET: &str = "./.jv/cached/{sheet_name}.ron";
-pub const CLIENT_FILE_LATEST_DATA: &str = "./.jv/members/{account}/file.yaml";
+pub const CLIENT_PATH_CACHED_SHEET: &str = "./.jv/cache/sheet/";
+pub const CLIENT_FILE_LOCAL_SHEET: &str = "./.jv/local/{account}/{sheet_name}.yaml";
+pub const CLIENT_FILE_CACHED_SHEET: &str = "./.jv/cache/sheet/{sheet_name}.yaml";
+pub const CLIENT_FILE_LATEST_DATA: &str = "./.jv/cache/latest/{account}.file.yaml";
 
 pub const CLIENT_FILE_LOCAL_SHEET_NOSET: &str = "./.jv/.temp/wrong.json";
 pub const CLIENT_FILE_MEMBER_HELD_NOSET: &str = "./.jv/.temp/wrong.json";
