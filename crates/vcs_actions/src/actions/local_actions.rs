@@ -376,14 +376,13 @@ pub async fn update_to_latest_info_action(
                 let Ok(meta) = vault.virtual_file_meta(&id).await else {
                     continue;
                 };
-                result.insert(
-                    id,
-                    if meta.hold_member().is_empty() {
-                        (None, "".to_string())
-                    } else {
-                        (Some(meta.hold_member().to_string()), meta.version_latest())
-                    },
-                );
+                let holder = if meta.hold_member().is_empty() {
+                    None
+                } else {
+                    Some(meta.hold_member().clone())
+                };
+                let version = meta.version_latest();
+                result.insert(id, (holder, version));
             }
 
             // Send information
