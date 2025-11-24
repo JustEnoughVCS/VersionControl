@@ -398,6 +398,9 @@ pub async fn update_to_latest_info_action(
         let local_sheet_path = workspace.local_path().join(CLIENT_PATH_LOCAL_SHEET);
         if !local_sheet_path.exists() || !cached_sheet_path.exists() {
             // No need to sync
+            if ctx.is_proc_on_local() {
+                sign_vault_modified(false).await;
+            }
             return Ok(UpdateToLatestInfoResult::Success);
         }
 
