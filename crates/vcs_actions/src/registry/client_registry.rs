@@ -15,6 +15,7 @@ use crate::{
         },
         sheet_actions::{register_drop_sheet_action, register_make_sheet_action},
         track_action::register_track_file_action,
+        user_actions::register_change_virtual_file_edit_right_action,
     },
     connection::protocol::RemoteActionInvoke,
 };
@@ -30,8 +31,11 @@ fn register_actions(pool: &mut ActionPool) {
     register_make_sheet_action(pool);
     register_drop_sheet_action(pool);
 
-    // Virtual File Actions
+    // Track Action
     register_track_file_action(pool);
+
+    // User Actions
+    register_change_virtual_file_edit_right_action(pool);
 }
 
 pub fn client_action_pool() -> ActionPool {
