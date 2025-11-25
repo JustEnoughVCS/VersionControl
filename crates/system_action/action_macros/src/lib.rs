@@ -2,13 +2,56 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{ItemFn, parse_macro_input};
 
-/// A procedural macro for generating structs that implement the Action trait
+/// # Macro - Generate Action
 ///
-/// Usage:
-/// #[action_gen] or #[action_gen(local)]
-/// pub fn my_action(ctx: ActionContext, arg: MyArg) -> Result<MyReturn, TcpTargetError> {
-///     todo!()
+/// When annotating a function with the `#[action_gen]` macro in the following format, it generates boilerplate code for client-server interaction
+///
+/// ```ignore
+/// #[action_gen]
+/// async fn action_name(ctx: ActionContext, argument: YourArgument) -> Result<YourResult, TcpTargetError> {
+///     // Write your client and server logic here
+///     if ctx.is_proc_on_remote() {
+///         // Server logic
+///     }
+///     if ctx.is_proc_on_local() {
+///         // Client logic
+///     }
 /// }
+/// ```
+///
+/// > WARNING:
+/// > For Argument and Result types, the `action_gen` macro only supports types that derive serde's Serialize and Deserialize
+///
+/// ## Generated Code
+///
+/// `action_gen` will generate the following:
+///
+/// 1. Complete implementation of Action<Args, Return>
+/// 2. Process / Register method
+///
+/// ## How to use
+///
+/// You can use your generated method as follows
+///
+/// ```ignore
+/// async fn main() -> Result<(), TcpTargetError> {
+///
+///     // Prepare your argument
+///     let args = YourArgument::default();
+///
+///     // Create a pool and context
+///     let mut pool = ActionPool::new();
+///     let ctx = ActionContext::local();
+///
+///     // Register your action
+///     register_your_action(&mut pool);
+///
+///     // Process your action
+///     proc_your_action(&pool, ctx, args).await?;
+///
+///     Ok(())
+/// }
+/// ```
 #[proc_macro_attribute]
 pub fn action_gen(attr: TokenStream, item: TokenStream) -> TokenStream {
     let input_fn = parse_macro_input!(item as ItemFn);

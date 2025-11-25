@@ -5,6 +5,40 @@ use std::sync::Arc;
 use tcp_connection::{error::TcpTargetError, instance::ConnectionInstance};
 use tokio::{net::TcpStream, sync::Mutex};
 
+/// # Trait - Action<Args, Return>
+///
+/// A trait used to describe the interaction pattern between client and server
+///
+/// ## Generics
+///
+/// Args: Represents the parameter type required for this action
+///
+/// Return: Represents the return type of this action
+///
+/// The above generics must implement serde's Serialize and DeserializeOwned traits,
+/// and must be sendable between threads
+///
+/// ## Implementation
+///
+/// ```ignore
+/// pub trait Action<Args, Return>
+/// where
+///     Args: Serialize + DeserializeOwned + Send,
+///     Return: Serialize + DeserializeOwned + Send,
+/// {
+///     /// Name, used to inform the server which action to execute
+///     fn action_name() -> &'static str;
+///
+///     /// Whether it's a local Action, used to inform the system if it only runs locally
+///     fn is_remote_action() -> bool;
+///
+///     /// Action processing logic
+///     fn process(
+///         context: ActionContext,
+///         args: Args,
+///     ) -> impl std::future::Future<Output = Result<Return, TcpTargetError>> + Send;
+/// }
+/// ```
 pub trait Action<Args, Return>
 where
     Args: Serialize + DeserializeOwned + Send,
@@ -20,6 +54,28 @@ where
     ) -> impl std::future::Future<Output = Result<Return, TcpTargetError>> + Send;
 }
 
+/// # Struct - ActionContext
+///
+/// Used to inform the Action about the current execution environment
+///
+/// ## Creation
+///
+/// Create ActionContext using the following methods:
+///
+/// ```ignore
+///
+/// // The instance here is the connection instance passed from external sources for communicating with the server
+/// // For specific usage, please refer to the `/crates/utils/tcp_connection` section
+///
+/// fn init_local_action_ctx(instance: ConnectionInstance) {
+///     // Create context and specify execution on local
+///     let mut ctx = ActionContext::local();
+/// }
+///
+/// fn init_remote_action_ctx(instance: ConnectionInstance) {
+///     // Create context and specify execution on remote
+///     let mut ctx = ActionContext::remote();
+/// }
 #[derive(Default)]
 pub struct ActionContext {
     /// Whether the action is executed locally or remotely

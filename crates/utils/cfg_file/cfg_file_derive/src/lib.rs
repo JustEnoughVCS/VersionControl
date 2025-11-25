@@ -4,7 +4,34 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::parse::ParseStream;
 use syn::{Attribute, DeriveInput, Expr, parse_macro_input};
-
+/// # Macro - ConfigFile
+///
+/// ## Usage
+///
+/// Use `#[derive(ConfigFile)]` to derive the ConfigFile trait for a struct
+///
+/// Specify the default storage path via `#[cfg_file(path = "...")]`
+///
+/// ## About the `cfg_file` attribute macro
+///
+/// Use `#[cfg_file(path = "string")]` to specify the configuration file path
+///
+/// Or use `#[cfg_file(path = constant_expression)]` to specify the configuration file path
+///
+/// ## Path Rules
+///
+/// Paths starting with `"./"`: relative to the current working directory
+///
+/// Other paths: treated as absolute paths
+///
+/// When no path is specified: use the struct name + ".json" as the default filename (e.g., `my_struct.json`)
+///
+/// ## Example
+/// ```ignore
+/// #[derive(ConfigFile)]
+/// #[cfg_file(path = "./config.json")]
+/// struct AppConfig;
+/// ```
 #[proc_macro_derive(ConfigFile, attributes(cfg_file))]
 pub fn derive_config_file(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);

@@ -15,7 +15,25 @@ type ProcEndCallback = fn() -> ProcEndFuture;
 type ProcBeginFuture<'a> = Pin<Box<dyn Future<Output = Result<(), TcpTargetError>> + Send + 'a>>;
 type ProcEndFuture = Pin<Box<dyn Future<Output = Result<(), TcpTargetError>> + Send>>;
 
-/// A pool of registered actions that can be processed by name
+/// # Struct - ActionPool
+///
+/// This struct is used to register and record all accessible and executable actions
+///
+/// It also registers `on_proc_begin` and `on_proc_end` callback functions
+/// used for action initialization
+///
+/// ## Creating and registering actions
+/// ```ignore
+/// fn init_action_pool() {
+///     let mut pool = Action::new();
+///
+///     // Register action
+///     pool.register<YourAction, ActionArgument, ActionReturn>();
+///
+///     // If the action is implemented with `#[action_gen]`, you can also do
+///     register_your_action(&mut pool);
+/// }
+/// ```
 pub struct ActionPool {
     /// HashMap storing action name to action implementation mapping
     actions: std::collections::HashMap<&'static str, Box<dyn ActionErased>>,

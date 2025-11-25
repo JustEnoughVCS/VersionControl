@@ -5,6 +5,9 @@ use tokio::fs::File;
 use tokio::io::{AsyncReadExt, BufReader};
 use tokio::task;
 
+/// # Struct - Sha1Result
+///
+/// Records SHA1 calculation results, including the file path and hash value
 #[derive(Debug, Clone)]
 pub struct Sha1Result {
     pub file_path: PathBuf,

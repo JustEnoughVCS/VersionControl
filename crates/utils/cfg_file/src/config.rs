@@ -33,12 +33,50 @@ impl ConfigFormat {
     }
 }
 
+/// # Trait - ConfigFile
+///
+/// Used to implement more convenient persistent storage functionality for structs
+///
+/// This trait requires the struct to implement Default and serde's Serialize and Deserialize traits
+///
+/// ## Implementation
+///
+/// ```ignore
+/// // Your struct
+/// #[derive(Default, Serialize, Deserialize)]
+/// struct YourData;
+///
+/// impl ConfigFile for YourData {
+///     type DataType = YourData;
+///
+///     // Specify default path
+///     fn default_path() -> Result<PathBuf, Error> {
+///         Ok(current_dir()?.join("data.json"))
+///     }
+/// }
+/// ```
+///
+/// > **Using derive macro**
+/// >
+/// > We provide the derive macro `#[derive(ConfigFile)]`
+/// >
+/// > You can implement this trait more quickly, please check the module cfg_file::cfg_file_derive
+///
 #[async_trait]
 pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
     type DataType: Serialize + for<'a> Deserialize<'a> + Default + Send + Sync;
 
     fn default_path() -> Result<PathBuf, Error>;
 
+    /// # Read from default path
+    ///
+    /// Read data from the path specified by default_path()
+    ///
+    /// ```ignore
+    /// fn main() -> Result<(), std::io::Error> {
+    ///     let data = YourData::read().await?;
+    /// }
+    /// ```
     async fn read() -> Result<Self::DataType, std::io::Error>
     where
         Self: Sized + Send + Sync,
@@ -47,6 +85,16 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
         Self::read_from(path).await
     }
 
+    /// # Read from the given path
+    ///
+    /// Read data from the path specified by the path parameter
+    ///
+    /// ```ignore
+    /// fn main() -> Result<(), std::io::Error> {
+    ///     let data_path = current_dir()?.join("data.json");
+    ///     let data = YourData::read_from(data_path).await?;
+    /// }
+    /// ```
     async fn read_from(path: impl AsRef<Path> + Send) -> Result<Self::DataType, std::io::Error>
     where
         Self: Sized + Send + Sync,
@@ -91,6 +139,16 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
         Ok(result)
     }
 
+    /// # Write to default path
+    ///
+    /// Write data to the path specified by default_path()
+    ///
+    /// ```ignore
+    /// fn main() -> Result<(), std::io::Error> {
+    ///     let data = YourData::default();
+    ///     YourData::write(&data).await?;
+    /// }
+    /// ```
     async fn write(val: &Self::DataType) -> Result<(), std::io::Error>
     where
         Self: Sized + Send + Sync,
@@ -98,7 +156,17 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
         let path = Self::default_path()?;
         Self::write_to(val, path).await
     }
-
+    /// # Write to the given path
+    ///
+    /// Write data to the path specified by the path parameter
+    ///
+    /// ```ignore
+    /// fn main() -> Result<(), std::io::Error> {
+    ///     let data = YourData::default();
+    ///     let data_path = current_dir()?.join("data.json");
+    ///     YourData::write_to(&data, data_path).await?;
+    /// }
+    /// ```
     async fn write_to(
         val: &Self::DataType,
         path: impl AsRef<Path> + Send,
