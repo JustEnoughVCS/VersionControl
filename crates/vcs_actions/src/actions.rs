@@ -17,9 +17,9 @@ use vcs_data::{
 
 pub mod local_actions;
 pub mod sheet_actions;
+pub mod track_action;
 pub mod user_actions;
 pub mod vault_actions;
-pub mod virtual_file_actions;
 
 /// Check if the connection instance is valid in the given context.
 /// This function is used to verify the connection instance in actions that require remote calls.
@@ -175,11 +175,12 @@ pub async fn get_current_sheet_name(
         // Check if sheet exists
         if let Ok(sheet) = vault.sheet(&sheet_name).await
             && let Some(holder) = sheet.holder()
-                && holder == member_id {
-                    // Tell local the check is passed
-                    mut_instance.write_msgpack(true).await?;
-                    return Ok(sheet_name.clone());
-                }
+            && holder == member_id
+        {
+            // Tell local the check is passed
+            mut_instance.write_msgpack(true).await?;
+            return Ok(sheet_name.clone());
+        }
         // Tell local the check is not passed
         mut_instance.write_msgpack(false).await?;
         return Err(TcpTargetError::NotFound("Sheet not found".to_string()));

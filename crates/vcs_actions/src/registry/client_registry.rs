@@ -14,7 +14,7 @@ use crate::{
             register_set_upstream_vault_action, register_update_to_latest_info_action,
         },
         sheet_actions::{register_drop_sheet_action, register_make_sheet_action},
-        virtual_file_actions::register_track_file_action,
+        track_action::register_track_file_action,
     },
     connection::protocol::RemoteActionInvoke,
 };
