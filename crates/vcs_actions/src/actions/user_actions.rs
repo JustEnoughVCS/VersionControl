@@ -1,8 +1,3 @@
-// Hold
-// Throw
-// Import
-// Export
-
 use std::path::PathBuf;
 
 use action_system::{action::ActionContext, macros::action_gen};
@@ -27,7 +22,7 @@ pub enum ChangeVirtualFileEditRightResult {
     DoNothing,
 }
 
-#[derive(Serialize, Deserialize, PartialEq)]
+#[derive(Serialize, Deserialize, PartialEq, Clone)]
 pub enum EditRightChangeBehaviour {
     Hold,
     Throw,
@@ -42,9 +37,10 @@ pub enum EditRightChangeBehaviour {
 #[action_gen]
 pub async fn change_virtual_file_edit_right_action(
     ctx: ActionContext,
-    relative_paths: Vec<(PathBuf, EditRightChangeBehaviour)>,
+    arguments: (Vec<(PathBuf, EditRightChangeBehaviour)>, bool),
 ) -> Result<ChangeVirtualFileEditRightResult, TcpTargetError> {
     let instance = check_connection_instance(&ctx)?;
+    let (relative_paths, print_info) = arguments;
 
     // Auth Member
     let member_id = match auth_member(&ctx, instance).await {
@@ -78,23 +74,23 @@ pub async fn change_virtual_file_edit_right_action(
                 continue;
             };
 
-            // Throw file
-            if has_edit_right && behaviour == EditRightChangeBehaviour::Throw {
+            // Hold file
+            if !has_edit_right && behaviour == EditRightChangeBehaviour::Hold {
                 match vault
                     .grant_virtual_file_edit_right(&member_id, &mapping.id)
                     .await
                 {
                     Ok(_) => {
-                        success_throw.push(path.clone());
+                        success_hold.push(path.clone());
                     }
                     Err(_) => continue,
                 }
             } else
-            // Hold file
-            if !has_edit_right && behaviour == EditRightChangeBehaviour::Hold {
+            // Throw file
+            if has_edit_right && behaviour == EditRightChangeBehaviour::Throw {
                 match vault.revoke_virtual_file_edit_right(&mapping.id).await {
                     Ok(_) => {
-                        success_hold.push(path.clone());
+                        success_throw.push(path.clone());
                     }
                     Err(_) => continue,
                 }
@@ -124,6 +120,17 @@ pub async fn change_virtual_file_edit_right_action(
         if success_hold.len() + success_throw.len() > 0 {
             sign_vault_modified(true).await;
         }
+
+        // Print info
+        if print_info {
+            success_hold
+                .iter()
+                .for_each(|s| println!("+ {}", s.display()));
+            success_throw
+                .iter()
+                .for_each(|s| println!("- {}", s.display()));
+        }
+
         return Ok(ChangeVirtualFileEditRightResult::Success {
             success_hold,
             success_throw,
