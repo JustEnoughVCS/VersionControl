@@ -34,6 +34,9 @@ pub struct VaultServerConfig {
     /// TCP port to bind to when the server starts
     port: u16,
 
+    /// Enable logging
+    logger: bool,
+
     /// Whether to enable LAN discovery, allowing members on the same LAN to more easily find the upstream server
     lan_discovery: bool, // TODO
 
@@ -55,6 +58,7 @@ impl Default for VaultConfig {
             server_config: VaultServerConfig {
                 local_bind: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
                 port: PORT,
+                logger: true,
                 lan_discovery: false,
                 auth_strength: 2,
             },
@@ -143,5 +147,15 @@ impl VaultServerConfig {
     /// Set port
     pub fn set_port(&mut self, port: u16) {
         self.port = port;
+    }
+
+    /// Get logger enabled status
+    pub fn is_logger_enabled(&self) -> bool {
+        self.logger
+    }
+
+    /// Set logger enabled status
+    pub fn set_logger_enabled(&mut self, logger: bool) {
+        self.logger = logger;
     }
 }
