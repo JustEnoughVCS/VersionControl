@@ -125,7 +125,7 @@ impl Default for VaultConfig {
                 logger: BehaviourEnabled::Yes,
                 logger_level: LoggerLevel::Info,
                 lan_discovery: ServiceEnabled::Disable,
-                auth_mode: AuthMode::Password,
+                auth_mode: AuthMode::Key,
             },
         }
     }
