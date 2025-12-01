@@ -59,7 +59,7 @@ impl ServerHandle<VirtualFileCreateClientHandle> for VirtualFileCreateServerHand
             .unwrap();
 
         // Setup vault
-        Vault::setup_vault(dir.clone()).await.unwrap();
+        Vault::setup_vault(dir.clone(), "TestVault").await.unwrap();
 
         // Read vault
         let Some(vault) = Vault::init(

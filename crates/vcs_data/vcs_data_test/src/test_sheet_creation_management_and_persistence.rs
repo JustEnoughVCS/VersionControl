@@ -17,7 +17,7 @@ async fn test_sheet_creation_management_and_persistence() -> Result<(), std::io:
     let dir = get_test_dir("sheet_management").await?;
 
     // Setup vault
-    Vault::setup_vault(dir.clone()).await?;
+    Vault::setup_vault(dir.clone(), "TestVault").await?;
 
     // Get vault
     let config = VaultConfig::read_from(dir.join(SERVER_FILE_VAULT)).await?;
@@ -193,7 +193,7 @@ async fn test_sheet_error_conditions() -> Result<(), std::io::Error> {
     let dir = get_test_dir("sheet_error_conditions").await?;
 
     // Setup vault
-    Vault::setup_vault(dir.clone()).await?;
+    Vault::setup_vault(dir.clone(), "TestVault").await?;
 
     // Get vault
     let config = VaultConfig::read_from(dir.join(SERVER_FILE_VAULT)).await?;
@@ -244,7 +244,7 @@ async fn test_sheet_data_serialization() -> Result<(), std::io::Error> {
 
     // Test serialization by creating a sheet through the vault
     // Setup vault
-    Vault::setup_vault(dir.clone()).await?;
+    Vault::setup_vault(dir.clone(), "TestVault").await?;
 
     // Get vault
     let config = VaultConfig::read_from(dir.join(SERVER_FILE_VAULT)).await?;

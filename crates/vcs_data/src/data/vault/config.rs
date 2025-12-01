@@ -10,43 +10,107 @@ use crate::data::member::{Member, MemberId};
 pub type VaultName = String;
 pub type VaultUuid = Uuid;
 
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AuthMode {
+    /// Use asymmetric keys: both client and server need to register keys, after which they can connect
+    Key,
+
+    /// Use password: the password stays on the server, and the client needs to set the password locally for connection
+    Password,
+
+    /// No authentication: generally used in a strongly secure environment, skipping verification directly
+    NoAuth,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum LoggerLevel {
+    Debug,
+    Trace,
+    Info,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum ServiceEnabled {
+    Enable,
+    Disable,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum BehaviourEnabled {
+    Yes,
+    No,
+}
+
+impl Into<bool> for ServiceEnabled {
+    fn into(self) -> bool {
+        match self {
+            ServiceEnabled::Enable => true,
+            ServiceEnabled::Disable => false,
+        }
+    }
+}
+
+impl Into<bool> for BehaviourEnabled {
+    fn into(self) -> bool {
+        match self {
+            BehaviourEnabled::Yes => true,
+            BehaviourEnabled::No => false,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, ConfigFile)]
 #[cfg_file(path = SERVER_FILE_VAULT)]
 pub struct VaultConfig {
     /// Vault uuid, unique identifier for the vault
+    #[serde(rename = "uuid")]
     vault_uuid: VaultUuid,
 
     /// Vault name, which can be used as the project name and generally serves as a hint
+    #[serde(rename = "name")]
     vault_name: VaultName,
 
     /// Vault admin id, a list of member id representing administrator identities
+    #[serde(rename = "admin")]
     vault_admin_list: Vec<MemberId>,
 
     /// Vault server configuration, which will be loaded when connecting to the server
+    #[serde(rename = "profile")]
     server_config: VaultServerConfig,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct VaultServerConfig {
     /// Local IP address to bind to when the server starts
+    #[serde(rename = "bind")]
     local_bind: IpAddr,
 
     /// TCP port to bind to when the server starts
+    #[serde(rename = "port")]
     port: u16,
 
     /// Enable logging
-    logger: bool,
+    #[serde(rename = "logger")]
+    logger: BehaviourEnabled,
+
+    /// Logger Level
+    #[serde(rename = "logger_level")]
+    logger_level: LoggerLevel,
 
     /// Whether to enable LAN discovery, allowing members on the same LAN to more easily find the upstream server
-    lan_discovery: bool, // TODO
+    #[serde(rename = "lan_discovery")]
+    lan_discovery: ServiceEnabled, // TODO
 
-    /// Authentication strength level
-    /// 0: Weakest - Anyone can claim any identity, fastest speed
-    /// 1: Basic - Any device can claim any registered identity, slightly faster
-    /// 2: Advanced - Uses asymmetric encryption, multiple devices can use key authentication to log in simultaneously, slightly slower
-    /// 3: Secure - Uses asymmetric encryption, only one device can use key for authentication at a time, much slower
-    /// Default is "Advanced", if using a lower security policy, ensure your server is only accessible by trusted devices
-    auth_strength: u8, // TODO
+    /// Authentication mode for the vault server
+    /// key: Use asymmetric keys for authentication
+    /// password: Use a password for authentication
+    /// noauth: No authentication required, requires a strongly secure environment
+    #[serde(rename = "auth_mode")]
+    auth_mode: AuthMode, // TODO
 }
 
 impl Default for VaultConfig {
@@ -58,9 +122,10 @@ impl Default for VaultConfig {
             server_config: VaultServerConfig {
                 local_bind: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
                 port: PORT,
-                logger: true,
-                lan_discovery: false,
-                auth_strength: 2,
+                logger: BehaviourEnabled::Yes,
+                logger_level: LoggerLevel::Info,
+                lan_discovery: ServiceEnabled::Disable,
+                auth_mode: AuthMode::Password,
             },
         }
     }
@@ -134,28 +199,13 @@ impl VaultServerConfig {
         &self.local_bind
     }
 
-    /// Set local bind IP address
-    pub fn set_local_bind(&mut self, local_bind: IpAddr) {
-        self.local_bind = local_bind;
-    }
-
     /// Get port
     pub fn port(&self) -> u16 {
         self.port
     }
 
-    /// Set port
-    pub fn set_port(&mut self, port: u16) {
-        self.port = port;
-    }
-
     /// Get logger enabled status
     pub fn is_logger_enabled(&self) -> bool {
-        self.logger
-    }
-
-    /// Set logger enabled status
-    pub fn set_logger_enabled(&mut self, logger: bool) {
-        self.logger = logger;
+        self.logger.clone().into()
     }
 }

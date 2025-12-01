@@ -19,7 +19,7 @@ async fn test_vault_setup_and_member_register() -> Result<(), std::io::Error> {
     let dir = get_test_dir("member_register").await?;
 
     // Setup vault
-    Vault::setup_vault(dir.clone()).await?;
+    Vault::setup_vault(dir.clone(), "TestVault").await?;
 
     // Check if the following files and directories are created in `dir`:
     // Files: SERVER_FILE_VAULT, SERVER_FILE_README
