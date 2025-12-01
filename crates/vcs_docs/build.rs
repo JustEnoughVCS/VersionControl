@@ -29,7 +29,7 @@ fn main() -> io::Result<()> {
     let mut documents = Vec::new();
 
     if docs_dir.exists() {
-        collect_markdown_files(docs_dir, &mut documents)?;
+        collect_text_files(docs_dir, &mut documents)?;
     }
 
     // Read template file
@@ -67,6 +67,11 @@ fn main() -> io::Result<()> {
             .replace(['/', '\\', '-'], "_")
             .replace(".md", "")
             .replace(".txt", "")
+            .replace(".toml", "")
+            .replace(".yaml", "")
+            .replace(".yml", "")
+            .replace(".json", "")
+            .replace(".rs", "")
             .to_uppercase();
 
         // Generate snake_case name for function matching
@@ -74,14 +79,22 @@ fn main() -> io::Result<()> {
             .replace(['/', '\\', '-'], "_")
             .replace(".md", "")
             .replace(".txt", "")
+            .replace(".toml", "")
+            .replace(".yaml", "")
+            .replace(".yml", "")
+            .replace(".json", "")
+            .replace(".rs", "")
             .to_lowercase();
+
+        // Escape double quotes in content
+        let escaped_content = content.trim().replace('\"', "\\\"");
 
         // Replace template parameters in document block preserving indentation
         let document_block = document_template
             .replace(PARAM_DOCUMENT_PATH, &document_path)
             .replace(PARAM_DOCUMENT_CONSTANT_NAME, &document_constant_name)
-            .replace(PARAM_DOCUMENT_CONTENT, content.trim())
-            .replace("r#\"\"#", &format!("r#\"{}\"#", content.trim()));
+            .replace(PARAM_DOCUMENT_CONTENT, &escaped_content)
+            .replace("r#\"\"#", &format!("r#\"{}\"#", escaped_content));
 
         document_blocks.push_str(&document_block);
         document_blocks.push_str("\n\n");
@@ -119,20 +132,22 @@ fn main() -> io::Result<()> {
 
     // Add function section
     if let Some(func_section) = template_content.split(TEMPLATE_FUNC_BEGIN).next()
-        && let Some(rest) = func_section.split(TEMPLATE_DOCUMENT_END).nth(1) {
-            output.push_str(rest.trim());
-            output.push('\n');
-        }
+        && let Some(rest) = func_section.split(TEMPLATE_DOCUMENT_END).nth(1)
+    {
+        output.push_str(rest.trim());
+        output.push('\n');
+    }
 
     // Add match arms
     output.push_str(&match_arms);
 
     // Add list items for documents() function
     if let Some(list_section) = template_content.split(TEMPLATE_LIST_BEGIN).next()
-        && let Some(rest) = list_section.split(TEMPLATE_FUNC_END).nth(1) {
-            output.push_str(rest.trim());
-            output.push('\n');
-        }
+        && let Some(rest) = list_section.split(TEMPLATE_FUNC_END).nth(1)
+    {
+        output.push_str(rest.trim());
+        output.push('\n');
+    }
     output.push_str(&list_items);
 
     // Add footer
@@ -152,24 +167,30 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-fn collect_markdown_files(dir: &Path, documents: &mut Vec<(String, String)>) -> io::Result<()> {
+fn collect_text_files(dir: &Path, documents: &mut Vec<(String, String)>) -> io::Result<()> {
     for entry in fs::read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
 
         if path.is_dir() {
-            collect_markdown_files(&path, documents)?;
-        } else if path
-            .extension()
-            .is_some_and(|ext| ext == "md" || ext == "txt")
-            && let Ok(relative_path) = path.strip_prefix("../../docs/Documents")
-                && let Some(relative_path_str) = relative_path.to_str() {
-                    let content = fs::read_to_string(&path)?;
-                    documents.push((
-                        relative_path_str.trim_start_matches('/').to_string(),
-                        content,
-                    ));
-                }
+            collect_text_files(&path, documents)?;
+        } else if path.extension().is_some_and(|ext| {
+            ext == "md"
+                || ext == "txt"
+                || ext == "toml"
+                || ext == "yaml"
+                || ext == "yml"
+                || ext == "json"
+                || ext == "rs"
+        }) && let Ok(relative_path) = path.strip_prefix("../../docs/Documents")
+            && let Some(relative_path_str) = relative_path.to_str()
+        {
+            let content = fs::read_to_string(&path)?;
+            documents.push((
+                relative_path_str.trim_start_matches('/').to_string(),
+                content,
+            ));
+        }
     }
     Ok(())
 }
