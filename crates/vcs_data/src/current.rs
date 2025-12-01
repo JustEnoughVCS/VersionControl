@@ -72,7 +72,7 @@ pub fn find_local_path(path: impl Into<PathBuf>) -> Option<PathBuf> {
     None
 }
 
-/// Get the system's document directory and join with .just_enough_vcs
-pub fn current_doc_dir() -> Option<PathBuf> {
+/// Get the system's document directory and join with jvcs
+pub fn current_cfg_dir() -> Option<PathBuf> {
     dirs::config_local_dir().map(|path| path.join("jvcs"))
 }

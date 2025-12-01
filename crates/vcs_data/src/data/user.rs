@@ -1,4 +1,4 @@
-use crate::current::current_doc_dir;
+use crate::current::current_cfg_dir;
 use std::path::PathBuf;
 
 pub mod accounts;
@@ -11,7 +11,7 @@ impl UserDirectory {
     /// Create a user ditectory struct from the current system's document directory
     pub fn current_doc_dir() -> Option<Self> {
         Some(UserDirectory {
-            local_path: current_doc_dir()?,
+            local_path: current_cfg_dir()?,
         })
     }
 
