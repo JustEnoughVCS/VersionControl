@@ -208,4 +208,9 @@ impl VaultServerConfig {
     pub fn is_logger_enabled(&self) -> bool {
         self.logger.clone().into()
     }
+
+    /// Get logger level
+    pub fn logger_level(&self) -> LoggerLevel {
+        self.logger_level.clone()
+    }
 }

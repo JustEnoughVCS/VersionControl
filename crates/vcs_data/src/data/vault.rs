@@ -1,6 +1,5 @@
 use std::{env::current_dir, path::PathBuf, sync::Arc};
 
-use cfg_file::config::ConfigFile;
 use tokio::fs::create_dir_all;
 use vcs_docs::docs::READMES_VAULT_README;
 
