@@ -81,7 +81,7 @@ async fn on_proc_begin(
     ctx.insert_arc_data(local_workspace_arc);
 
     // Insert UserDirectory Arc
-    let Some(user_directory) = UserDirectory::current_doc_dir() else {
+    let Some(user_directory) = UserDirectory::current_cfg_dir() else {
         return Err(TcpTargetError::NotFound(
             "The user directory does not exist.".to_string(),
         ));
