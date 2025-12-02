@@ -10,38 +10,45 @@ use crate::data::member::{Member, MemberId};
 pub type VaultName = String;
 pub type VaultUuid = Uuid;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum AuthMode {
     /// Use asymmetric keys: both client and server need to register keys, after which they can connect
     Key,
 
     /// Use password: the password stays on the server, and the client needs to set the password locally for connection
+    #[default]
     Password,
 
     /// No authentication: generally used in a strongly secure environment, skipping verification directly
     NoAuth,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum LoggerLevel {
     Debug,
     Trace,
+
+    #[default]
     Info,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum ServiceEnabled {
     Enable,
+
+    #[default]
     Disable,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum BehaviourEnabled {
     Yes,
+
+    #[default]
     No,
 }
 
@@ -95,22 +102,22 @@ pub struct VaultServerConfig {
 
     /// Enable logging
     #[serde(rename = "logger")]
-    logger: BehaviourEnabled,
+    logger: Option<BehaviourEnabled>,
 
     /// Logger Level
     #[serde(rename = "logger_level")]
-    logger_level: LoggerLevel,
+    logger_level: Option<LoggerLevel>,
 
     /// Whether to enable LAN discovery, allowing members on the same LAN to more easily find the upstream server
     #[serde(rename = "lan_discovery")]
-    lan_discovery: ServiceEnabled, // TODO
+    lan_discovery: Option<ServiceEnabled>, // TODO
 
     /// Authentication mode for the vault server
     /// key: Use asymmetric keys for authentication
     /// password: Use a password for authentication
     /// noauth: No authentication required, requires a strongly secure environment
     #[serde(rename = "auth_mode")]
-    auth_mode: AuthMode, // TODO
+    auth_mode: Option<AuthMode>, // TODO
 }
 
 impl Default for VaultConfig {
@@ -122,10 +129,10 @@ impl Default for VaultConfig {
             server_config: VaultServerConfig {
                 local_bind: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
                 port: PORT,
-                logger: BehaviourEnabled::Yes,
-                logger_level: LoggerLevel::Info,
-                lan_discovery: ServiceEnabled::Disable,
-                auth_mode: AuthMode::Key,
+                logger: Some(BehaviourEnabled::default()),
+                logger_level: Some(LoggerLevel::default()),
+                lan_discovery: Some(ServiceEnabled::default()),
+                auth_mode: Some(AuthMode::Key),
             },
         }
     }
@@ -204,13 +211,23 @@ impl VaultServerConfig {
         self.port
     }
 
+    /// Check if LAN discovery is enabled
+    pub fn is_lan_discovery_enabled(&self) -> bool {
+        self.lan_discovery.clone().unwrap_or_default().into()
+    }
+
     /// Get logger enabled status
     pub fn is_logger_enabled(&self) -> bool {
-        self.logger.clone().into()
+        self.logger.clone().unwrap_or_default().into()
     }
 
     /// Get logger level
     pub fn logger_level(&self) -> LoggerLevel {
-        self.logger_level.clone()
+        self.logger_level.clone().unwrap_or_default()
+    }
+
+    /// Get authentication mode
+    pub fn auth_mode(&self) -> AuthMode {
+        self.auth_mode.clone().unwrap_or_default()
     }
 }
