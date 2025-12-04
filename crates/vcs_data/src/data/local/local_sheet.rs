@@ -238,7 +238,7 @@ impl<'a> LocalSheet<'a> {
     /// Add mapping to local sheet data
     pub fn add_mapping(
         &mut self,
-        path: LocalFilePathBuf,
+        path: &LocalFilePathBuf,
         mapping: LocalMappingMetadata,
     ) -> Result<(), std::io::Error> {
         let path = format_path(path)?;
