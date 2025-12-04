@@ -186,6 +186,11 @@ pub async fn track_file_action(
                 .collect();
 
             let result = other.iter().filter_map(|p| {
+                // Not exists and not lost, first download
+                if !workspace.local_path().join(p).exists() && !analyzed.lost.contains(p) {
+                    return Some(p.clone());
+                }
+
                 // In cached sheet
                 if !cached_sheet.mapping().contains_key(p) {
                     return None;
@@ -415,7 +420,7 @@ async fn proc_create_tasks_local(
         let hash = sha1_hash::calc_sha1(&full_path, 2048).await.unwrap().hash;
         let time = std::fs::metadata(&full_path)?.modified()?;
         local_sheet.add_mapping(
-            path.clone(),
+            &path.clone(),
             LocalMappingMetadata::new(
                 hash,                                 // hash_when_updated
                 time,                                 // time_when_updated
@@ -734,7 +739,11 @@ async fn proc_update_tasks_remote(
     Ok(UpdateTaskResult::Success(success))
 }
 
-type SyncVersionInfo = Option<(VirtualFileVersion, VirtualFileVersionDescription)>;
+type SyncVersionInfo = Option<(
+    VirtualFileVersion,
+    VirtualFileVersionDescription,
+    VirtualFileId,
+)>;
 
 async fn proc_sync_tasks_local(
     ctx: &ActionContext,
@@ -747,8 +756,10 @@ async fn proc_sync_tasks_local(
     let workspace = try_get_local_workspace(ctx)?;
     let mut mut_instance = instance.lock().await;
     let mut success: Vec<PathBuf> = Vec::new();
+
     for path in relative_paths {
-        let Some((version, description)) = mut_instance.read_msgpack::<SyncVersionInfo>().await?
+        let Some((version, description, vfid)) =
+            mut_instance.read_msgpack::<SyncVersionInfo>().await?
         else {
             continue;
         };
@@ -761,44 +772,93 @@ async fn proc_sync_tasks_local(
         let copy_to = workspace.local_path().join(&path);
 
         // Read file
-        if mut_instance.read_file(&temp_path).await.is_ok() && temp_path.exists() {
-            // Calc hash
-            let Ok(new_hash) = calc_sha1(&temp_path, 2048).await else {
-                continue;
-            };
-
-            // Calc size
-            let Ok(new_size) = fs::metadata(&path).await.map(|meta| meta.len()) else {
-                continue;
-            };
-
-            // Write file
-            if copy_to.exists() {
-                let _ = fs::remove_file(&copy_to).await;
+        match mut_instance.read_file(&temp_path).await {
+            Ok(_) => {
+                if !temp_path.exists() {
+                    continue;
+                }
             }
-            fs::rename(temp_path, copy_to).await?;
+            Err(_) => {
+                continue;
+            }
+        }
 
-            // Modify local sheet
-            let mut local_sheet = workspace.local_sheet(member_id, sheet_name).await?;
-            let mapping = local_sheet.mapping_data_mut(&path)?;
-
-            let time = SystemTime::now();
-            mapping.set_hash_when_updated(new_hash.hash);
-            mapping.set_last_modifiy_check_result(false); // Mark not modified
-            mapping.set_version_when_updated(version);
-            mapping.set_version_desc_when_updated(description);
-            mapping.set_size_when_updated(new_size);
-            mapping.set_time_when_updated(time);
-            mapping.set_last_modifiy_check_time(time);
-            local_sheet.write().await?;
-
-            success.push(path.clone());
-
-            // Print success info
-            if print_infos {
-                println!("↓ {}", path.display());
+        // Calc hash
+        let new_hash = match calc_sha1(&temp_path, 2048).await {
+            Ok(hash) => hash,
+            Err(_) => {
+                continue;
             }
         };
+
+        // Calc size
+        let new_size = match fs::metadata(&temp_path).await.map(|meta| meta.len()) {
+            Ok(size) => size,
+            Err(_) => {
+                continue;
+            }
+        };
+
+        // Write file
+        if copy_to.exists() {
+            if let Err(_) = fs::remove_file(&copy_to).await {
+                continue;
+            }
+        } else {
+            // Not exist, create directory
+            if let Some(path) = copy_to.clone().parent() {
+                fs::create_dir_all(path).await?;
+            }
+        }
+        if let Err(_) = fs::rename(&temp_path, &copy_to).await {
+            continue;
+        }
+
+        // Modify local sheet
+        let mut local_sheet = match workspace.local_sheet(member_id, sheet_name).await {
+            Ok(sheet) => sheet,
+            Err(_) => {
+                continue;
+            }
+        };
+
+        // Get or create mapping
+        let mapping = match local_sheet.mapping_data_mut(&path) {
+            Ok(m) => m,
+            Err(_) => {
+                // First download
+                let mut data = LocalMappingMetadata::default();
+                data.set_mapping_vfid(vfid);
+                if let Err(_) = local_sheet.add_mapping(&path, data) {
+                    continue;
+                }
+                match local_sheet.mapping_data_mut(&path) {
+                    Ok(m) => m,
+                    Err(_) => {
+                        continue;
+                    }
+                }
+            }
+        };
+
+        let time = SystemTime::now();
+        mapping.set_hash_when_updated(new_hash.hash);
+        mapping.set_last_modifiy_check_result(false); // Mark not modified
+        mapping.set_version_when_updated(version);
+        mapping.set_version_desc_when_updated(description);
+        mapping.set_size_when_updated(new_size);
+        mapping.set_time_when_updated(time);
+        mapping.set_last_modifiy_check_time(time);
+        if let Err(_) = local_sheet.write().await {
+            continue;
+        }
+
+        success.push(path.clone());
+
+        // Print success info
+        if print_infos {
+            println!("↓ {}", path.display());
+        }
     }
     Ok(SyncTaskResult::Success(success))
 }
@@ -839,6 +899,7 @@ async fn proc_sync_tasks_remote(
                         description: "".to_string(),
                     },
                 ),
+                vf.id(),
             )))
             .await?; // (ready)
         if mut_instance.write_file(real_path).await.is_err() {
