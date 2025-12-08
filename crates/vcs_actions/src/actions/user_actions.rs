@@ -125,10 +125,10 @@ pub async fn change_virtual_file_edit_right_action(
         if print_info {
             success_hold
                 .iter()
-                .for_each(|s| println!("+ {}", s.display()));
+                .for_each(|s| println!("--> {}", s.display()));
             success_throw
                 .iter()
-                .for_each(|s| println!("- {}", s.display()));
+                .for_each(|s| println!("<-- {}", s.display()));
         }
 
         return Ok(ChangeVirtualFileEditRightResult::Success {
