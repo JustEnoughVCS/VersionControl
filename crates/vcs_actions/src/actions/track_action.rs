@@ -48,6 +48,9 @@ pub struct TrackFileActionArguments {
 
     // Print infos
     pub print_infos: bool,
+
+    // overwrite modified files
+    pub allow_overwrite_modified: bool,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -56,6 +59,7 @@ pub enum TrackFileActionResult {
         created: Vec<PathBuf>,
         updated: Vec<PathBuf>,
         synced: Vec<PathBuf>,
+        skipped: Vec<PathBuf>,
     },
 
     // Fail
@@ -177,6 +181,8 @@ pub async fn track_file_action(
             result.collect()
         };
 
+        let mut skipped_task: Vec<PathBuf> = Vec::new();
+
         // Filter out files that do not exist locally or have version inconsistencies and need to be synchronized
         let sync_task: Vec<PathBuf> = {
             let other: Vec<PathBuf> = relative_pathes
@@ -203,6 +209,14 @@ pub async fn track_file_action(
                 if let Some(latest_version) = &latest_file_data.file_version(vfid) {
                     // Version does not match
                     if &local_sheet_mapping.version_when_updated() != latest_version {
+                        let modified = modified.contains(p);
+                        if modified && arguments.allow_overwrite_modified {
+                            return Some(p.clone());
+                        } else if modified && !arguments.allow_overwrite_modified {
+                            // If not allowed to overwrite, join skipped tasks
+                            skipped_task.push(p.clone());
+                            return None;
+                        }
                         return Some(p.clone());
                     }
                 }
@@ -210,7 +224,14 @@ pub async fn track_file_action(
                 // File not held and modified
                 let holder = latest_file_data.file_holder(vfid);
                 if (holder.is_none() || &member_id != holder.unwrap()) && modified.contains(p) {
-                    return Some(p.clone());
+                    // If allow overwrite modified is true, overwrite the file
+                    if arguments.allow_overwrite_modified {
+                        return Some(p.clone());
+                    } else {
+                        // If not allowed to overwrite, join skipped tasks
+                        skipped_task.push(p.clone());
+                        return None;
+                    }
                 }
 
                 None
@@ -297,6 +318,7 @@ pub async fn track_file_action(
             created: success_create,
             updated: success_update,
             synced: success_sync,
+            skipped: skipped_task,
         });
     }
 
@@ -366,6 +388,7 @@ pub async fn track_file_action(
             created: success_create,
             updated: success_update,
             synced: success_sync,
+            skipped: Vec::new(), // The server doesn't know which files were skipped
         });
     }
 
