@@ -79,13 +79,14 @@ impl<'a> AnalyzeResult<'a> {
                 }
 
                 if entry.file_type().is_file()
-                    && let Ok(relative_path) = entry.path().strip_prefix(local_path) {
-                        let format = format_path(relative_path.to_path_buf());
-                        let Ok(format) = format else {
-                            continue;
-                        };
-                        paths.insert(format);
-                    }
+                    && let Ok(relative_path) = entry.path().strip_prefix(local_path)
+                {
+                    let format = format_path(relative_path.to_path_buf());
+                    let Ok(format) = format else {
+                        continue;
+                    };
+                    paths.insert(format);
+                }
             }
 
             paths
@@ -174,7 +175,16 @@ impl<'a> AnalyzeResult<'a> {
                     .iter()
                     .filter_map(|f| {
                         local_sheet.mapping_data(f).ok().map(|mapping_data| {
-                            (mapping_data.hash_when_updated.clone(), (*f).clone())
+                            (
+                                // Using the most recently recorded Hash can more accurately identify moved items,
+                                // but if it doesn't exist, fall back to the initially recorded Hash
+                                mapping_data
+                                    .last_modifiy_check_hash
+                                    .as_ref()
+                                    .cloned()
+                                    .unwrap_or(mapping_data.hash_when_updated.clone()),
+                                (*f).clone(),
+                            )
                         })
                     })
                     .collect(),
@@ -270,6 +280,9 @@ impl<'a> AnalyzeResult<'a> {
                 mapping_data.last_modifiy_check_time = modified_time;
                 mapping_data.last_modifiy_check_result = false;
             }
+
+            // Record latest hash
+            mapping_data.last_modifiy_check_hash = Some(hash_calc.hash)
         }
 
         // Persist the local sheet data
