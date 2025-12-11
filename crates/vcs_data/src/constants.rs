@@ -33,6 +33,7 @@ pub const SERVER_PATH_VF_ROOT: &str = "./storage/";
 pub const SERVER_PATH_VF_STORAGE: &str = "./storage/{vf_index}/{vf_id}/";
 pub const SERVER_FILE_VF_VERSION_INSTANCE: &str = "./storage/{vf_index}/{vf_id}/{vf_version}.rf";
 pub const SERVER_FILE_VF_META: &str = "./storage/{vf_index}/{vf_id}/meta.json";
+pub const SERVER_NAME_VF_META: &str = "meta.json";
 
 // Server - Updates
 pub const SERVER_FILE_UPDATES: &str = "./.updates.txt";
