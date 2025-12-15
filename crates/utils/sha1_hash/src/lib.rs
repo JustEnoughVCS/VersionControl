@@ -147,7 +147,12 @@ mod tests {
     async fn test_sha1_accuracy() {
         // Test file path relative to the crate root
         let test_file_path = "res/story.txt";
-        let expected_hash_path = "res/story.sha1";
+        // Choose expected hash file based on platform
+        let expected_hash_path = if cfg!(windows) {
+            "res/story_crlf.sha1"
+        } else {
+            "res/story_lf.sha1"
+        };
 
         // Calculate SHA1 hash
         let result = calc_sha1(test_file_path, 8192)
@@ -169,6 +174,14 @@ mod tests {
         println!("Test file: {}", result.file_path.display());
         println!("Calculated hash: {}", result.hash);
         println!("Expected hash: {}", expected_hash);
+        println!(
+            "Platform: {}",
+            if cfg!(windows) {
+                "Windows"
+            } else {
+                "Unix/Linux"
+            }
+        );
     }
 
     #[tokio::test]
@@ -223,8 +236,15 @@ mod tests {
 
         assert_eq!(results.len(), 1, "Should have calculated hash for 1 file");
 
+        // Choose expected hash file based on platform
+        let expected_hash_path = if cfg!(windows) {
+            "res/story_crlf.sha1"
+        } else {
+            "res/story_lf.sha1"
+        };
+
         // Read expected hash from file
-        let expected_hash = fs::read_to_string("res/story.sha1")
+        let expected_hash = fs::read_to_string(expected_hash_path)
             .expect("Failed to read expected hash file")
             .trim()
             .to_string();
