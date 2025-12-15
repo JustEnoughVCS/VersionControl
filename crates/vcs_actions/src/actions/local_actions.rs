@@ -1,11 +1,10 @@
-use std::{collections::HashMap, io::ErrorKind, net::SocketAddr, path::PathBuf};
+use std::{collections::HashMap, io::ErrorKind, net::SocketAddr, path::PathBuf, time::SystemTime};
 
 use action_system::{action::ActionContext, macros::action_gen};
 use cfg_file::config::ConfigFile;
 use log::info;
 use serde::{Deserialize, Serialize};
 use tcp_connection::error::TcpTargetError;
-use tokio::time::Instant;
 use vcs_data::{
     constants::{CLIENT_PATH_CACHED_SHEET, CLIENT_PATH_LOCAL_SHEET},
     data::{
@@ -195,7 +194,7 @@ pub async fn update_to_latest_info_action(
                 .await
                 .read_large_msgpack::<LatestInfo>(512_u16)
                 .await?;
-            latest_info.update_instant = Some(Instant::now());
+            latest_info.update_instant = Some(SystemTime::now());
             LatestInfo::write_to(
                 &latest_info,
                 LatestInfo::latest_info_path(workspace.local_path(), &member_id),
