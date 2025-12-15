@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 use tcp_connection::error::TcpTargetError;
 use vcs_data::data::{
     local::{
-        file_status::{FromRelativePathBuf, ToRelativePathBuf},
         vault_modified::sign_vault_modified,
+        workspace_analyzer::{FromRelativePathBuf, ToRelativePathBuf},
     },
     sheet::SheetName,
 };

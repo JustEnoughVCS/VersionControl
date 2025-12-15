@@ -5,7 +5,7 @@ use std::{
 
 use data_struct::dada_sort::quick_sort_with_cmp;
 
-use crate::data::local::file_status::AnalyzeResult;
+use crate::data::local::workspace_analyzer::AnalyzeResult;
 
 pub type AlignTasksName = String;
 pub type AlignPathBuf = PathBuf;

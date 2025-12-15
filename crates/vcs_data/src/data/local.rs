@@ -30,12 +30,12 @@ use crate::{
 pub mod align;
 pub mod cached_sheet;
 pub mod config;
-pub mod file_status;
 pub mod latest_file_data;
 pub mod latest_info;
 pub mod local_files;
 pub mod local_sheet;
 pub mod vault_modified;
+pub mod workspace_analyzer;
 
 const SHEET_NAME: &str = "{sheet_name}";
 const ACCOUNT_NAME: &str = "{account}";

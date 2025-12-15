@@ -15,9 +15,9 @@ use vcs_data::{
     constants::CLIENT_FILE_TEMP_FILE,
     data::{
         local::{
-            cached_sheet::CachedSheet, file_status::AnalyzeResult,
-            latest_file_data::LatestFileData, local_sheet::LocalMappingMetadata,
-            vault_modified::sign_vault_modified,
+            cached_sheet::CachedSheet, latest_file_data::LatestFileData,
+            local_sheet::LocalMappingMetadata, vault_modified::sign_vault_modified,
+            workspace_analyzer::AnalyzeResult,
         },
         member::MemberId,
         sheet::SheetName,
