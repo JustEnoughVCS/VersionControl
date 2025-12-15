@@ -33,6 +33,9 @@ pub struct AnalyzeResult<'a> {
     /// Lost local files
     pub lost: HashSet<LostRelativePathBuf>,
 
+    /// Erased local files
+    pub erased: HashSet<LostRelativePathBuf>,
+
     /// Modified local files (excluding moved files)
     /// For files that were both moved and modified, changes can only be detected after LocalSheet mapping is aligned with actual files
     pub modified: HashSet<ModifiedRelativePathBuf>,
@@ -154,6 +157,23 @@ impl<'a> AnalyzeResult<'a> {
             .cloned()
             .collect();
 
+        // Files that exist locally but not in remote
+        let mut erased_files: HashSet<PathBuf> = HashSet::new();
+
+        if let Some(cached_data) = &analyze_ctx.cached_sheet_data {
+            if let Some(local_sheet) = &analyze_ctx.local_sheet {
+                let cached_sheet_mapping = cached_data.mapping();
+                let local_sheet_mapping = &local_sheet.data.mapping;
+
+                // Find paths that exist in local sheet but not in cached sheet
+                for local_path in local_sheet_mapping.keys() {
+                    if !cached_sheet_mapping.contains_key(local_path) {
+                        erased_files.insert(local_path.clone());
+                    }
+                }
+            }
+        }
+
         // Calculate hashes for new files
         let new_files_for_hash: Vec<PathBuf> = new_files
             .iter()
@@ -231,6 +251,7 @@ impl<'a> AnalyzeResult<'a> {
                 vfid.map(|vfid| (vfid, (from.clone(), to.clone())))
             })
             .collect();
+        result.erased = erased_files;
 
         Ok(())
     }
@@ -299,6 +320,7 @@ impl<'a> AnalyzeResult<'a> {
             created: HashSet::new(),
             lost: HashSet::new(),
             modified: HashSet::new(),
+            erased: HashSet::new(),
         }
     }
 }

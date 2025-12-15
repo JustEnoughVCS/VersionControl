@@ -16,6 +16,7 @@ pub struct AlignTasks {
     pub created: Vec<(AlignTasksName, AlignPathBuf)>,
     pub lost: Vec<(AlignTasksName, AlignPathBuf)>,
     pub moved: Vec<(AlignTasksName, (AlignLostPathBuf, AlignCreatedPathBuf))>,
+    pub erased: Vec<(AlignTasksName, AlignPathBuf)>,
 }
 
 impl AlignTasks {
@@ -24,6 +25,7 @@ impl AlignTasks {
             created: path_hash_set_sort_helper(result.created.clone(), "created"),
             lost: path_hash_set_sort_helper(result.lost.clone(), "lost"),
             moved: path_hash_map_sort_helper(result.moved.clone(), "moved"),
+            erased: path_hash_set_sort_helper(result.erased.clone(), "erased"),
         }
     }
 
@@ -32,6 +34,7 @@ impl AlignTasks {
             created: path_hash_set_sort_helper(result.created, "created"),
             lost: path_hash_set_sort_helper(result.lost, "lost"),
             moved: path_hash_map_sort_helper(result.moved, "moved"),
+            erased: path_hash_set_sort_helper(result.erased, "erased"),
         }
     }
 }

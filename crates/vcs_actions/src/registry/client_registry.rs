@@ -13,7 +13,9 @@ use crate::{
         local_actions::{
             register_set_upstream_vault_action, register_update_to_latest_info_action,
         },
-        sheet_actions::{register_drop_sheet_action, register_make_sheet_action},
+        sheet_actions::{
+            register_drop_sheet_action, register_edit_mapping_action, register_make_sheet_action,
+        },
         track_action::register_track_file_action,
         user_actions::register_change_virtual_file_edit_right_action,
     },
@@ -30,6 +32,7 @@ fn register_actions(pool: &mut ActionPool) {
     // Sheet Actions
     register_make_sheet_action(pool);
     register_drop_sheet_action(pool);
+    register_edit_mapping_action(pool);
 
     // Track Action
     register_track_file_action(pool);

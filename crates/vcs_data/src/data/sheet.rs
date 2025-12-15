@@ -69,6 +69,9 @@ pub struct SheetData {
     pub(crate) id_mapping: Option<HashMap<VirtualFileId, SheetPathBuf>>,
 }
 
+#[derive(Default, Serialize, Deserialize, ConfigFile, Clone)]
+pub struct SheetInputs {}
+
 #[derive(Debug, Default, Serialize, Deserialize, ConfigFile, Clone, Eq, PartialEq)]
 pub struct SheetMappingMetadata {
     pub id: VirtualFileId,

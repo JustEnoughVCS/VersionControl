@@ -38,6 +38,11 @@ pub fn format_path_str(path: impl Into<String>) -> Result<String, std::io::Error
         result.push('/');
     }
 
+    // Special case: when result is only "./", return ""
+    if result == "./" {
+        return Ok(String::new());
+    }
+
     Ok(result)
 }
 
@@ -96,6 +101,10 @@ mod tests {
             format_path_str("/home/my_user/DOCS/JVCS_TEST/Workspace/../Vault/")?,
             "/home/my_user/DOCS/JVCS_TEST/Vault/"
         );
+
+        assert_eq!(format_path_str("./home/file.txt")?, "home/file.txt");
+        assert_eq!(format_path_str("./home/path/")?, "home/path/");
+        assert_eq!(format_path_str("./")?, "");
 
         Ok(())
     }
