@@ -192,9 +192,7 @@ impl<'a> Sheet<'a> {
     /// This operation performs safety checks to ensure the member has the right to add the mapping:
     /// 1. The sheet must have a holder (member) to perform this operation
     /// 2. If the virtual file ID doesn't exist in the vault, the mapping is added directly
-    /// 3. If the virtual file exists, check if the member has edit rights to the virtual file
-    /// 4. If member has edit rights, the mapping is not allowed to be modified and returns an error
-    /// 5. If member doesn't have edit rights, the mapping is allowed (member is giving up the file)
+    /// 3. If the virtual file exists, the mapping is added regardless of member edit rights
     ///
     /// Note: Full validation adds overhead - avoid frequent calls
     pub async fn add_mapping(
@@ -217,44 +215,22 @@ impl<'a> Sheet<'a> {
         }
 
         // Check if the sheet has a holder
-        let Some(holder) = self.holder() else {
+        let Some(_) = self.holder() else {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::PermissionDenied,
                 "This sheet has no holder",
             ));
         };
 
-        // Check if the holder has edit rights to the virtual file
-        match self
-            .vault_reference
-            .has_virtual_file_edit_right(holder, &virtual_file_id)
-            .await
-        {
-            Ok(true) => {
-                // Holder has edit rights, add the mapping (member has permission to modify the file)
-                self.data.mapping.insert(
-                    sheet_path,
-                    SheetMappingMetadata {
-                        id: virtual_file_id,
-                        version,
-                    },
-                );
-                Ok(())
-            }
-            Ok(false) => {
-                // Holder doesn't have edit rights, don't allow modifying the mapping
-                Err(std::io::Error::new(
-                    std::io::ErrorKind::PermissionDenied,
-                    "Member doesn't have edit rights to the virtual file, cannot modify mapping",
-                ))
-            }
-            Err(_) => {
-                // Error checking rights, don't allow modifying the mapping
-                Err(std::io::Error::other(
-                    "Failed to check virtual file edit rights",
-                ))
-            }
-        }
+        self.data.mapping.insert(
+            sheet_path,
+            SheetMappingMetadata {
+                id: virtual_file_id,
+                version,
+            },
+        );
+
+        Ok(())
     }
 
     /// Remove a mapping entry from the sheet
