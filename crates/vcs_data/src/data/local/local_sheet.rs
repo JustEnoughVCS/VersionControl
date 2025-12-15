@@ -199,6 +199,16 @@ impl LocalMappingMetadata {
     pub fn set_last_modifiy_check_result(&mut self, result: bool) {
         self.last_modifiy_check_result = result;
     }
+
+    /// Getter for last_modifiy_check_hash
+    pub fn last_modifiy_check_hash(&self) -> &Option<String> {
+        &self.last_modifiy_check_hash
+    }
+
+    /// Setter for last_modifiy_check_hash
+    pub fn set_last_modifiy_check_hash(&mut self, hash: Option<String>) {
+        self.last_modifiy_check_hash = hash;
+    }
 }
 
 impl Default for LocalMappingMetadata {
@@ -289,6 +299,21 @@ impl<'a> LocalSheet<'a> {
         self.data.mapping.insert(to, old_value);
 
         Ok(())
+    }
+
+    /// Remove mapping from local sheet
+    pub fn remove_mapping(
+        &mut self,
+        path: &LocalFilePathBuf,
+    ) -> Result<LocalMappingMetadata, std::io::Error> {
+        let path = format_path(path)?;
+        match self.data.mapping.remove(&path) {
+            Some(mapping) => Ok(mapping),
+            None => Err(Error::new(
+                std::io::ErrorKind::NotFound,
+                "Path is not found.",
+            )),
+        }
     }
 
     /// Get immutable mapping data
