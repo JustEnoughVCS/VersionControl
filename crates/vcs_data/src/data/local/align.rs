@@ -7,16 +7,16 @@ use data_struct::dada_sort::quick_sort_with_cmp;
 
 use crate::data::local::workspace_analyzer::AnalyzeResult;
 
-pub type AlignTasksName = String;
+pub type AlignTaskName = String;
 pub type AlignPathBuf = PathBuf;
 pub type AlignLostPathBuf = PathBuf;
 pub type AlignCreatedPathBuf = PathBuf;
 
 pub struct AlignTasks {
-    pub created: Vec<(AlignTasksName, AlignPathBuf)>,
-    pub lost: Vec<(AlignTasksName, AlignPathBuf)>,
-    pub moved: Vec<(AlignTasksName, (AlignLostPathBuf, AlignCreatedPathBuf))>,
-    pub erased: Vec<(AlignTasksName, AlignPathBuf)>,
+    pub created: Vec<(AlignTaskName, AlignPathBuf)>,
+    pub lost: Vec<(AlignTaskName, AlignPathBuf)>,
+    pub moved: Vec<(AlignTaskName, (AlignLostPathBuf, AlignCreatedPathBuf))>,
+    pub erased: Vec<(AlignTaskName, AlignPathBuf)>,
 }
 
 impl AlignTasks {
