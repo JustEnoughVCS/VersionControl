@@ -145,18 +145,6 @@ impl<'a> AnalyzeResult<'a> {
         };
         let file_relative_paths_ref: HashSet<&PathBuf> = file_relative_paths.iter().collect();
 
-        // Files that exist in the local sheet but not in reality are considered lost
-        let mut lost_files: HashSet<&PathBuf> = local_sheet_paths
-            .difference(&file_relative_paths_ref)
-            .cloned()
-            .collect();
-
-        // Files that exist in reality but not in the local sheet are recorded as newly created
-        let mut new_files: HashSet<&PathBuf> = file_relative_paths_ref
-            .difference(&local_sheet_paths)
-            .cloned()
-            .collect();
-
         // Files that exist locally but not in remote
         let mut erased_files: HashSet<PathBuf> = HashSet::new();
 
@@ -173,6 +161,19 @@ impl<'a> AnalyzeResult<'a> {
                 }
             }
         }
+
+        // Files that exist in the local sheet but not in reality are considered lost
+        let mut lost_files: HashSet<&PathBuf> = local_sheet_paths
+            .difference(&file_relative_paths_ref)
+            .filter(|&&path| !erased_files.contains(path))
+            .cloned()
+            .collect();
+
+        // Files that exist in reality but not in the local sheet are recorded as newly created
+        let mut new_files: HashSet<&PathBuf> = file_relative_paths_ref
+            .difference(&local_sheet_paths)
+            .cloned()
+            .collect();
 
         // Calculate hashes for new files
         let new_files_for_hash: Vec<PathBuf> = new_files
