@@ -351,6 +351,28 @@ impl ConnectionInstance {
 
         self.stream.write_all(&file_crc.to_be_bytes()).await?;
 
+        // If file size is 0, skip content transfer
+        if file_size == 0 {
+            self.stream.flush().await?;
+
+            // Wait for receiver confirmation
+            let mut ack = [0u8; 1];
+            tokio::time::timeout(
+                Duration::from_secs(self.config.timeout_secs),
+                self.stream.read_exact(&mut ack),
+            )
+            .await
+            .map_err(|_| TcpTargetError::Timeout("Ack timeout".to_string()))??;
+
+            if ack[0] != 1 {
+                return Err(TcpTargetError::Protocol(
+                    "Receiver verification failed".to_string(),
+                ));
+            }
+
+            return Ok(());
+        }
+
         // Transfer file content
         let mut reader = BufReader::with_capacity(self.config.chunk_size, &mut file);
         let mut bytes_sent = 0;
@@ -434,6 +456,9 @@ impl ConnectionInstance {
                 .truncate(true)
                 .open(path)
                 .await?;
+            // Send confirmation
+            self.stream.write_all(&[1u8]).await?;
+            self.stream.flush().await?;
             return Ok(());
         }
 
