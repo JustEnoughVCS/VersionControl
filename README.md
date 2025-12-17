@@ -7,60 +7,50 @@
 <h1 align="center">JustEnoughVCS</h1>
 
 <p align="center">
-    Lightweight and Binary-Friendly Centralized Version Control System
+    Making version control easier than breathing!
 </p>
+
 
 <p align="center">
     <img src="https://img.shields.io/github/stars/JustEnoughVCS/VersionControl?style=for-the-badge">
-    <img src="https://img.shields.io/badge/Status-Development%20in%20Progress-yellow?style=for-the-badge">
+    <img src="https://img.shields.io/badge/Status-In%20Progress-yellow?style=for-the-badge">
     <img src="https://img.shields.io/badge/Release-Not%20Available-lightgrey?style=for-the-badge">
 </p>
-
-> [!WARNING]
-> JustEnoughVCS core features are still under development and not yet usable
->
-> If you are interested in our project, we recommend contacting us directly. [Contact and Support](#Support)
-
 
 
 ## Introduction
 
-JustEnoughVCS simplifies binary collaboration by allowing only one person to edit a file at a time. Its architecture keeps you updated on file status, versions, and other relevant information.
-
-### 1. Personal View
-
-Each member has their own sheet[^sheet] that maps assets to directory structures. This allows personalized file views. Members can focus on their own workspace without worrying about others moving files or affecting others with their own moves.
-
-### 2. Asset "Read" and "Write"
-
-JustEnoughVCS has an intuitive permission model: visible assets can be read, held assets can be modified.
-
-[^sheet]: Sheet: A member's personal file structure. Members can have multiple sheets, but only one can be edited in a local workspace[^local_workspace] at a time.
-[^local_workspace]: Local Workspace: The local directory where members edit files.
-
-### 3. Visibility Propagation
-
-To **share an asset with everyone**, export[^export] its mapping to the reference sheet[^ref_sheet]. After vault[^vault] administrator approval, it becomes visible to all members, who can then import[^import] it to receive updates.
-
-To share with **specific sheets**, export the asset visibility to those sheets. After approval from the sheet holders, they can receive your updates.
-
-[^export]: Export: The method for transferring asset mappings in JVCS.
-[^import]: Import: The method for obtaining asset mappings in JVCS.
-[^ref_sheet]: Reference Sheet: A sheet curated by the vault[^vault] administrator, serving as the team's "asset index".
-[^vault]: Vault: The asset repository in JVCS where all assets are stored.
-
-### 4. Editing Rights Transfer
-
-The first member to track an asset becomes its initial holder with full editing rights. To transfer rights, the holder releases them, allowing another member to hold the asset. The latest version is synchronized during this process.
+If you are looking for a version control system that your team members can easily get started with, we highly recommend you give this a try. This version control system lives up to its name: "Just Enough," providing just what you need without creating excessive mental overhead.
 
 
+
+## Architecture
+
+`JustEnoughVCS` is a **centralized** version control system, divided into two parts: the **client** and the **server**.
 
 > [!NOTE]
 >
-> This collaboration model manages binary asset structure and versioning, but is not suitable for program development.
+> This version control system addresses the problem of managing the structure and versions of binary assets and is not suitable for managing code and text.
 >
-> Git already serves that purpose well.
+> In the realm of code and text, there are other extremely mature and widely recognized SCM systems.
 
+
+
+## Multi-File Structure
+
+It encourages users to place and manage their assets in their preferred way and share the **visibility** of files with other team members as needed. Since each member has their own structure, there's no need to worry about file moves affecting others.
+
+
+
+## Serialized Editing
+
+At the same time, `JustEnoughVCS` manages permissions at the file granularity. At any given moment, only one member holds a file, meaning they have the **editing rights** for that file. After updating a file version, other members can discover the new version during the next status check and decide whether to update the latest version to their local workspace.
+
+
+
+## Rejecting Ambiguous Mappings
+
+When there is a **discrepancy** between the actual file structure and the recorded file structure, `JustEnoughVCS` will prevent you from tracking the file's version. You need to clearly explain your local structural changes before you can proceed.
 
 
 ## Roadmap
@@ -68,29 +58,24 @@ The first member to track an asset becomes its initial holder with full editing 
 ### Core Library
 
 - [ ] Incremental file updates and storage
-- [ ] Multiple reference sheets
+- [ ] Multiple reference tables
 
 
 
 ### Extension Tools
 
-- [ ] Command Line Tool -> [CommandLine](https://github.com/JustEnoughVCS/CommandLine ) (Currently Private)
-- [ ] Declarative Asset Management -> [AssetsConfig](https://github.com/JustEnoughVCS/AssetsConfig) (Currently Private)
-- [ ] File Merger -> [BinMerger](https://github.com/JustEnoughVCS/BinMerger) (Currently Private)
+- [x] Command-line client -> [CommandLine](https://github.com/JustEnoughVCS/CommandLine )
+- [ ] Desktop client -> [JVDesktop](https://github.com/JustEnoughVCS/JVDesktop )
+- [ ] Declarative asset management -> [JVRefs](https://github.com/JustEnoughVCS/AssetsConfig) (Currently Private)
+- [ ] File merger -> [JVBinMerger](https://github.com/JustEnoughVCS/BinMerger) (Currently Private)
 
 
 
 ## Support
 
-Encountered issues or have suggestions while using JustEnoughVCS?
+Encountering any issues or have suggestions while using JustEnoughVCS?
 
--   Please submit them to https://github.com/JustEnoughVCS/VersionControl/issues, and we'll address your feedback promptly.
-
-> [!NOTE]
->
-> The project is in early development. Instead of creating Issues, we recommend contacting [@Weicao-CatilGrass](https://github.com/Weicao-CatilGrass) directly.
->
-> Creating Issues will be more appropriate once basic features are more complete.
+-   Please submit them to the https://github.com/JustEnoughVCS/VersionControl/issues page. We will promptly address your feedback.
 
 
 
@@ -98,8 +83,8 @@ Encountered issues or have suggestions while using JustEnoughVCS?
 
 This project is licensed under the **MIT License**.
 
-For complete license terms, see ./LICENSE-MIT.md in the project root.
+For the full license terms, please refer to the ./LICENSE-MIT.md file in the project root directory.
 
 ---
 
-Thank you for your interest in `JustEnoughVCS`!
+Finally, thank you for your interest in `JustEnoughVCS`!
