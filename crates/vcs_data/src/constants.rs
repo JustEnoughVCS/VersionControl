@@ -19,7 +19,9 @@ pub const SERVER_SUFFIX_SHEET_FILE: &str = ".json";
 pub const SERVER_SUFFIX_SHEET_FILE_NO_DOT: &str = "json";
 pub const REF_SHEET_NAME: &str = "ref";
 pub const SERVER_PATH_SHEETS: &str = "./sheets/";
+pub const SERVER_PATH_SHARES: &str = "./sheets/shares/";
 pub const SERVER_FILE_SHEET: &str = "./sheets/{sheet_name}.json";
+pub const SERVER_FILE_SHEET_SHARE: &str = "./sheets/shares/{sheet_name}/{share_id}.json";
 
 // Server - Members
 pub const SERVER_PATH_MEMBERS: &str = "./members/";
@@ -54,17 +56,17 @@ pub const CLIENT_FOLDER_WORKSPACE_ROOT_NAME: &str = ".jv";
 pub const CLIENT_FILE_WORKSPACE: &str = "./.jv/workspace.toml";
 
 // Client - Latest Information
-pub const CLIENT_FILE_LATEST_INFO: &str = "./.jv/cache/latest/{account}.vault.yaml";
+pub const CLIENT_FILE_LATEST_INFO: &str = "./.jv/latest/{account}.vault.yaml";
+pub const CLIENT_FILE_LATEST_DATA: &str = "./.jv/latest/{account}.file.yaml";
 
 // Client - Local
 pub const CLIENT_SUFFIX_LOCAL_SHEET_FILE: &str = ".yaml";
 pub const CLIENT_SUFFIX_CACHED_SHEET_FILE: &str = ".yaml";
 pub const CLIENT_PATH_LOCAL_DRAFT: &str = "./.jv/drafts/{account}/{sheet_name}/";
-pub const CLIENT_PATH_LOCAL_SHEET: &str = "./.jv/local/";
-pub const CLIENT_PATH_CACHED_SHEET: &str = "./.jv/cache/sheet/";
-pub const CLIENT_FILE_LOCAL_SHEET: &str = "./.jv/local/{account}/{sheet_name}.yaml";
-pub const CLIENT_FILE_CACHED_SHEET: &str = "./.jv/cache/sheet/{sheet_name}.yaml";
-pub const CLIENT_FILE_LATEST_DATA: &str = "./.jv/cache/latest/{account}.file.yaml";
+pub const CLIENT_PATH_LOCAL_SHEET: &str = "./.jv/sheets/local/";
+pub const CLIENT_FILE_LOCAL_SHEET: &str = "./.jv/sheets/local/{account}/{sheet_name}.yaml";
+pub const CLIENT_PATH_CACHED_SHEET: &str = "./.jv/sheets/cached/";
+pub const CLIENT_FILE_CACHED_SHEET: &str = "./.jv/sheets/cached/{sheet_name}.yaml";
 
 pub const CLIENT_FILE_LOCAL_SHEET_NOSET: &str = "./.jv/.temp/wrong.json";
 pub const CLIENT_FILE_MEMBER_HELD_NOSET: &str = "./.jv/.temp/wrong.json";
@@ -77,7 +79,9 @@ pub const CLIENT_FILE_GITIGNORE: &str = "./.jv/.gitignore";
 pub const CLIENT_CONTENT_GITIGNORE: &str = "# Git support for JVCS Workspace
 
 # Ignore cached datas
-/cache/
+/sheets/cached/
+/latest/
+
 .vault_modified";
 pub const CLIENT_FILE_VAULT_MODIFIED: &str = "./.jv/.vault_modified";
 pub const CLIENT_FILE_TEMP_FILE: &str = "./.jv/.temp/download/{temp_name}";

@@ -110,21 +110,22 @@ impl Vault {
             )
         })?;
 
-        // Ensure the first part has exactly 8 characters
-        if first_part.len() != 8 {
+        // Ensure the first part has at least 4 characters
+        if first_part.len() < 4 {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                "Invalid virtual file ID format: first part must be 8 characters",
+                "Invalid virtual file ID format: first part must have at least 4 characters",
             ))?;
         }
 
-        // Split into 2-character chunks and join with path separator
+        // Take only the first 4 characters and split into two 2-character chunks
+        let first_four = &first_part[0..4];
         let mut path = String::new();
-        for i in (0..first_part.len()).step_by(2) {
+        for i in (0..first_four.len()).step_by(2) {
             if i > 0 {
                 path.push('/');
             }
-            path.push_str(&first_part[i..i + 2]);
+            path.push_str(&first_four[i..i + 2]);
         }
 
         Ok(path)
