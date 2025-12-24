@@ -70,6 +70,10 @@ lto = "fat"
 panic = "abort"
 strip = "symbols"
 
+[build-dependencies]
+chrono = "0.4"
+toml = "0.9"
+
 [dependencies]
 cfg_file = { path = "crates/utils/cfg_file" }
 data_struct = { path = "crates/utils/data_struct" }

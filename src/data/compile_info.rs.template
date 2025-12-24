@@ -1,0 +1,20 @@
+pub struct CoreCompileInfo {
+    pub date: String,
+    pub target: String,
+    pub platform: String,
+    pub toolchain: String,
+
+    pub vcs_version: String,
+}
+
+impl Default for CoreCompileInfo {
+    fn default() -> Self {
+        Self {
+            date: "{date}".to_string(),
+            target: "{target}".to_string(),
+            platform: "{platform}".to_string(),
+            toolchain: "{toolchain}".to_string(),
+            vcs_version: "{version}".to_string(),
+        }
+    }
+}

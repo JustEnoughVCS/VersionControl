@@ -1,3 +1,6 @@
+/// Data
+pub mod data;
+
 // Feature `vcs`
 #[cfg(feature = "vcs")]
 pub mod vcs {
