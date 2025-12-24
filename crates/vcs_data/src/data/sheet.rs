@@ -2,7 +2,6 @@ use std::{collections::HashMap, path::PathBuf};
 
 use cfg_file::{ConfigFile, config::ConfigFile};
 use serde::{Deserialize, Serialize};
-use string_proc::simple_processer::sanitize_file_path;
 
 use crate::{
     constants::SERVER_FILE_SHEET,
@@ -17,26 +16,6 @@ use crate::{
 
 pub type SheetName = String;
 pub type SheetPathBuf = PathBuf;
-pub type InputName = String;
-pub type InputRelativePathBuf = PathBuf;
-
-#[derive(Debug, Clone, Serialize, Deserialize, Eq)]
-pub struct InputPackage {
-    /// Name of the input package
-    pub name: InputName,
-
-    /// The sheet from which this input package was created
-    pub from: SheetName,
-
-    /// Files in this input package with their relative paths and virtual file IDs
-    pub files: Vec<(InputRelativePathBuf, SheetMappingMetadata)>,
-}
-
-impl PartialEq for InputPackage {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-    }
-}
 
 const SHEET_NAME: &str = "{sheet_name}";
 
@@ -59,18 +38,12 @@ pub struct SheetData {
     /// The holder of the current sheet, who has full operation rights to the sheet mapping
     pub(crate) holder: Option<MemberId>,
 
-    /// Inputs
-    pub(crate) inputs: Vec<InputPackage>,
-
     /// Mapping of sheet paths to virtual file IDs
     pub(crate) mapping: HashMap<SheetPathBuf, SheetMappingMetadata>,
 
     /// Mapping of virtual file Ids to sheet paths
     pub(crate) id_mapping: Option<HashMap<VirtualFileId, SheetPathBuf>>,
 }
-
-#[derive(Default, Serialize, Deserialize, ConfigFile, Clone)]
-pub struct SheetInputs {}
 
 #[derive(Debug, Default, Serialize, Deserialize, ConfigFile, Clone, Eq, PartialEq)]
 pub struct SheetMappingMetadata {
@@ -86,20 +59,6 @@ impl<'a> Sheet<'a> {
     /// Get the holder of this sheet
     pub fn holder(&self) -> Option<&MemberId> {
         self.data.holder.as_ref()
-    }
-
-    /// Get the inputs of this sheet
-    pub fn inputs(&self) -> &Vec<InputPackage> {
-        &self.data.inputs
-    }
-
-    /// Get the names of the inputs of this sheet
-    pub fn input_names(&self) -> Vec<String> {
-        self.data
-            .inputs
-            .iter()
-            .map(|input| input.name.clone())
-            .collect()
     }
 
     /// Get the mapping of this sheet
@@ -130,61 +89,6 @@ impl<'a> Sheet<'a> {
     /// Set the holder of this sheet
     pub fn set_holder(&mut self, holder: MemberId) {
         self.data.holder = Some(holder);
-    }
-
-    /// Add an input package to the sheet
-    pub fn add_input(&mut self, input_package: InputPackage) -> Result<(), std::io::Error> {
-        if self.data.inputs.iter().any(|input| input == &input_package) {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::AlreadyExists,
-                format!("Input package '{}' already exists", input_package.name),
-            ));
-        }
-        self.data.inputs.push(input_package);
-        Ok(())
-    }
-
-    /// Deny and remove an input package from the sheet
-    pub fn deny_input(&mut self, input_name: &InputName) -> Option<InputPackage> {
-        self.data
-            .inputs
-            .iter()
-            .position(|input| input.name == *input_name)
-            .map(|pos| self.data.inputs.remove(pos))
-    }
-
-    /// Accept an input package and insert to the sheet
-    pub async fn accept_import(
-        &mut self,
-        input_name: &InputName,
-        insert_to: &SheetPathBuf,
-    ) -> Result<(), std::io::Error> {
-        // Remove inputs
-        let input = self
-            .inputs()
-            .iter()
-            .position(|input| input.name == *input_name)
-            .map(|pos| self.data.inputs.remove(pos));
-
-        // Ensure input is not empty
-        let Some(input) = input else {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                "Empty inputs.",
-            ));
-        };
-
-        // Insert to sheet
-        for (relative_path, virtual_file_meta) in input.files {
-            self.add_mapping(
-                insert_to.join(relative_path),
-                virtual_file_meta.id,
-                virtual_file_meta.version,
-            )
-            .await?;
-        }
-
-        Ok(())
     }
 
     /// Add (or Edit) a mapping entry to the sheet
@@ -326,101 +230,6 @@ impl<'a> Sheet<'a> {
             .join(SERVER_FILE_SHEET.replace(SHEET_NAME, name.as_ref()))
     }
 
-    /// Export files from the current sheet as an InputPackage for importing into other sheets
-    ///
-    /// This is the recommended way to create InputPackages. It takes a list of sheet paths
-    /// and generates an InputPackage with optimized relative paths by removing the longest
-    /// common prefix from all provided paths, then placing the files under a directory
-    /// named with the output_name.
-    ///
-    /// # Example
-    /// Given paths:
-    /// - `MyProject/Art/Character/Model/final.fbx`
-    /// - `MyProject/Art/Character/Texture/final.png`
-    /// - `MyProject/Art/Character/README.md`
-    ///
-    /// With output_name = "MyExport", the resulting package will contain:
-    /// - `MyExport/Model/final.fbx`
-    /// - `MyExport/Texture/final.png`
-    /// - `MyExport/README.md`
-    ///
-    /// # Arguments
-    /// * `output_name` - Name of the output package (will be used as the root directory)
-    /// * `paths` - List of sheet paths to include in the package
-    ///
-    /// # Returns
-    /// Returns an InputPackage containing the exported files with optimized paths,
-    /// or an error if paths are empty or files are not found in the sheet mapping
-    pub fn output_mappings(
-        &self,
-        output_name: InputName,
-        paths: &[SheetPathBuf],
-    ) -> Result<InputPackage, std::io::Error> {
-        let output_name = sanitize_file_path(output_name);
-
-        // Return error for empty paths since there's no need to generate an empty package
-        if paths.is_empty() {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                "Cannot generate output package with empty paths",
-            ));
-        }
-
-        // Find the longest common prefix among all paths
-        let common_prefix = Self::find_longest_common_prefix(paths);
-
-        // Create output files with optimized relative paths
-        let files = paths
-            .iter()
-            .map(|path| {
-                let relative_path = path.strip_prefix(&common_prefix).unwrap_or(path);
-                let output_path = PathBuf::from(&output_name).join(relative_path);
-
-                self.data
-                    .mapping
-                    .get(path)
-                    .map(|vfid| (output_path, vfid.clone()))
-                    .ok_or_else(|| {
-                        std::io::Error::new(
-                            std::io::ErrorKind::NotFound,
-                            format!("File not found: {:?}", path),
-                        )
-                    })
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-
-        Ok(InputPackage {
-            name: output_name,
-            from: self.name.clone(),
-            files,
-        })
-    }
-
-    /// Helper function to find the longest common prefix among all paths
-    fn find_longest_common_prefix(paths: &[SheetPathBuf]) -> PathBuf {
-        if paths.is_empty() {
-            return PathBuf::new();
-        }
-
-        let first_path = &paths[0];
-        let mut common_components = Vec::new();
-
-        for (component_idx, first_component) in first_path.components().enumerate() {
-            for path in paths.iter().skip(1) {
-                if let Some(component) = path.components().nth(component_idx) {
-                    if component != first_component {
-                        return common_components.into_iter().collect();
-                    }
-                } else {
-                    return common_components.into_iter().collect();
-                }
-            }
-            common_components.push(first_component);
-        }
-
-        common_components.into_iter().collect()
-    }
-
     /// Clone the data of the sheet
     pub fn clone_data(&self) -> SheetData {
         self.data.clone()
@@ -441,11 +250,6 @@ impl SheetData {
     /// Get the holder of this sheet data
     pub fn holder(&self) -> Option<&MemberId> {
         self.holder.as_ref()
-    }
-
-    /// Get the inputs of this sheet data
-    pub fn inputs(&self) -> &Vec<InputPackage> {
-        &self.inputs
     }
 
     /// Get the mapping of this sheet data
