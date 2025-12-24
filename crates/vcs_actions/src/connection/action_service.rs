@@ -8,7 +8,7 @@ use std::{
 
 use action_system::{action::ActionContext, action_pool::ActionPool};
 use cfg_file::config::ConfigFile;
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use tcp_connection::{error::TcpTargetError, instance::ConnectionInstance};
 use tokio::{
     net::{TcpListener, TcpStream},
@@ -134,7 +134,7 @@ fn build_server_future(
                 accept_result = listener.accept(), if !shutdown_requested => {
                     match accept_result {
                         Ok((stream, _addr)) => {
-                            info!("New connection. (now {})", active_connections);
+                            debug!("New connection. (now {})", active_connections);
                             let _ = tx.send(1).await;
 
                             let vault_clone = vault.clone();
@@ -143,7 +143,7 @@ fn build_server_future(
 
                             spawn(async move {
                                 process_connection(stream, vault_clone, action_pool_clone).await;
-                                info!("A connection closed. (now {})", active_connections);
+                                debug!("A connection closed. (now {})", active_connections);
                                 let _ = tx_clone.send(-1).await;
                             });
                         }

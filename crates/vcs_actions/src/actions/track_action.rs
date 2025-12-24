@@ -28,9 +28,12 @@ use vcs_data::{
     },
 };
 
-use crate::actions::{
-    auth_member, check_connection_instance, get_current_sheet_name, try_get_local_workspace,
-    try_get_vault,
+use crate::{
+    actions::{
+        auth_member, check_connection_instance, get_current_sheet_name, try_get_local_output,
+        try_get_local_workspace, try_get_vault,
+    },
+    local_println,
 };
 
 pub type NextVersion = String;
@@ -404,8 +407,13 @@ async fn proc_create_tasks_local(
     print_infos: bool,
 ) -> Result<CreateTaskResult, TcpTargetError> {
     let workspace = try_get_local_workspace(ctx)?;
+    let local_output = try_get_local_output(ctx)?;
     let mut mut_instance = instance.lock().await;
     let mut local_sheet = workspace.local_sheet(member_id, sheet_name).await?;
+
+    if print_infos && relative_paths.len() > 0 {
+        local_println!(local_output, "Creating {} files...", relative_paths.len());
+    }
 
     // Wait for remote detection of whether the sheet exists
     let has_sheet = mut_instance.read_msgpack::<bool>().await?;
@@ -458,7 +466,7 @@ async fn proc_create_tasks_local(
 
         // Print success info
         if print_infos {
-            println!("+ {}", path.display());
+            local_println!(local_output, "+ {}", path.display());
         }
 
         success_relative_pathes.push(path);
@@ -545,10 +553,15 @@ async fn proc_update_tasks_local(
     file_update_info: HashMap<PathBuf, (NextVersion, UpdateDescription)>,
 ) -> Result<UpdateTaskResult, TcpTargetError> {
     let workspace = try_get_local_workspace(ctx)?;
+    let local_output = try_get_local_output(ctx)?;
     let mut mut_instance = instance.lock().await;
     let mut local_sheet = workspace.local_sheet(member_id, sheet_name).await?;
 
     let mut success = Vec::new();
+
+    if print_infos && relative_paths.len() > 0 {
+        local_println!(local_output, "Updating {} files...", relative_paths.len());
+    }
 
     for path in relative_paths.iter() {
         let Ok(mapping) = local_sheet.mapping_data(path) else {
@@ -616,7 +629,13 @@ async fn proc_update_tasks_local(
 
             // Print success info
             if print_infos {
-                println!("↑ {} ({} -> {})", path.display(), version, next_version);
+                local_println!(
+                    local_output,
+                    "↑ {} ({} -> {})",
+                    path.display(),
+                    version,
+                    next_version
+                );
             }
         }
     }
@@ -777,8 +796,13 @@ async fn proc_sync_tasks_local(
     print_infos: bool,
 ) -> Result<SyncTaskResult, TcpTargetError> {
     let workspace = try_get_local_workspace(ctx)?;
+    let local_output = try_get_local_output(ctx)?;
     let mut mut_instance = instance.lock().await;
     let mut success: Vec<PathBuf> = Vec::new();
+
+    if print_infos && relative_paths.len() > 0 {
+        local_println!(local_output, "Syncing {} files...", relative_paths.len());
+    }
 
     for path in relative_paths {
         let Some((version, description, vfid)) =
@@ -880,7 +904,7 @@ async fn proc_sync_tasks_local(
 
         // Print success info
         if print_infos {
-            println!("↓ {}", path.display());
+            local_println!(local_output, "↓ {}", path.display());
         }
     }
     Ok(SyncTaskResult::Success(success))

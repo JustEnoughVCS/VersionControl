@@ -3,7 +3,7 @@ use std::sync::Arc;
 use action_system::action::ActionContext;
 use cfg_file::config::ConfigFile;
 use tcp_connection::{error::TcpTargetError, instance::ConnectionInstance};
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, mpsc::Sender};
 use vcs_data::{
     constants::SERVER_PATH_MEMBER_PUB,
     data::{
@@ -62,6 +62,16 @@ pub fn try_get_user_directory(ctx: &ActionContext) -> Result<Arc<UserDirectory>,
         ));
     };
     Ok(user_directory)
+}
+
+/// Try to get the LocalWorkspace instance from the context.
+pub fn try_get_local_output(ctx: &ActionContext) -> Result<Arc<Sender<String>>, TcpTargetError> {
+    let Some(output) = ctx.get_arc::<Sender<String>>() else {
+        return Err(TcpTargetError::NotFound(
+            "Client sender not found".to_string(),
+        ));
+    };
+    Ok(output)
 }
 
 /// Authenticate member based on context and return MemberId
@@ -194,5 +204,15 @@ macro_rules! write_and_return {
     ($instance:expr, $result:expr) => {{
         $instance.lock().await.write($result).await?;
         return Ok($result);
+    }};
+}
+
+/// The macro to send formatted string to output channel.
+/// Usage: local_println!(output, "format string", arg1, arg2, ...)
+#[macro_export]
+macro_rules! local_println {
+    ($output:expr, $($arg:tt)*) => {{
+        let formatted = format!($($arg)*);
+        let _ = $output.send(formatted).await;
     }};
 }
