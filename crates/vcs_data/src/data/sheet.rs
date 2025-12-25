@@ -266,4 +266,9 @@ impl SheetData {
     pub fn id_mapping(&self) -> &Option<HashMap<VirtualFileId, SheetPathBuf>> {
         &self.id_mapping
     }
+
+    /// Get the muttable id_mapping of this sheet data
+    pub fn id_mapping_mut(&mut self) -> &mut Option<HashMap<VirtualFileId, SheetPathBuf>> {
+        &mut self.id_mapping
+    }
 }

@@ -14,6 +14,9 @@ pub mod test_local_workspace_setup_and_account_management;
 #[cfg(test)]
 pub mod test_sheet_creation_management_and_persistence;
 
+#[cfg(test)]
+pub mod test_sheet_share_creation_and_management;
+
 pub async fn get_test_dir(area: &str) -> Result<PathBuf, std::io::Error> {
     let dir = current_dir()?.join(".temp").join("test").join(area);
     if !dir.exists() {

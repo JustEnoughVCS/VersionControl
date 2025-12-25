@@ -19,7 +19,7 @@ pub const SERVER_SUFFIX_SHEET_FILE: &str = ".json";
 pub const SERVER_SUFFIX_SHEET_FILE_NO_DOT: &str = "json";
 pub const REF_SHEET_NAME: &str = "ref";
 pub const SERVER_PATH_SHEETS: &str = "./sheets/";
-pub const SERVER_PATH_SHARES: &str = "./sheets/shares/";
+pub const SERVER_PATH_SHARES: &str = "./sheets/shares/{sheet_name}/";
 pub const SERVER_FILE_SHEET: &str = "./sheets/{sheet_name}.json";
 pub const SERVER_FILE_SHEET_SHARE: &str = "./sheets/shares/{sheet_name}/{share_id}.json";
 
