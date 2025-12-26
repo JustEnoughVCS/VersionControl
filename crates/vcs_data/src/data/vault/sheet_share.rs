@@ -7,10 +7,7 @@ use string_proc::{format_path, snake_case};
 use tokio::fs;
 
 use crate::{
-    constants::{
-        SERVER_FILE_SHEET_SHARE, SERVER_PATH_SHARES, SERVER_SUFFIX_SHEET_FILE,
-        SERVER_SUFFIX_SHEET_FILE_NO_DOT,
-    },
+    constants::{SERVER_FILE_SHEET_SHARE, SERVER_PATH_SHARES, SERVER_SUFFIX_SHEET_FILE_NO_DOT},
     data::{
         member::MemberId,
         sheet::{Sheet, SheetMappingMetadata, SheetName, SheetPathBuf},
@@ -77,7 +74,7 @@ impl Vault {
     /// Get the path of a share item in a sheet
     pub fn share_file_path(&self, sheet_name: &SheetName, share_id: &SheetShareId) -> PathBuf {
         let sheet_name = snake_case!(sheet_name.clone());
-        let share_id = snake_case!(share_id.clone());
+        let share_id = share_id.clone();
 
         // Format the path to remove "./" prefix and normalize it
         let path_str = SERVER_FILE_SHEET_SHARE
@@ -376,10 +373,7 @@ impl Share {
             .take(8)
             .map(char::from)
             .collect();
-        format!(
-            "{}@{}{}",
-            sharer_snake, random_part, SERVER_SUFFIX_SHEET_FILE
-        )
+        format!("{}@{}", sharer_snake, random_part)
     }
 
     /// Delete a share (reject or remove the share item)

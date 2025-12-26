@@ -2,7 +2,7 @@ use std::io::Error;
 
 use cfg_file::config::ConfigFile;
 use vcs_data::{
-    constants::{SERVER_FILE_VAULT, SERVER_SUFFIX_SHEET_FILE},
+    constants::SERVER_FILE_VAULT,
     data::{
         member::{Member, MemberId},
         sheet::{SheetName, SheetPathBuf},
@@ -622,15 +622,10 @@ async fn test_share_id_generation() -> Result<(), std::io::Error> {
     assert_ne!(id1, id3);
     assert_ne!(id2, id3);
 
-    // IDs should contain sharer name and file suffix
-    assert!(id1.contains("test_sharer"));
-    assert!(id1.ends_with(SERVER_SUFFIX_SHEET_FILE));
-
-    assert!(id2.contains("test_sharer"));
-    assert!(id2.ends_with(SERVER_SUFFIX_SHEET_FILE));
-
-    assert!(id3.contains("test_sharer"));
-    assert!(id3.ends_with(SERVER_SUFFIX_SHEET_FILE));
+    // IDs should start with sharer name
+    assert!(id1.starts_with(&format!("test_sharer@")));
+    assert!(id2.starts_with(&format!("test_sharer@")));
+    assert!(id3.starts_with(&format!("test_sharer@")));
 
     Ok(())
 }
