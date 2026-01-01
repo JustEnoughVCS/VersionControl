@@ -32,6 +32,10 @@ pub struct LocalConfig {
     /// This ID will be used to verify access permissions when connecting to the upstream server.
     using_account: MemberId,
 
+    /// Whether the current member is interacting as a host.
+    /// In host mode, full Vault operation permissions are available except for adding new content.
+    using_host_mode: bool,
+
     /// Whether the local workspace is stained.
     ///
     /// If stained, it can only set an upstream server with the same identifier.
@@ -52,6 +56,7 @@ impl Default for LocalConfig {
                 PORT,
             )),
             using_account: "unknown".to_string(),
+            using_host_mode: false,
             stained_uuid: None,
             sheet_in_use: None,
         }
@@ -79,6 +84,11 @@ impl LocalConfig {
         }
         self.using_account = account;
         Ok(())
+    }
+
+    /// Set the host mode
+    pub fn set_host_mode(&mut self, host_mode: bool) {
+        self.using_host_mode = host_mode;
     }
 
     /// Set the currently used sheet
@@ -110,7 +120,7 @@ impl LocalConfig {
         };
 
         // Check if the sheet exists
-        if !latest_info.my_sheets.contains(&sheet) {
+        if !latest_info.visible_sheets.contains(&sheet) {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::NotFound,
                 "Sheet not found",
@@ -289,6 +299,11 @@ impl LocalConfig {
     /// Get the currently used account
     pub fn current_account(&self) -> MemberId {
         self.using_account.clone()
+    }
+
+    /// Check if the current member is interacting as a host.
+    pub fn is_host_mode(&self) -> bool {
+        self.using_host_mode
     }
 
     /// Check if the local workspace is stained.

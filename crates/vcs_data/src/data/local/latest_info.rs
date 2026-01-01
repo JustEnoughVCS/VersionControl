@@ -1,4 +1,5 @@
 use std::{
+    collections::{HashMap, HashSet},
     path::{Path, PathBuf},
     time::SystemTime,
 };
@@ -11,6 +12,7 @@ use crate::{
     data::{
         member::{Member, MemberId},
         sheet::{SheetData, SheetName},
+        vault::sheet_share::{Share, SheetShareId},
     },
 };
 
@@ -23,12 +25,24 @@ const ACCOUNT: &str = "{account}";
 #[cfg_file(path = CLIENT_FILE_LATEST_INFO_NOSET)]
 pub struct LatestInfo {
     // Sheets
-    /// My sheets, indicating which sheets I can edit
-    pub my_sheets: Vec<SheetName>,
-    /// Other sheets, indicating which sheets I can export files to (these sheets are not readable to me)
-    pub other_sheets: Vec<SheetInfo>,
+    /// Visible sheets,
+    /// indicating which sheets I can edit
+    pub visible_sheets: Vec<SheetName>,
+
+    /// Invisible sheets,
+    /// indicating which sheets I can export files to (these sheets are not readable to me)
+    pub invisible_sheets: Vec<SheetInfo>,
+
+    /// Reference sheets,
+    /// indicating sheets owned by the host, visible to everyone,
+    /// but only the host can modify or add mappings within them
+    pub reference_sheets: HashSet<SheetName>,
+
     /// Reference sheet data, indicating what files I can get from the reference sheet
     pub ref_sheet_content: SheetData,
+
+    /// Shares in my sheets, indicating which external merge requests have entries that I can view
+    pub shares_in_my_sheets: HashMap<SheetName, HashMap<SheetShareId, Share>>,
 
     /// Update instant
     pub update_instant: Option<SystemTime>,
