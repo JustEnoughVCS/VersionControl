@@ -6,6 +6,9 @@ pub enum TcpTargetError {
     #[error("Authentication failed: {0}")]
     Authentication(String),
 
+    #[error("Reference sheet not allowed: {0}")]
+    ReferenceSheetNotAllowed(String),
+
     #[error("Cryptographic error: {0}")]
     Crypto(String),
 
