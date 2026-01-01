@@ -43,7 +43,7 @@ pub async fn change_virtual_file_edit_right_action(
     let (relative_paths, print_info) = arguments;
 
     // Auth Member
-    let member_id = match auth_member(&ctx, instance).await {
+    let (member_id, is_host_mode) = match auth_member(&ctx, instance).await {
         Ok(id) => id,
         Err(e) => {
             return Ok(ChangeVirtualFileEditRightResult::AuthorizeFailed(
@@ -53,7 +53,8 @@ pub async fn change_virtual_file_edit_right_action(
     };
 
     // Check sheet
-    let sheet_name = get_current_sheet_name(&ctx, instance, &member_id).await?;
+    let (sheet_name, _is_ref_sheet) =
+        get_current_sheet_name(&ctx, instance, &member_id, true).await?;
 
     if ctx.is_proc_on_remote() {
         let mut mut_instance = instance.lock().await;
@@ -87,7 +88,9 @@ pub async fn change_virtual_file_edit_right_action(
                 }
             } else
             // Throw file
-            if has_edit_right && behaviour == EditRightChangeBehaviour::Throw {
+            if (has_edit_right || is_host_mode)
+                && behaviour == EditRightChangeBehaviour::Throw
+            {
                 match vault.revoke_virtual_file_edit_right(&mapping.id).await {
                     Ok(_) => {
                         success_throw.push(path.clone());

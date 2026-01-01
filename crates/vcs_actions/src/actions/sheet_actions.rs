@@ -3,12 +3,16 @@ use std::{collections::HashMap, io::ErrorKind};
 use action_system::{action::ActionContext, macros::action_gen};
 use serde::{Deserialize, Serialize};
 use tcp_connection::error::TcpTargetError;
-use vcs_data::data::{
-    local::{
-        vault_modified::sign_vault_modified,
-        workspace_analyzer::{FromRelativePathBuf, ToRelativePathBuf},
+use vcs_data::{
+    constants::VAULT_HOST_NAME,
+    data::{
+        local::{
+            vault_modified::sign_vault_modified,
+            workspace_analyzer::{FromRelativePathBuf, ToRelativePathBuf},
+        },
+        sheet::SheetName,
+        vault::sheet_share::{ShareMergeMode, SheetShareId},
     },
-    sheet::SheetName,
 };
 
 use crate::{
@@ -42,7 +46,7 @@ pub async fn make_sheet_action(
     let instance = check_connection_instance(&ctx)?;
 
     // Auth Member
-    let member_id = match auth_member(&ctx, instance).await {
+    let (member_id, is_host_mode) = match auth_member(&ctx, instance).await {
         Ok(id) => id,
         Err(e) => return Ok(MakeSheetActionResult::AuthorizeFailed(e.to_string())),
     };
@@ -54,7 +58,11 @@ pub async fn make_sheet_action(
         if let Ok(mut sheet) = vault.sheet(&sheet_name).await {
             // If the sheet has no holder, assign it to the current member (restore operation)
             if sheet.holder().is_none() {
-                sheet.set_holder(member_id);
+                sheet.set_holder(if is_host_mode {
+                    VAULT_HOST_NAME.to_string()
+                } else {
+                    member_id
+                });
                 match sheet.persist().await {
                     Ok(_) => {
                         write_and_return!(instance, MakeSheetActionResult::SuccessRestore);
@@ -124,7 +132,7 @@ pub async fn drop_sheet_action(
     let instance = check_connection_instance(&ctx)?;
 
     // Auth Member
-    let member_id = match auth_member(&ctx, instance).await {
+    let (member_id, is_host_mode) = match auth_member(&ctx, instance).await {
         Ok(id) => id,
         Err(e) => {
             return Ok(DropSheetActionResult::AuthorizeFailed(e.to_string()));
@@ -174,8 +182,9 @@ pub async fn drop_sheet_action(
             write_and_return!(instance, DropSheetActionResult::NoHolder);
         };
 
-        // Verify the sheet's holder
-        if holder != &member_id {
+        // Verify that the sheet holder is either the current user or the host
+        // All sheets belong to the host
+        if holder != &member_id && !is_host_mode {
             write_and_return!(instance, DropSheetActionResult::NotOwner);
         }
 
@@ -223,6 +232,7 @@ pub enum EditMappingActionResult {
 
     // Fail
     AuthorizeFailed(String),
+    EditNotAllowed,
     MappingNotFound(FromRelativePathBuf),
     InvalidMove(InvalidMoveReason),
 
@@ -251,7 +261,7 @@ pub async fn edit_mapping_action(
     let instance = check_connection_instance(&ctx)?;
 
     // Auth Member
-    let member_id = match auth_member(&ctx, instance).await {
+    let (member_id, is_host_mode) = match auth_member(&ctx, instance).await {
         Ok(id) => id,
         Err(e) => {
             return Ok(EditMappingActionResult::AuthorizeFailed(e.to_string()));
@@ -259,7 +269,15 @@ pub async fn edit_mapping_action(
     };
 
     // Check sheet
-    let sheet_name = get_current_sheet_name(&ctx, instance, &member_id).await?;
+    let (sheet_name, is_ref_sheet) =
+        get_current_sheet_name(&ctx, instance, &member_id, true).await?;
+
+    // Can modify Sheet when not in reference sheet or in Host mode
+    let can_modify_sheet = !is_ref_sheet || is_host_mode;
+
+    if !can_modify_sheet {
+        return Ok(EditMappingActionResult::EditNotAllowed);
+    }
 
     if ctx.is_proc_on_remote() {
         let vault = try_get_vault(&ctx)?;
@@ -339,4 +357,220 @@ pub async fn edit_mapping_action(
     }
 
     Ok(EditMappingActionResult::Success)
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Eq, Clone)]
+pub struct ShareMappingArguments {
+    pub mappings: Vec<FromRelativePathBuf>,
+    pub description: String,
+    // None = current sheet,
+    // Some(sheet_name) = other ref(public) sheet
+    pub from_sheet: Option<SheetName>,
+    pub to_sheet: SheetName,
+}
+
+#[derive(Serialize, Deserialize, Default)]
+pub enum ShareMappingActionResult {
+    Success,
+
+    // Fail
+    AuthorizeFailed(String),
+    TargetSheetNotFound(SheetName),
+    TargetIsSelf,
+    MappingNotFound(FromRelativePathBuf),
+
+    #[default]
+    Unknown,
+}
+
+#[action_gen]
+pub async fn share_mapping_action(
+    ctx: ActionContext,
+    args: ShareMappingArguments,
+) -> Result<ShareMappingActionResult, TcpTargetError> {
+    let instance = check_connection_instance(&ctx)?;
+
+    // Auth Member
+    let (member_id, _is_host_mode) = match auth_member(&ctx, instance).await {
+        Ok(id) => id,
+        Err(e) => {
+            return Ok(ShareMappingActionResult::AuthorizeFailed(e.to_string()));
+        }
+    };
+
+    // Check sheet
+    let sheet_name = args.from_sheet.unwrap_or(
+        get_current_sheet_name(&ctx, instance, &member_id, false)
+            .await?
+            .0,
+    );
+
+    if ctx.is_proc_on_remote() {
+        let vault = try_get_vault(&ctx)?;
+        let sheet = vault.sheet(&sheet_name).await?;
+
+        // Tip: Because sheet_name may specify a sheet that does not belong to the user,
+        // a secondary verification is required.
+
+        // Check if the sheet holder is Some and matches the member_id or is the host
+        let Some(holder) = sheet.holder() else {
+            // If there's no holder, the sheet cannot be shared from
+            write_and_return!(
+                instance,
+                ShareMappingActionResult::AuthorizeFailed("Sheet has no holder".to_string())
+            );
+        };
+
+        // Verify the holder is either the current member or the host
+        if holder != &member_id && holder != VAULT_HOST_NAME {
+            write_and_return!(
+                instance,
+                ShareMappingActionResult::AuthorizeFailed(
+                    "Not sheet holder or ref sheet".to_string()
+                )
+            );
+        }
+
+        let to_sheet_name = args.to_sheet;
+
+        // Verify target sheet exists
+        if !vault.sheet_names()?.contains(&to_sheet_name) {
+            // Does not exist
+            write_and_return!(
+                instance,
+                ShareMappingActionResult::TargetSheetNotFound(to_sheet_name.clone())
+            );
+        }
+
+        // Verify sheet is not self
+        if sheet_name == to_sheet_name {
+            // Is self
+            write_and_return!(instance, ShareMappingActionResult::TargetIsSelf);
+        }
+
+        // Verify all mappings are correct
+        for mapping in args.mappings.iter() {
+            if !sheet.mapping().contains_key(mapping) {
+                // If any mapping is invalid, indicate failure
+                write_and_return!(
+                    instance,
+                    ShareMappingActionResult::MappingNotFound(mapping.clone())
+                );
+            }
+        }
+
+        // Execute sharing logic
+        sheet
+            .share_mappings(&to_sheet_name, args.mappings, &member_id, args.description)
+            .await?;
+
+        // Sharing successful
+        write_and_return!(instance, ShareMappingActionResult::Success);
+    }
+
+    if ctx.is_proc_on_local() {
+        let result = instance
+            .lock()
+            .await
+            .read::<ShareMappingActionResult>()
+            .await?;
+        return Ok(result);
+    }
+
+    Ok(ShareMappingActionResult::Success)
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Eq, Clone)]
+pub struct MergeShareMappingArguments {
+    pub share_id: SheetShareId,
+    pub share_merge_mode: ShareMergeMode,
+}
+
+#[derive(Serialize, Deserialize, Default)]
+pub enum MergeShareMappingActionResult {
+    Success,
+
+    // Fail
+    HasConflicts,
+    AuthorizeFailed(String),
+    EditNotAllowed,
+    ShareIdNotFound(SheetShareId),
+    MergeFails(String),
+
+    #[default]
+    Unknown,
+}
+
+#[action_gen]
+pub async fn merge_share_mapping_action(
+    ctx: ActionContext,
+    args: MergeShareMappingArguments,
+) -> Result<MergeShareMappingActionResult, TcpTargetError> {
+    let instance = check_connection_instance(&ctx)?;
+
+    // Auth Member
+    let (member_id, is_host_mode) = match auth_member(&ctx, instance).await {
+        Ok(id) => id,
+        Err(e) => {
+            return Ok(MergeShareMappingActionResult::AuthorizeFailed(
+                e.to_string(),
+            ));
+        }
+    };
+
+    // Check sheet
+    let (sheet_name, is_ref_sheet) =
+        get_current_sheet_name(&ctx, instance, &member_id, true).await?;
+
+    // Can modify Sheet when not in reference sheet or in Host mode
+    let can_modify_sheet = !is_ref_sheet || is_host_mode;
+
+    if !can_modify_sheet {
+        return Ok(MergeShareMappingActionResult::EditNotAllowed);
+    }
+
+    if ctx.is_proc_on_remote() {
+        let vault = try_get_vault(&ctx)?;
+        let share_id = args.share_id;
+
+        // Get the share and sheet
+        let (sheet, share) = if vault.share_file_path(&sheet_name, &share_id).exists() {
+            let sheet = vault.sheet(&sheet_name).await?;
+            let share = sheet.get_share(&share_id).await?;
+            (sheet, share)
+        } else {
+            // Share does not exist
+            write_and_return!(
+                instance,
+                MergeShareMappingActionResult::ShareIdNotFound(share_id.clone())
+            );
+        };
+
+        // Perform the merge
+        match sheet.merge_share(share, args.share_merge_mode).await {
+            Ok(_) => write_and_return!(instance, MergeShareMappingActionResult::Success),
+            Err(e) => match e.kind() {
+                ErrorKind::AlreadyExists => {
+                    write_and_return!(instance, MergeShareMappingActionResult::HasConflicts);
+                }
+                _ => {
+                    write_and_return!(
+                        instance,
+                        MergeShareMappingActionResult::MergeFails(e.to_string())
+                    );
+                }
+            },
+        }
+    }
+
+    if ctx.is_proc_on_local() {
+        let result = instance
+            .lock()
+            .await
+            .read::<MergeShareMappingActionResult>()
+            .await?;
+        return Ok(result);
+    }
+
+    Ok(MergeShareMappingActionResult::Success)
 }

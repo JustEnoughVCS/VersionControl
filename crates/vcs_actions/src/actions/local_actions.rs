@@ -1,4 +1,10 @@
-use std::{collections::HashMap, io::ErrorKind, net::SocketAddr, path::PathBuf, time::SystemTime};
+use std::{
+    collections::{HashMap, HashSet},
+    io::ErrorKind,
+    net::SocketAddr,
+    path::PathBuf,
+    time::SystemTime,
+};
 
 use action_system::{action::ActionContext, macros::action_gen};
 use cfg_file::config::ConfigFile;
@@ -6,7 +12,9 @@ use log::info;
 use serde::{Deserialize, Serialize};
 use tcp_connection::error::TcpTargetError;
 use vcs_data::{
-    constants::{CLIENT_PATH_CACHED_SHEET, CLIENT_PATH_LOCAL_SHEET},
+    constants::{
+        CLIENT_PATH_CACHED_SHEET, CLIENT_PATH_LOCAL_SHEET, REF_SHEET_NAME, VAULT_HOST_NAME,
+    },
     data::{
         local::{
             cached_sheet::CachedSheet,
@@ -19,6 +27,7 @@ use vcs_data::{
         sheet::{SheetData, SheetName},
         vault::{
             config::VaultUuid,
+            sheet_share::{Share, SheetShareId},
             virtual_file::{VirtualFileId, VirtualFileVersion},
         },
     },
@@ -138,7 +147,7 @@ pub async fn update_to_latest_info_action(
 ) -> Result<UpdateToLatestInfoResult, TcpTargetError> {
     let instance = check_connection_instance(&ctx)?;
 
-    let member_id = match auth_member(&ctx, instance).await {
+    let (member_id, _is_host_mode) = match auth_member(&ctx, instance).await {
         Ok(id) => id,
         Err(e) => return Ok(UpdateToLatestInfoResult::AuthorizeFailed(e.to_string())),
     };
@@ -153,13 +162,43 @@ pub async fn update_to_latest_info_action(
             // Build latest info
             let mut latest_info = LatestInfo::default();
 
-            // Sheet
+            // Sheet & Share
+            let mut shares_in_my_sheets: HashMap<SheetName, HashMap<SheetShareId, Share>> =
+                HashMap::new();
             let mut member_owned = Vec::new();
             let mut member_visible = Vec::new();
+            let mut ref_sheets = HashSet::new();
 
             for sheet in vault.sheets().await? {
-                if sheet.holder().is_some() && sheet.holder().unwrap() == &member_id {
+                // Build share parts
+                if let Some(holder) = sheet.holder() {
+                    if holder == &member_id {
+                        let mut sheet_shares: HashMap<SheetShareId, Share> = HashMap::new();
+                        for share in sheet.get_shares().await? {
+                            // Get SharePath
+                            let Some(share_path) = share.path.clone() else {
+                                continue;
+                            };
+                            // Get ShareId from SharePath
+                            let Some(share_id) = share_path.file_name() else {
+                                continue;
+                            };
+                            sheet_shares.insert(share_id.display().to_string(), share);
+                        }
+                        shares_in_my_sheets.insert(sheet.name().clone(), sheet_shares);
+                    }
+                }
+
+                // Build sheet parts
+                let holder_is_host =
+                    sheet.holder().unwrap_or(&String::default()) == &VAULT_HOST_NAME;
+                if sheet.holder().is_some()
+                    && (sheet.holder().unwrap() == &member_id || holder_is_host)
+                {
                     member_owned.push(sheet.name().clone());
+                    if holder_is_host {
+                        ref_sheets.insert(sheet.name().clone());
+                    }
                 } else {
                     member_visible.push(SheetInfo {
                         sheet_name: sheet.name().clone(),
@@ -168,12 +207,15 @@ pub async fn update_to_latest_info_action(
                 }
             }
 
-            latest_info.my_sheets = member_owned;
-            latest_info.other_sheets = member_visible;
+            // Record Share & Sheet
+            latest_info.visible_sheets = member_owned;
+            latest_info.invisible_sheets = member_visible;
+            latest_info.shares_in_my_sheets = shares_in_my_sheets;
 
             // RefSheet
-            let ref_sheet_data = vault.sheet(&"ref".to_string()).await?.to_data();
+            let ref_sheet_data = vault.sheet(&REF_SHEET_NAME.to_string()).await?.to_data();
             latest_info.ref_sheet_content = ref_sheet_data;
+            latest_info.reference_sheets = ref_sheets;
 
             // Members
             let members = vault.members().await?;
@@ -222,7 +264,7 @@ pub async fn update_to_latest_info_action(
 
             // Collect all local versions
             let mut local_versions = vec![];
-            for request_sheet in latest_info.my_sheets {
+            for request_sheet in latest_info.visible_sheets {
                 let Ok(data) = CachedSheet::cached_sheet_data(&request_sheet).await else {
                     // For newly created sheets, the version is 0.
                     // Send -1 to distinguish from 0, ensuring the upstream will definitely send the sheet information
@@ -244,29 +286,6 @@ pub async fn update_to_latest_info_action(
                     let _: bool = mut_instance.read_msgpack().await?;
                 }
             } else {
-                // Send data to local
-                if ctx.is_proc_on_remote() {
-                    let vault = try_get_vault(&ctx)?;
-                    let mut mut_instance = instance.lock().await;
-
-                    let local_versions =
-                        mut_instance.read_msgpack::<Vec<(SheetName, i32)>>().await?;
-
-                    for (sheet_name, local_write_count) in local_versions.iter() {
-                        let sheet = vault.sheet(sheet_name).await?;
-                        if let Some(holder) = sheet.holder()
-                            && holder == &member_id
-                            && &sheet.write_count() != local_write_count
-                        {
-                            mut_instance.write_msgpack(true).await?;
-                            mut_instance
-                                .write_large_msgpack((sheet_name, sheet.to_data()), 1024u16)
-                                .await?;
-                        }
-                    }
-                    mut_instance.write_msgpack(false).await?;
-                }
-
                 // Receive data
                 if ctx.is_proc_on_local() {
                     let mut mut_instance = instance.lock().await;
@@ -289,7 +308,8 @@ pub async fn update_to_latest_info_action(
                     }
                 }
             }
-        } else if ctx.is_proc_on_remote() {
+        }
+        if ctx.is_proc_on_remote() {
             let vault = try_get_vault(&ctx)?;
             let mut mut_instance = instance.lock().await;
 
@@ -298,7 +318,7 @@ pub async fn update_to_latest_info_action(
             for (sheet_name, version) in local_versions.iter() {
                 let sheet = vault.sheet(sheet_name).await?;
                 if let Some(holder) = sheet.holder()
-                    && holder == &member_id
+                    && (holder == &member_id || holder == VAULT_HOST_NAME)
                     && &sheet.write_count() != version
                 {
                     mut_instance.write_msgpack(true).await?;
@@ -331,7 +351,7 @@ pub async fn update_to_latest_info_action(
 
             // Collect files that need to know the holder
             let mut holder_wants_know = Vec::new();
-            for sheet_name in &latest_info.my_sheets {
+            for sheet_name in &latest_info.visible_sheets {
                 if let Ok(sheet_data) = CachedSheet::cached_sheet_data(sheet_name).await {
                     holder_wants_know
                         .extend(sheet_data.mapping().values().map(|value| value.id.clone()));

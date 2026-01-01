@@ -123,13 +123,17 @@ pub async fn track_file_action(
     let instance = check_connection_instance(&ctx)?;
 
     // Auth Member
-    let member_id = match auth_member(&ctx, instance).await {
+    let (member_id, is_host_mode) = match auth_member(&ctx, instance).await {
         Ok(id) => id,
         Err(e) => return Ok(TrackFileActionResult::AuthorizeFailed(e.to_string())),
     };
 
     // Check sheet
-    let sheet_name = get_current_sheet_name(&ctx, instance, &member_id).await?;
+    let (sheet_name, is_ref_sheet) =
+        get_current_sheet_name(&ctx, instance, &member_id, true).await?;
+
+    // Can modify Sheet when not in reference sheet or in Host mode
+    let can_modify_sheet = !is_ref_sheet || is_host_mode;
 
     if ctx.is_proc_on_local() {
         let workspace = try_get_local_workspace(&ctx)?;
@@ -164,7 +168,7 @@ pub async fn track_file_action(
             .collect::<Vec<_>>();
 
         // Filter out modified files that need to be updated
-        let update_task: Vec<PathBuf> = {
+        let mut update_task: Vec<PathBuf> = {
             let result = modified.iter().filter_map(|p| {
                 if let Ok(local_data) = local_sheet.mapping_data(p) {
                     let id = local_data.mapping_vfid();
@@ -187,7 +191,7 @@ pub async fn track_file_action(
         let mut skipped_task: Vec<PathBuf> = Vec::new();
 
         // Filter out files that do not exist locally or have version inconsistencies and need to be synchronized
-        let sync_task: Vec<PathBuf> = {
+        let mut sync_task: Vec<PathBuf> = {
             let other: Vec<PathBuf> = relative_pathes
                 .iter()
                 .filter(|p| !created_task.contains(p) && !update_task.contains(p))
@@ -242,6 +246,18 @@ pub async fn track_file_action(
             result.collect()
         };
 
+        // If the sheet cannot be modified,
+        // the update_task here should be considered invalid and changed to sync rollback
+        if !can_modify_sheet {
+            if arguments.allow_overwrite_modified {
+                sync_task.append(&mut update_task);
+                update_task.clear();
+            } else {
+                skipped_task.append(&mut update_task);
+                update_task.clear();
+            }
+        }
+
         // Package tasks
         let tasks: (Vec<PathBuf>, Vec<PathBuf>, Vec<PathBuf>) =
             (created_task, update_task, sync_task);
@@ -256,45 +272,51 @@ pub async fn track_file_action(
         }
 
         // Process create tasks
-        let success_create = match proc_create_tasks_local(
-            &ctx,
-            instance.clone(),
-            &member_id,
-            &sheet_name,
-            tasks.0,
-            arguments.print_infos,
-        )
-        .await
-        {
-            Ok(r) => match r {
-                CreateTaskResult::Success(relative_pathes) => relative_pathes,
-                _ => {
-                    return Ok(TrackFileActionResult::CreateTaskFailed(r));
-                }
-            },
-            Err(e) => return Err(e),
-        };
+        let mut success_create = Vec::<PathBuf>::new();
+        if can_modify_sheet {
+            success_create = match proc_create_tasks_local(
+                &ctx,
+                instance.clone(),
+                &member_id,
+                &sheet_name,
+                tasks.0,
+                arguments.print_infos,
+            )
+            .await
+            {
+                Ok(r) => match r {
+                    CreateTaskResult::Success(relative_pathes) => relative_pathes,
+                    _ => {
+                        return Ok(TrackFileActionResult::CreateTaskFailed(r));
+                    }
+                },
+                Err(e) => return Err(e),
+            };
+        }
 
         // Process update tasks
-        let success_update = match proc_update_tasks_local(
-            &ctx,
-            instance.clone(),
-            &member_id,
-            &sheet_name,
-            tasks.1,
-            arguments.print_infos,
-            arguments.file_update_info,
-        )
-        .await
-        {
-            Ok(r) => match r {
-                UpdateTaskResult::Success(relative_pathes) => relative_pathes,
-                _ => {
-                    return Ok(TrackFileActionResult::UpdateTaskFailed(r));
-                }
-            },
-            Err(e) => return Err(e),
-        };
+        let mut success_update = Vec::<PathBuf>::new();
+        if can_modify_sheet {
+            success_update = match proc_update_tasks_local(
+                &ctx,
+                instance.clone(),
+                &member_id,
+                &sheet_name,
+                tasks.1,
+                arguments.print_infos,
+                arguments.file_update_info,
+            )
+            .await
+            {
+                Ok(r) => match r {
+                    UpdateTaskResult::Success(relative_pathes) => relative_pathes,
+                    _ => {
+                        return Ok(TrackFileActionResult::UpdateTaskFailed(r));
+                    }
+                },
+                Err(e) => return Err(e),
+            };
+        }
 
         // Process sync tasks
         let success_sync = match proc_sync_tasks_local(
@@ -333,43 +355,49 @@ pub async fn track_file_action(
         };
 
         // Process create tasks
-        let success_create = match proc_create_tasks_remote(
-            &ctx,
-            instance.clone(),
-            &member_id,
-            &sheet_name,
-            created_task,
-        )
-        .await
-        {
-            Ok(r) => match r {
-                CreateTaskResult::Success(relative_pathes) => relative_pathes,
-                _ => {
-                    return Ok(TrackFileActionResult::CreateTaskFailed(r));
-                }
-            },
-            Err(e) => return Err(e),
-        };
+        let mut success_create = Vec::<PathBuf>::new();
+        if can_modify_sheet {
+            success_create = match proc_create_tasks_remote(
+                &ctx,
+                instance.clone(),
+                &member_id,
+                &sheet_name,
+                created_task,
+            )
+            .await
+            {
+                Ok(r) => match r {
+                    CreateTaskResult::Success(relative_pathes) => relative_pathes,
+                    _ => {
+                        return Ok(TrackFileActionResult::CreateTaskFailed(r));
+                    }
+                },
+                Err(e) => return Err(e),
+            };
+        }
 
         // Process update tasks
-        let success_update = match proc_update_tasks_remote(
-            &ctx,
-            instance.clone(),
-            &member_id,
-            &sheet_name,
-            update_task,
-            arguments.file_update_info,
-        )
-        .await
-        {
-            Ok(r) => match r {
-                UpdateTaskResult::Success(relative_pathes) => relative_pathes,
-                _ => {
-                    return Ok(TrackFileActionResult::UpdateTaskFailed(r));
-                }
-            },
-            Err(e) => return Err(e),
-        };
+        let mut success_update = Vec::<PathBuf>::new();
+        if can_modify_sheet {
+            success_update = match proc_update_tasks_remote(
+                &ctx,
+                instance.clone(),
+                &member_id,
+                &sheet_name,
+                update_task,
+                arguments.file_update_info,
+            )
+            .await
+            {
+                Ok(r) => match r {
+                    UpdateTaskResult::Success(relative_pathes) => relative_pathes,
+                    _ => {
+                        return Ok(TrackFileActionResult::UpdateTaskFailed(r));
+                    }
+                },
+                Err(e) => return Err(e),
+            };
+        }
 
         // Process sync tasks
         let success_sync = match proc_sync_tasks_remote(

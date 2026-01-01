@@ -5,9 +5,9 @@ use cfg_file::config::ConfigFile;
 use tcp_connection::{error::TcpTargetError, instance::ConnectionInstance};
 use tokio::sync::{Mutex, mpsc::Sender};
 use vcs_data::{
-    constants::SERVER_PATH_MEMBER_PUB,
+    constants::{SERVER_PATH_MEMBER_PUB, VAULT_HOST_NAME},
     data::{
-        local::{LocalWorkspace, config::LocalConfig},
+        local::{LocalWorkspace, config::LocalConfig, latest_info::LatestInfo},
         member::MemberId,
         sheet::SheetName,
         user::UserDirectory,
@@ -78,13 +78,25 @@ pub fn try_get_local_output(ctx: &ActionContext) -> Result<Arc<Sender<String>>, 
 pub async fn auth_member(
     ctx: &ActionContext,
     instance: &Arc<Mutex<ConnectionInstance>>,
-) -> Result<MemberId, TcpTargetError> {
+) -> Result<(MemberId, bool), TcpTargetError> {
+    // Window开服Linux连接 -> 此函数内产生 early eof
+    // ~ WS # jv update
+    // 身份认证失败：I/O error: early eof！
+
+    // 分析相应流程：
+    // 1. 服务端发起挑战，客户端接受
+    // 2. 服务端发送结果，客户端接受
+    // 3. 推测此时发生 early eof ---> 无 ack，导致客户端尝试拿到结果时，服务端已经结束
+    // 这很有可能是 Windows 和 Linux 对于连接处理的方案差异导致的问题，需要进一步排查
+
     // Start Challenge (Remote)
     if ctx.is_proc_on_remote() {
+        let mut mut_instance = instance.lock().await;
         let vault = try_get_vault(ctx)?;
-        let result = instance
-            .lock()
-            .await
+
+        let using_host_mode = mut_instance.read_msgpack::<bool>().await?;
+
+        let result = mut_instance
             .challenge(vault.vault_path().join(SERVER_PATH_MEMBER_PUB))
             .await;
 
@@ -92,14 +104,28 @@ pub async fn auth_member(
             Ok((pass, member_id)) => {
                 if !pass {
                     // Send false to inform the client that authentication failed
-                    instance.lock().await.write(false).await?;
+                    mut_instance.write(false).await?;
                     Err(TcpTargetError::Authentication(
                         "Authenticate failed.".to_string(),
                     ))
                 } else {
-                    // Send true to inform the client that authentication was successful
-                    instance.lock().await.write(true).await?;
-                    Ok(member_id)
+                    if using_host_mode {
+                        if vault.config().vault_admin_list().contains(&member_id) {
+                            // Using Host mode authentication, and is indeed an administrator
+                            mut_instance.write(true).await?;
+                            Ok((member_id, true))
+                        } else {
+                            // Using Host mode authentication, but not an administrator
+                            mut_instance.write(false).await?;
+                            Err(TcpTargetError::Authentication(
+                                "Authenticate failed.".to_string(),
+                            ))
+                        }
+                    } else {
+                        // Not using Host mode authentication
+                        mut_instance.write(true).await?;
+                        Ok((member_id, false))
+                    }
                 }
             }
             Err(e) => Err(e),
@@ -108,22 +134,27 @@ pub async fn auth_member(
 
     // Accept Challenge (Local)
     if ctx.is_proc_on_local() {
+        let mut mut_instance = instance.lock().await;
         let local_workspace = try_get_local_workspace(ctx)?;
+        let (is_host_mode, member_name) = {
+            let cfg = local_workspace.config().lock_owned().await;
+            (cfg.is_host_mode(), cfg.current_account())
+        };
         let user_directory = try_get_user_directory(ctx)?;
 
+        // Inform remote whether to authenticate in Host mode
+        mut_instance.write_msgpack(is_host_mode).await?;
+
         // Member name & Private key
-        let member_name = local_workspace.config().lock().await.current_account();
         let private_key = user_directory.account_private_key_path(&member_name);
-        let _ = instance
-            .lock()
-            .await
+        let _ = mut_instance
             .accept_challenge(private_key, &member_name)
             .await?;
 
         // Read result
-        let challenge_result = instance.lock().await.read::<bool>().await?;
+        let challenge_result = mut_instance.read::<bool>().await?;
         if challenge_result {
-            return Ok(member_name.clone());
+            return Ok((member_name.clone(), is_host_mode));
         } else {
             return Err(TcpTargetError::Authentication(
                 "Authenticate failed.".to_string(),
@@ -136,34 +167,57 @@ pub async fn auth_member(
 
 /// Get the current sheet name based on the context (local or remote).
 /// This function handles the communication between local and remote instances
-/// to verify and retrieve the current sheet name.
+/// to verify and retrieve the current sheet name and whether it's a reference sheet.
 ///
 /// On local:
 /// - Reads the current sheet from local configuration
 /// - Sends the sheet name to remote for verification
-/// - Returns the sheet name if remote confirms it exists
+/// - Returns the sheet name and whether it's a reference sheet if remote confirms it exists
 ///
 /// On remote:
 /// - Receives sheet name from local
 /// - Verifies the sheet exists in the vault
-/// - Sends confirmation back to local
+/// - Checks if the sheet is a reference sheet
+/// - If allow_ref is true, reference sheets are allowed to pass verification
+/// - Sends confirmation and reference status back to local
 ///
-/// Returns the verified sheet name or an error if the sheet doesn't exist
+/// Returns a tuple of (SheetName, bool) where the bool indicates if it's a reference sheet,
+/// or an error if the sheet doesn't exist or doesn't meet the verification criteria.
 pub async fn get_current_sheet_name(
     ctx: &ActionContext,
     instance: &Arc<Mutex<ConnectionInstance>>,
     member_id: &MemberId,
-) -> Result<SheetName, TcpTargetError> {
+    allow_ref: bool,
+) -> Result<(SheetName, bool), TcpTargetError> {
     let mut mut_instance = instance.lock().await;
     if ctx.is_proc_on_local() {
+        let workspace = try_get_local_workspace(ctx)?;
         let config = LocalConfig::read().await?;
+        let latest = LatestInfo::read_from(LatestInfo::latest_info_path(
+            workspace.local_path(),
+            member_id,
+        ))
+        .await?;
         if let Some(sheet_name) = config.sheet_in_use() {
             // Send sheet name
             mut_instance.write_msgpack(sheet_name).await?;
 
             // Read result
             if mut_instance.read_msgpack::<bool>().await? {
-                return Ok(sheet_name.clone());
+                // Check if sheet is a reference sheet
+                let is_ref_sheet = latest.reference_sheets.contains(sheet_name);
+                if allow_ref {
+                    // Allow reference sheets, directly return the determination result
+                    return Ok((sheet_name.clone(), is_ref_sheet));
+                } else if is_ref_sheet {
+                    // Not allowed but it's a reference sheet, return an error
+                    return Err(TcpTargetError::ReferenceSheetNotAllowed(
+                        "Reference sheet not allowed".to_string(),
+                    ));
+                } else {
+                    // Not allowed but not a reference sheet, return normally
+                    return Ok((sheet_name.clone(), false));
+                }
             } else {
                 return Err(TcpTargetError::NotFound("Sheet not found".to_string()));
             }
@@ -185,11 +239,27 @@ pub async fn get_current_sheet_name(
         // Check if sheet exists
         if let Ok(sheet) = vault.sheet(&sheet_name).await
             && let Some(holder) = sheet.holder()
-            && holder == member_id
         {
-            // Tell local the check is passed
-            mut_instance.write_msgpack(true).await?;
-            return Ok(sheet_name.clone());
+            let is_ref_sheet = holder == VAULT_HOST_NAME;
+            if allow_ref {
+                // Allow reference sheets, directly return the determination result
+                if holder == member_id || holder == VAULT_HOST_NAME {
+                    mut_instance.write_msgpack(true).await?;
+                    return Ok((sheet.name().clone(), is_ref_sheet));
+                }
+            } else if is_ref_sheet {
+                // Not allowed but it's a reference sheet, return an error
+                mut_instance.write_msgpack(true).await?;
+                return Err(TcpTargetError::ReferenceSheetNotAllowed(
+                    "Reference sheet not allowed".to_string(),
+                ));
+            } else {
+                // Not allowed but not a reference sheet, return normally
+                if holder == member_id {
+                    mut_instance.write_msgpack(true).await?;
+                    return Ok((sheet_name.clone(), false));
+                }
+            }
         }
         // Tell local the check is not passed
         mut_instance.write_msgpack(false).await?;
