@@ -24,7 +24,7 @@ use vcs_data::{
             vault_modified::sign_vault_modified,
         },
         member::MemberId,
-        sheet::{SheetData, SheetName},
+        sheet::{SheetData, SheetName, SheetPathBuf},
         vault::{
             config::VaultUuid,
             sheet_share::{Share, SheetShareId},
@@ -214,7 +214,12 @@ pub async fn update_to_latest_info_action(
 
             // RefSheet
             let ref_sheet_data = vault.sheet(&REF_SHEET_NAME.to_string()).await?.to_data();
-            latest_info.ref_sheet_content = ref_sheet_data;
+            latest_info.ref_sheet_content = ref_sheet_data.clone();
+            latest_info.ref_sheet_vfs_mapping = ref_sheet_data
+                .mapping()
+                .into_iter()
+                .map(|(path, file)| (file.id.clone(), path.clone()))
+                .collect::<HashMap<VirtualFileId, SheetPathBuf>>();
             latest_info.reference_sheets = ref_sheets;
 
             // Members

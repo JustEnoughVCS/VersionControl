@@ -11,8 +11,11 @@ use crate::{
     constants::{CLIENT_FILE_LATEST_INFO, CLIENT_FILE_LATEST_INFO_NOSET},
     data::{
         member::{Member, MemberId},
-        sheet::{SheetData, SheetName},
-        vault::sheet_share::{Share, SheetShareId},
+        sheet::{SheetData, SheetName, SheetPathBuf},
+        vault::{
+            sheet_share::{Share, SheetShareId},
+            virtual_file::VirtualFileId,
+        },
     },
 };
 
@@ -40,6 +43,9 @@ pub struct LatestInfo {
 
     /// Reference sheet data, indicating what files I can get from the reference sheet
     pub ref_sheet_content: SheetData,
+
+    /// Reverse mapping from virtual file IDs to actual paths in reference sheets
+    pub ref_sheet_vfs_mapping: HashMap<VirtualFileId, SheetPathBuf>,
 
     /// Shares in my sheets, indicating which external merge requests have entries that I can view
     pub shares_in_my_sheets: HashMap<SheetName, HashMap<SheetShareId, Share>>,
