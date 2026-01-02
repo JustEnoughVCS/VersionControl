@@ -32,16 +32,17 @@ pub struct LocalSheet<'a> {
 #[cfg_file(path = CLIENT_FILE_LOCAL_SHEET_NOSET)] // Do not use LocalSheet::write or LocalSheet::read
 pub struct LocalSheetData {
     /// Local file path to metadata mapping.
-    #[serde(rename = "mapping")]
+    #[serde(rename = "map")]
     pub(crate) mapping: HashMap<LocalFilePathBuf, LocalMappingMetadata>,
 
+    #[serde(rename = "vfs")]
     pub(crate) vfs: HashMap<VirtualFileId, LocalFilePathBuf>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LocalMappingMetadata {
     /// Hash value generated immediately after the file is downloaded to the local workspace
-    #[serde(rename = "hash")]
+    #[serde(rename = "base_hash")]
     pub(crate) hash_when_updated: String,
 
     /// Time when the file was downloaded to the local workspace
@@ -57,7 +58,7 @@ pub struct LocalMappingMetadata {
     pub(crate) version_desc_when_updated: VirtualFileVersionDescription,
 
     /// Version when the file was downloaded to the local workspace
-    #[serde(rename = "version")]
+    #[serde(rename = "ver")]
     pub(crate) version_when_updated: VirtualFileVersion,
 
     /// Virtual file ID corresponding to the local path

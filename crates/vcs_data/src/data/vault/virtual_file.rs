@@ -39,24 +39,30 @@ pub struct VirtualFile<'a> {
 #[derive(Default, Clone, Serialize, Deserialize, ConfigFile)]
 pub struct VirtualFileMeta {
     /// Current version of the virtual file
+    #[serde(rename = "ver")]
     current_version: VirtualFileVersion,
 
     /// The member who holds the edit right of the file
+    #[serde(rename = "holder")]
     hold_member: MemberId,
 
     /// Description of each version
+    #[serde(rename = "descs")]
     version_description: HashMap<VirtualFileVersion, VirtualFileVersionDescription>,
 
     /// Histories
+    #[serde(rename = "histories")]
     histories: Vec<VirtualFileVersion>,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct VirtualFileVersionDescription {
     /// The member who created this version
+    #[serde(rename = "creator")]
     pub creator: MemberId,
 
     /// The description of this version
+    #[serde(rename = "desc")]
     pub description: String,
 }
 

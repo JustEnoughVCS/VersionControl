@@ -81,9 +81,9 @@ pub struct VaultConfig {
     #[serde(rename = "name")]
     vault_name: VaultName,
 
-    /// Vault admin id, a list of member id representing administrator identities
-    #[serde(rename = "admin")]
-    vault_admin_list: Vec<MemberId>,
+    /// Vault host ids, a list of member id representing administrator identities
+    #[serde(rename = "hosts")]
+    vault_host_list: Vec<MemberId>,
 
     /// Vault server configuration, which will be loaded when connecting to the server
     #[serde(rename = "profile")]
@@ -125,7 +125,7 @@ impl Default for VaultConfig {
         Self {
             vault_uuid: Uuid::new_v4(),
             vault_name: "JustEnoughVault".to_string(),
-            vault_admin_list: Vec::new(),
+            vault_host_list: Vec::new(),
             server_config: VaultServerConfig {
                 local_bind: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
                 port: PORT,
@@ -148,15 +148,15 @@ impl VaultConfig {
     /// Add admin
     pub fn add_admin(&mut self, member: &Member) {
         let uuid = member.id();
-        if !self.vault_admin_list.contains(&uuid) {
-            self.vault_admin_list.push(uuid);
+        if !self.vault_host_list.contains(&uuid) {
+            self.vault_host_list.push(uuid);
         }
     }
 
     /// Remove admin
     pub fn remove_admin(&mut self, member: &Member) {
         let id = member.id();
-        self.vault_admin_list.retain(|x| x != &id);
+        self.vault_host_list.retain(|x| x != &id);
     }
 
     /// Get vault UUID
@@ -180,13 +180,13 @@ impl VaultConfig {
     }
 
     /// Get vault admin list
-    pub fn vault_admin_list(&self) -> &Vec<MemberId> {
-        &self.vault_admin_list
+    pub fn vault_host_list(&self) -> &Vec<MemberId> {
+        &self.vault_host_list
     }
 
     /// Set vault admin list
-    pub fn set_vault_admin_list(&mut self, vault_admin_list: Vec<MemberId>) {
-        self.vault_admin_list = vault_admin_list;
+    pub fn set_vault_host_list(&mut self, vault_host_list: Vec<MemberId>) {
+        self.vault_host_list = vault_host_list;
     }
 
     /// Get server config

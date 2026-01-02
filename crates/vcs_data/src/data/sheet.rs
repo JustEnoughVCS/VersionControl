@@ -33,21 +33,27 @@ pub struct Sheet<'a> {
 #[derive(Default, Serialize, Deserialize, ConfigFile, Clone)]
 pub struct SheetData {
     /// The write count of the current sheet
+    #[serde(rename = "v")]
     pub(crate) write_count: i32,
 
     /// The holder of the current sheet, who has full operation rights to the sheet mapping
+    #[serde(rename = "holder")]
     pub(crate) holder: Option<MemberId>,
 
     /// Mapping of sheet paths to virtual file IDs
+    #[serde(rename = "map")]
     pub(crate) mapping: HashMap<SheetPathBuf, SheetMappingMetadata>,
 
     /// Mapping of virtual file Ids to sheet paths
+    #[serde(rename = "id_map")]
     pub(crate) id_mapping: Option<HashMap<VirtualFileId, SheetPathBuf>>,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, ConfigFile, Clone, Eq, PartialEq)]
 pub struct SheetMappingMetadata {
+    #[serde(rename = "id")]
     pub id: VirtualFileId,
+    #[serde(rename = "ver")]
     pub version: VirtualFileVersion,
 }
 

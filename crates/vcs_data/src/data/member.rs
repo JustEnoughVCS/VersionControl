@@ -9,9 +9,11 @@ pub type MemberId = String;
 #[derive(Debug, Eq, Clone, ConfigFile, Serialize, Deserialize)]
 pub struct Member {
     /// Member ID, the unique identifier of the member
+    #[serde(rename = "id")]
     id: String,
 
     /// Member metadata
+    #[serde(rename = "meta")]
     metadata: HashMap<String, String>,
 }
 

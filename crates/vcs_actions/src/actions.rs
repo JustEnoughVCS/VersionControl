@@ -110,7 +110,7 @@ pub async fn auth_member(
                     ))
                 } else {
                     if using_host_mode {
-                        if vault.config().vault_admin_list().contains(&member_id) {
+                        if vault.config().vault_host_list().contains(&member_id) {
                             // Using Host mode authentication, and is indeed an administrator
                             mut_instance.write(true).await?;
                             Ok((member_id, true))

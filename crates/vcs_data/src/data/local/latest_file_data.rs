@@ -20,18 +20,24 @@ const ACCOUNT: &str = "{account}";
 #[cfg_file(path = CLIENT_FILE_MEMBER_HELD_NOSET)]
 pub struct LatestFileData {
     /// File holding status
+    #[serde(rename = "held")]
     held_status: HashMap<VirtualFileId, HeldStatus>,
 
     /// File version
+    #[serde(rename = "ver")]
     versions: HashMap<VirtualFileId, VirtualFileVersion>,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub enum HeldStatus {
+    #[serde(rename = "Hold")]
     HeldWith(MemberId), // Held, status changes are sync to the client
-    NotHeld,            // Not held, status changes are sync to the client
+
+    #[serde(rename = "None")]
+    NotHeld, // Not held, status changes are sync to the client
 
     #[default]
+    #[serde(rename = "Unknown")]
     WantedToKnow, // Holding status is unknown, notify server must inform client
 }
 

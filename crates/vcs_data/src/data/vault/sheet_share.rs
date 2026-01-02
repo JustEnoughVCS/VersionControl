@@ -23,9 +23,11 @@ const SHARE_ID: &str = "{share_id}";
 #[derive(Default, Serialize, Deserialize, ConfigFile, Clone, Debug)]
 pub struct Share {
     /// Sharer: the member who created this share item
+    #[serde(rename = "sharer")]
     pub sharer: MemberId,
 
     /// Description of the share item
+    #[serde(rename = "desc")]
     pub description: String,
 
     /// Metadata path
@@ -33,9 +35,11 @@ pub struct Share {
     pub path: Option<PathBuf>,
 
     /// From: which sheet the member exported the file from
+    #[serde(rename = "from")]
     pub from_sheet: SheetName,
 
     /// Mappings: the sheet mappings contained in the share item
+    #[serde(rename = "map")]
     pub mappings: HashMap<SheetPathBuf, SheetMappingMetadata>,
 }
 

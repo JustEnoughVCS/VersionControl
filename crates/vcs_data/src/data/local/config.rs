@@ -26,14 +26,17 @@ const SHEET_NAME: &str = "{sheet_name}";
 pub struct LocalConfig {
     /// The upstream address, representing the upstream address of the local workspace,
     /// to facilitate timely retrieval of new updates from the upstream source.
+    #[serde(rename = "addr")]
     upstream_addr: SocketAddr,
 
     /// The member ID used by the current local workspace.
     /// This ID will be used to verify access permissions when connecting to the upstream server.
+    #[serde(rename = "as")]
     using_account: MemberId,
 
     /// Whether the current member is interacting as a host.
     /// In host mode, full Vault operation permissions are available except for adding new content.
+    #[serde(rename = "host")]
     using_host_mode: bool,
 
     /// Whether the local workspace is stained.
@@ -42,9 +45,11 @@ pub struct LocalConfig {
     ///
     /// If the value is None, it means not stained;
     /// otherwise, it contains the stain identifier (i.e., the upstream vault's unique ID)
+    #[serde(rename = "up_uid")]
     stained_uuid: Option<VaultUuid>,
 
     /// The name of the sheet currently in use.
+    #[serde(rename = "use")]
     sheet_in_use: Option<SheetName>,
 }
 
