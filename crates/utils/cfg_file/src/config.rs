@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use bincode2;
 use ron;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -15,6 +16,7 @@ enum ConfigFormat {
     Toml,
     Ron,
     Json,
+    Bincode,
 }
 
 impl ConfigFormat {
@@ -27,6 +29,8 @@ impl ConfigFormat {
             Some(Self::Ron)
         } else if filename.ends_with(".json") {
             Some(Self::Json)
+        } else if filename.ends_with(".bcfg") {
+            Some(Self::Bincode)
         } else {
             None
         }
@@ -134,6 +138,12 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
                 .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?,
             ConfigFormat::Json => serde_json::from_str(&contents)
                 .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?,
+            ConfigFormat::Bincode => {
+                // For Bincode, we need to read the file as bytes
+                let bytes = fs::read(&file_path).await?;
+                bincode2::deserialize(&bytes)
+                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?
+            }
         };
 
         Ok(result)
@@ -192,25 +202,37 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
             .and_then(ConfigFormat::from_filename)
             .unwrap_or(ConfigFormat::Json); // Default to JSON
 
-        let contents = match format {
-            ConfigFormat::Yaml => serde_yaml::to_string(val)
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?,
-            ConfigFormat::Toml => toml::to_string(val)
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?,
+        match format {
+            ConfigFormat::Yaml => {
+                let contents = serde_yaml::to_string(val)
+                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+                fs::write(&file_path, contents).await?
+            }
+            ConfigFormat::Toml => {
+                let contents = toml::to_string(val)
+                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+                fs::write(&file_path, contents).await?
+            }
             ConfigFormat::Ron => {
                 let mut pretty_config = ron::ser::PrettyConfig::new();
                 pretty_config.new_line = Cow::from("\n");
                 pretty_config.indentor = Cow::from("  ");
 
-                ron::ser::to_string_pretty(val, pretty_config)
-                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?
+                let contents = ron::ser::to_string_pretty(val, pretty_config)
+                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+                fs::write(&file_path, contents).await?
             }
-            ConfigFormat::Json => serde_json::to_string(val)
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?,
-        };
-
-        // Write to file
-        fs::write(&file_path, contents).await?;
+            ConfigFormat::Json => {
+                let contents = serde_json::to_string(val)
+                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+                fs::write(&file_path, contents).await?
+            }
+            ConfigFormat::Bincode => {
+                let bytes = bincode2::serialize(val)
+                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+                fs::write(&file_path, bytes).await?
+            }
+        }
         Ok(())
     }
 
