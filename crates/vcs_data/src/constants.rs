@@ -74,7 +74,7 @@ pub const CLIENT_FILE_LATEST_INFO_NOSET: &str = "./.jv/.temp/wrong.json";
 
 // Client - Other
 pub const CLIENT_FILE_IGNOREFILES: &str = "IGNORE_RULES.toml";
-pub const CLIENT_FILE_TODOLIST: &str = "./SETUP.txt";
+pub const CLIENT_FILE_TODOLIST: &str = "./SETUP.md";
 pub const CLIENT_FILE_GITIGNORE: &str = "./.jv/.gitignore";
 pub const CLIENT_CONTENT_GITIGNORE: &str = "# Git support for JVCS Workspace
 
