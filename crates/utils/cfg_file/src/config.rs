@@ -115,13 +115,7 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
             ));
         }
 
-        // Open file
-        let mut file = fs::File::open(&file_path).await?;
-
-        let mut contents = String::new();
-        file.read_to_string(&mut contents).await?;
-
-        // Determine file format
+        // Determine file format first
         let format = file_path
             .file_name()
             .and_then(|name| name.to_str())
@@ -130,16 +124,36 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
 
         // Deserialize based on format
         let result = match format {
-            ConfigFormat::Yaml => serde_yaml::from_str(&contents)
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?,
-            ConfigFormat::Toml => toml::from_str(&contents)
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?,
-            ConfigFormat::Ron => ron::from_str(&contents)
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?,
-            ConfigFormat::Json => serde_json::from_str(&contents)
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?,
+            ConfigFormat::Yaml => {
+                let mut file = fs::File::open(&file_path).await?;
+                let mut contents = String::new();
+                file.read_to_string(&mut contents).await?;
+                serde_yaml::from_str(&contents)
+                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?
+            }
+            ConfigFormat::Toml => {
+                let mut file = fs::File::open(&file_path).await?;
+                let mut contents = String::new();
+                file.read_to_string(&mut contents).await?;
+                toml::from_str(&contents)
+                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?
+            }
+            ConfigFormat::Ron => {
+                let mut file = fs::File::open(&file_path).await?;
+                let mut contents = String::new();
+                file.read_to_string(&mut contents).await?;
+                ron::from_str(&contents)
+                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?
+            }
+            ConfigFormat::Json => {
+                let mut file = fs::File::open(&file_path).await?;
+                let mut contents = String::new();
+                file.read_to_string(&mut contents).await?;
+                serde_json::from_str(&contents)
+                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?
+            }
             ConfigFormat::Bincode => {
-                // For Bincode, we need to read the file as bytes
+                // For Bincode, we need to read the file as bytes directly
                 let bytes = fs::read(&file_path).await?;
                 bincode2::deserialize(&bytes)
                     .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?

@@ -262,9 +262,7 @@ pub async fn update_to_latest_info_action(
             ))
             .await
             else {
-                return Err(TcpTargetError::NotFound(
-                    "Latest info not found.".to_string(),
-                ));
+                return Err(TcpTargetError::Io("Read latest info failed".to_string()));
             };
 
             // Collect all local versions
@@ -349,9 +347,7 @@ pub async fn update_to_latest_info_action(
             ))
             .await
             else {
-                return Err(TcpTargetError::NotFound(
-                    "Latest info not found.".to_string(),
-                ));
+                return Err(TcpTargetError::Io("Read latest info failed".to_string()));
             };
 
             // Collect files that need to know the holder
