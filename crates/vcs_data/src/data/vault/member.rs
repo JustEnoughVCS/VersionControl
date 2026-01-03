@@ -7,7 +7,10 @@ use std::{
 use cfg_file::config::ConfigFile;
 
 use crate::{
-    constants::{SERVER_FILE_MEMBER_INFO, SERVER_FILE_MEMBER_PUB, SERVER_PATH_MEMBERS},
+    constants::{
+        SERVER_FILE_MEMBER_INFO, SERVER_FILE_MEMBER_PUB, SERVER_PATH_MEMBERS,
+        SERVER_SUFFIX_MEMBER_INFO_NO_DOT,
+    },
     data::{
         member::{Member, MemberId},
         vault::Vault,
@@ -44,7 +47,8 @@ impl Vault {
 
             if path.is_file()
                 && let Some(file_name) = path.file_stem().and_then(|s| s.to_str())
-                && path.extension().and_then(|s| s.to_str()) == Some("toml")
+                && path.extension().and_then(|s| s.to_str())
+                    == Some(SERVER_SUFFIX_MEMBER_INFO_NO_DOT)
             {
                 member_ids.push(file_name.to_string());
             }

@@ -24,6 +24,8 @@ pub const SERVER_FILE_SHEET: &str = "./sheets/{sheet_name}.bcfg";
 pub const SERVER_FILE_SHEET_SHARE: &str = "./sheets/shares/{sheet_name}/{share_id}.bcfg";
 
 // Server - Members
+pub const SERVER_SUFFIX_MEMBER_INFO: &str = ".bcfg";
+pub const SERVER_SUFFIX_MEMBER_INFO_NO_DOT: &str = "bcfg";
 pub const SERVER_PATH_MEMBERS: &str = "./members/";
 pub const SERVER_PATH_MEMBER_PUB: &str = "./key/";
 pub const SERVER_FILE_MEMBER_INFO: &str = "./members/{member_id}.bcfg";
