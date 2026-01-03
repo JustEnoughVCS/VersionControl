@@ -7,7 +7,9 @@ use string_proc::{format_path, snake_case};
 use tokio::fs;
 
 use crate::{
-    constants::{SERVER_FILE_SHEET_SHARE, SERVER_PATH_SHARES, SERVER_SUFFIX_SHEET_FILE_NO_DOT},
+    constants::{
+        SERVER_FILE_SHEET_SHARE, SERVER_PATH_SHARES, SERVER_SUFFIX_SHEET_SHARE_FILE_NO_DOT,
+    },
     data::{
         member::MemberId,
         sheet::{Sheet, SheetMappingMetadata, SheetName, SheetPathBuf},
@@ -108,7 +110,7 @@ impl Vault {
                 let path = entry.path();
                 if path.is_file()
                     && path.extension().and_then(|s| s.to_str())
-                        == Some(SERVER_SUFFIX_SHEET_FILE_NO_DOT)
+                        == Some(SERVER_SUFFIX_SHEET_SHARE_FILE_NO_DOT)
                 {
                     result.push(path);
                 }

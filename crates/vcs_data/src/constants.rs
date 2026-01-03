@@ -1,5 +1,4 @@
 // -------------------------------------------------------------------------------------
-//
 
 // Project
 pub const PATH_TEMP: &str = "./.temp/";
@@ -10,25 +9,50 @@ pub const PORT: u16 = 25331;
 // Vault Host Name
 pub const VAULT_HOST_NAME: &str = "host";
 
+// -------------------------------------------------------------------------------------
+
+// Suffix
+pub const SERVER_SUFFIX_SHEET_FILE: &str = ".st";
+pub const SERVER_SUFFIX_SHEET_FILE_NO_DOT: &str = "st";
+
+pub const SERVER_SUFFIX_SHEET_SHARE_FILE: &str = ".sre";
+pub const SERVER_SUFFIX_SHEET_SHARE_FILE_NO_DOT: &str = "sre";
+
+pub const SERVER_SUFFIX_MEMBER_INFO: &str = ".json";
+pub const SERVER_SUFFIX_MEMBER_INFO_NO_DOT: &str = "json";
+
+pub const SERVER_SUFFIX_VF_META: &str = ".vf";
+pub const SERVER_SUFFIX_VF_META_NO_DOT: &str = "vf";
+
+pub const CLIENT_SUFFIX_LATEST_INFO: &str = ".up";
+pub const CLIENT_SUFFIX_LATEST_INFO_NO_DOT: &str = "up";
+
+pub const CLIENT_SUFFIX_LATEST_DATA: &str = ".upf";
+pub const CLIENT_SUFFIX_LATEST_DATA_NO_DOT: &str = "upf";
+
+pub const CLIENT_SUFFIX_LOCAL_SHEET_FILE: &str = ".lst";
+pub const CLIENT_SUFFIX_LOCAL_SHEET_FILE_NO_DOT: &str = "lst";
+
+pub const CLIENT_SUFFIX_CACHED_SHEET_FILE: &str = ".st";
+pub const CLIENT_SUFFIX_CACHED_SHEET_FILE_NO_DOT: &str = "st";
+
+// -------------------------------------------------------------------------------------
+
 // Server
 // Server - Vault (Main)
 pub const SERVER_FILE_VAULT: &str = "./vault.toml";
 
 // Server - Sheets
-pub const SERVER_SUFFIX_SHEET_FILE: &str = ".bcfg";
-pub const SERVER_SUFFIX_SHEET_FILE_NO_DOT: &str = "bcfg";
 pub const REF_SHEET_NAME: &str = "ref";
 pub const SERVER_PATH_SHEETS: &str = "./sheets/";
 pub const SERVER_PATH_SHARES: &str = "./sheets/shares/{sheet_name}/";
-pub const SERVER_FILE_SHEET: &str = "./sheets/{sheet_name}.bcfg";
-pub const SERVER_FILE_SHEET_SHARE: &str = "./sheets/shares/{sheet_name}/{share_id}.bcfg";
+pub const SERVER_FILE_SHEET: &str = "./sheets/{sheet_name}.st";
+pub const SERVER_FILE_SHEET_SHARE: &str = "./sheets/shares/{sheet_name}/{share_id}.sre";
 
 // Server - Members
-pub const SERVER_SUFFIX_MEMBER_INFO: &str = ".bcfg";
-pub const SERVER_SUFFIX_MEMBER_INFO_NO_DOT: &str = "bcfg";
 pub const SERVER_PATH_MEMBERS: &str = "./members/";
 pub const SERVER_PATH_MEMBER_PUB: &str = "./key/";
-pub const SERVER_FILE_MEMBER_INFO: &str = "./members/{member_id}.bcfg";
+pub const SERVER_FILE_MEMBER_INFO: &str = "./members/{member_id}.json";
 pub const SERVER_FILE_MEMBER_PUB: &str = "./key/{member_id}.pem";
 
 // Server - Virtual File Storage
@@ -36,8 +60,8 @@ pub const SERVER_PATH_VF_TEMP: &str = "./.temp/{temp_name}";
 pub const SERVER_PATH_VF_ROOT: &str = "./storage/";
 pub const SERVER_PATH_VF_STORAGE: &str = "./storage/{vf_index}/{vf_id}/";
 pub const SERVER_FILE_VF_VERSION_INSTANCE: &str = "./storage/{vf_index}/{vf_id}/{vf_version}.rf";
-pub const SERVER_FILE_VF_META: &str = "./storage/{vf_index}/{vf_id}/meta.bcfg";
-pub const SERVER_NAME_VF_META: &str = "meta.bcfg";
+pub const SERVER_FILE_VF_META: &str = "./storage/{vf_index}/{vf_id}/meta.vf";
+pub const SERVER_NAME_VF_META: &str = "meta.vf";
 
 // Server - Updates
 pub const SERVER_FILE_UPDATES: &str = "./.updates.txt";
@@ -58,17 +82,15 @@ pub const CLIENT_FOLDER_WORKSPACE_ROOT_NAME: &str = ".jv";
 pub const CLIENT_FILE_WORKSPACE: &str = "./.jv/workspace.toml";
 
 // Client - Latest Information
-pub const CLIENT_FILE_LATEST_INFO: &str = "./.jv/latest/{account}.vault.bcfg";
-pub const CLIENT_FILE_LATEST_DATA: &str = "./.jv/latest/{account}.file.bcfg";
+pub const CLIENT_FILE_LATEST_INFO: &str = "./.jv/latest/{account}.up";
+pub const CLIENT_FILE_LATEST_DATA: &str = "./.jv/latest/{account}.upf";
 
 // Client - Local
-pub const CLIENT_SUFFIX_LOCAL_SHEET_FILE: &str = ".bcfg";
-pub const CLIENT_SUFFIX_CACHED_SHEET_FILE: &str = ".bcfg";
 pub const CLIENT_PATH_LOCAL_DRAFT: &str = "./.jv/drafts/{account}/{sheet_name}/";
 pub const CLIENT_PATH_LOCAL_SHEET: &str = "./.jv/sheets/local/";
-pub const CLIENT_FILE_LOCAL_SHEET: &str = "./.jv/sheets/local/{account}/{sheet_name}.bcfg";
+pub const CLIENT_FILE_LOCAL_SHEET: &str = "./.jv/sheets/local/{account}/{sheet_name}.lst";
 pub const CLIENT_PATH_CACHED_SHEET: &str = "./.jv/sheets/cached/";
-pub const CLIENT_FILE_CACHED_SHEET: &str = "./.jv/sheets/cached/{sheet_name}.bcfg";
+pub const CLIENT_FILE_CACHED_SHEET: &str = "./.jv/sheets/cached/{sheet_name}.st";
 
 pub const CLIENT_FILE_LOCAL_SHEET_NOSET: &str = "./.jv/.temp/wrong.json";
 pub const CLIENT_FILE_MEMBER_HELD_NOSET: &str = "./.jv/.temp/wrong.json";

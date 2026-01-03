@@ -120,7 +120,7 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
             .file_name()
             .and_then(|name| name.to_str())
             .and_then(ConfigFormat::from_filename)
-            .unwrap_or(ConfigFormat::Json); // Default to JSON
+            .unwrap_or(ConfigFormat::Bincode); // Default to Bincode
 
         // Deserialize based on format
         let result = match format {
@@ -214,7 +214,7 @@ pub trait ConfigFile: Serialize + for<'a> Deserialize<'a> + Default {
             .file_name()
             .and_then(|name| name.to_str())
             .and_then(ConfigFormat::from_filename)
-            .unwrap_or(ConfigFormat::Json); // Default to JSON
+            .unwrap_or(ConfigFormat::Bincode); // Default to Bincode
 
         match format {
             ConfigFormat::Yaml => {
