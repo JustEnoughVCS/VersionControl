@@ -8,7 +8,7 @@ use crate::{
     current::current_local_path,
     data::{
         member::MemberId,
-        vault::virtual_file::{VirtualFileId, VirtualFileVersion},
+        vault::virtual_file::{VirtualFileId, VirtualFileVersion, VirtualFileVersionDescription},
     },
 };
 
@@ -26,6 +26,10 @@ pub struct LatestFileData {
     /// File version
     #[serde(rename = "ver")]
     versions: HashMap<VirtualFileId, VirtualFileVersion>,
+
+    /// File histories and descriptions
+    #[serde(rename = "his")]
+    histories: HashMap<VirtualFileId, Vec<(VirtualFileVersion, VirtualFileVersionDescription)>>,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -69,9 +73,16 @@ impl LatestFileData {
     /// Update the held status of the files.
     pub fn update_info(
         &mut self,
-        map: HashMap<VirtualFileId, (Option<MemberId>, VirtualFileVersion)>,
+        map: HashMap<
+            VirtualFileId,
+            (
+                Option<MemberId>,
+                VirtualFileVersion,
+                Vec<(VirtualFileVersion, VirtualFileVersionDescription)>,
+            ),
+        >,
     ) {
-        for (vfid, (member_id, version)) in map {
+        for (vfid, (member_id, version, desc)) in map {
             self.held_status.insert(
                 vfid.clone(),
                 match member_id {
@@ -79,7 +90,8 @@ impl LatestFileData {
                     None => HeldStatus::NotHeld,
                 },
             );
-            self.versions.insert(vfid, version);
+            self.versions.insert(vfid.clone(), version);
+            self.histories.insert(vfid, desc);
         }
     }
 }

@@ -28,7 +28,7 @@ use vcs_data::{
         vault::{
             config::VaultUuid,
             sheet_share::{Share, SheetShareId},
-            virtual_file::{VirtualFileId, VirtualFileVersion},
+            virtual_file::{VirtualFileId, VirtualFileVersion, VirtualFileVersionDescription},
         },
     },
 };
@@ -366,8 +366,14 @@ pub async fn update_to_latest_info_action(
                 .await?;
 
             // Receive information and write to local
-            let result: HashMap<VirtualFileId, (Option<MemberId>, VirtualFileVersion)> =
-                mut_instance.read_large_msgpack(1024u16).await?;
+            let result: HashMap<
+                VirtualFileId,
+                (
+                    Option<MemberId>,
+                    VirtualFileVersion,
+                    Vec<(VirtualFileVersion, VirtualFileVersionDescription)>,
+                ),
+            > = mut_instance.read_large_msgpack(1024u16).await?;
 
             // Read configuration file
             let path = LatestFileData::data_path(&member_id)?;
@@ -390,8 +396,14 @@ pub async fn update_to_latest_info_action(
                 mut_instance.read_large_msgpack(1024u16).await?;
 
             // Organize the information
-            let mut result: HashMap<VirtualFileId, (Option<MemberId>, VirtualFileVersion)> =
-                HashMap::new();
+            let mut result: HashMap<
+                VirtualFileId,
+                (
+                    Option<MemberId>,
+                    VirtualFileVersion,
+                    Vec<(VirtualFileVersion, VirtualFileVersionDescription)>,
+                ),
+            > = HashMap::new();
             for id in holder_wants_know {
                 let Ok(meta) = vault.virtual_file_meta(&id).await else {
                     continue;
@@ -401,8 +413,21 @@ pub async fn update_to_latest_info_action(
                 } else {
                     Some(meta.hold_member().clone())
                 };
-                let version = meta.version_latest();
-                result.insert(id, (holder, version));
+                let latest_version = meta.version_latest();
+
+                let all_versions = meta.versions();
+                let all_descriptions = meta.version_descriptions();
+                let histories = all_versions
+                    .iter()
+                    .filter_map(|v| {
+                        let Some(desc) = all_descriptions.get(v) else {
+                            return None;
+                        };
+                        Some((v.clone(), desc.clone()))
+                    })
+                    .collect::<Vec<(VirtualFileVersion, VirtualFileVersionDescription)>>();
+
+                result.insert(id, (holder, latest_version, histories));
             }
 
             // Send information
