@@ -5,6 +5,8 @@ pub struct CoreCompileInfo {
     pub toolchain: String,
 
     pub vcs_version: String,
+    pub build_branch: String,
+    pub build_commit: String,
 }
 
 impl Default for CoreCompileInfo {
@@ -15,6 +17,8 @@ impl Default for CoreCompileInfo {
             platform: "{platform}".to_string(),
             toolchain: "{toolchain}".to_string(),
             vcs_version: "{version}".to_string(),
+            build_branch: "{branch}".to_string(),
+            build_commit: "{commit}".to_string(),
         }
     }
 }

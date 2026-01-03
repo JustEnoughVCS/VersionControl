@@ -1,10 +1,13 @@
 use std::env;
 use std::path::PathBuf;
+use std::process::Command;
 
 const COMPILE_INFO_RS: &str = "./src/data/compile_info.rs";
 const COMPILE_INFO_RS_TEMPLATE: &str = "./src/data/compile_info.rs.template";
 
 fn main() {
+    println!("cargo:rerun-if-env-changed=FORCE_BUILD");
+
     let repo_root = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
     if let Err(e) = generate_compile_info(&repo_root) {
@@ -23,13 +26,17 @@ fn generate_compile_info(repo_root: &PathBuf) -> Result<(), Box<dyn std::error::
     let platform = get_platform(&target);
     let toolchain = get_toolchain();
     let version = get_version();
+    let branch = get_git_branch().unwrap_or_else(|_| "unknown".to_string());
+    let commit = get_git_commit().unwrap_or_else(|_| "unknown".to_string());
 
     let generated_code = template_code
         .replace("{date}", &date)
         .replace("{target}", &target)
         .replace("{platform}", &platform)
         .replace("{toolchain}", &toolchain)
-        .replace("{version}", &version);
+        .replace("{version}", &version)
+        .replace("{branch}", &branch)
+        .replace("{commit}", &commit);
 
     // Write the generated code
     let compile_info_path = repo_root.join(COMPILE_INFO_RS);
@@ -98,4 +105,43 @@ fn get_version() -> String {
     }
 
     "unknown".to_string()
+}
+
+/// Get current git branch
+fn get_git_branch() -> Result<String, Box<dyn std::error::Error>> {
+    let output = Command::new("git")
+        .args(["branch", "--show-current"])
+        .output()?;
+
+    if output.status.success() {
+        let branch = String::from_utf8(output.stdout)?.trim().to_string();
+
+        if branch.is_empty() {
+            // Try to get HEAD reference if no branch (detached HEAD)
+            let output = Command::new("git")
+                .args(["rev-parse", "--abbrev-ref", "HEAD"])
+                .output()?;
+
+            if output.status.success() {
+                let head_ref = String::from_utf8(output.stdout)?.trim().to_string();
+                return Ok(head_ref);
+            }
+        } else {
+            return Ok(branch);
+        }
+    }
+
+    Err("Failed to get git branch".into())
+}
+
+/// Get current git commit hash
+fn get_git_commit() -> Result<String, Box<dyn std::error::Error>> {
+    let output = Command::new("git").args(["rev-parse", "HEAD"]).output()?;
+
+    if output.status.success() {
+        let commit = String::from_utf8(output.stdout)?.trim().to_string();
+        return Ok(commit);
+    }
+
+    Err("Failed to get git commit".into())
 }
