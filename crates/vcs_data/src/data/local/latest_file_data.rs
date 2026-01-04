@@ -70,6 +70,14 @@ impl LatestFileData {
         self.versions.get(vfid)
     }
 
+    /// Get the version of the file with the given ID.
+    pub fn file_histories(
+        &self,
+        vfid: &VirtualFileId,
+    ) -> Option<&Vec<(VirtualFileVersion, VirtualFileVersionDescription)>> {
+        self.histories.get(vfid)
+    }
+
     /// Update the held status of the files.
     pub fn update_info(
         &mut self,
