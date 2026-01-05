@@ -400,7 +400,7 @@ pub async fn share_mapping_action(
 
     // Check sheet
     let sheet_name = args.from_sheet.unwrap_or(
-        get_current_sheet_name(&ctx, instance, &member_id, false)
+        get_current_sheet_name(&ctx, instance, &member_id, true)
             .await?
             .0,
     );
@@ -569,6 +569,12 @@ pub async fn merge_share_mapping_action(
             .await
             .read::<MergeShareMappingActionResult>()
             .await?;
+        match result {
+            MergeShareMappingActionResult::Success => {
+                sign_vault_modified(true).await;
+            }
+            _ => {}
+        }
         return Ok(result);
     }
 

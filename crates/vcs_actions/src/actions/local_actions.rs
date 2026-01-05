@@ -13,7 +13,8 @@ use serde::{Deserialize, Serialize};
 use tcp_connection::error::TcpTargetError;
 use vcs_data::{
     constants::{
-        CLIENT_PATH_CACHED_SHEET, CLIENT_PATH_LOCAL_SHEET, REF_SHEET_NAME, VAULT_HOST_NAME,
+        CLIENT_PATH_CACHED_SHEET, CLIENT_PATH_LOCAL_SHEET, REF_SHEET_NAME,
+        SERVER_SUFFIX_SHEET_SHARE_FILE, VAULT_HOST_NAME,
     },
     data::{
         local::{
@@ -172,7 +173,7 @@ pub async fn update_to_latest_info_action(
             for sheet in vault.sheets().await? {
                 // Build share parts
                 if let Some(holder) = sheet.holder() {
-                    if holder == &member_id {
+                    if holder == &member_id || holder == VAULT_HOST_NAME {
                         let mut sheet_shares: HashMap<SheetShareId, Share> = HashMap::new();
                         for share in sheet.get_shares().await? {
                             // Get SharePath
@@ -183,7 +184,10 @@ pub async fn update_to_latest_info_action(
                             let Some(share_id) = share_path.file_name() else {
                                 continue;
                             };
-                            sheet_shares.insert(share_id.display().to_string(), share);
+                            let share_id = share_id.display().to_string();
+                            let share_id_trimed =
+                                share_id.trim_end_matches(SERVER_SUFFIX_SHEET_SHARE_FILE);
+                            sheet_shares.insert(share_id_trimed.to_string(), share);
                         }
                         shares_in_my_sheets.insert(sheet.name().clone(), sheet_shares);
                     }

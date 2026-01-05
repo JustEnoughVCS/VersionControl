@@ -58,6 +58,9 @@ pub enum ShareMergeMode {
     /// Pre-check for conflicts, prohibit merging if any conflicts are found
     #[default]
     Safe,
+
+    /// Reject all shares
+    RejectAll,
 }
 
 #[derive(Default, Serialize, Deserialize, ConfigFile, Clone)]
@@ -168,13 +171,14 @@ impl<'a> Sheet<'a> {
         let mut copy_sheet = self.clone_data();
 
         // Pre-check
-        let precheck = self.precheck(&copy_share);
+        let conflicts = self.precheck(&copy_share);
+        let mut reject_mode = false;
 
         match share_merge_mode {
             // Safe mode: conflicts are not allowed
             ShareMergeMode::Safe => {
                 // Conflicts found
-                if !precheck.ok() {
+                if !conflicts.ok() {
                     // Do nothing, return Error
                     return Err(Error::new(
                         std::io::ErrorKind::AlreadyExists,
@@ -185,7 +189,7 @@ impl<'a> Sheet<'a> {
             // Overwrite mode: when conflicts occur, prioritize the share item
             ShareMergeMode::Overwrite => {
                 // Handle duplicate mappings
-                for path in precheck.duplicate_mapping {
+                for path in conflicts.duplicate_mapping {
                     // Get the share data
                     let Some(share_value) = copy_share.mappings.remove(&path) else {
                         return Err(Error::new(
@@ -198,7 +202,7 @@ impl<'a> Sheet<'a> {
                 }
 
                 // Handle duplicate IDs
-                for path in precheck.duplicate_file {
+                for path in conflicts.duplicate_file {
                     // Get the share data
                     let Some(share_value) = copy_share.mappings.remove(&path) else {
                         return Err(Error::new(
@@ -240,30 +244,36 @@ impl<'a> Sheet<'a> {
             // Skip mode: when conflicts occur, prioritize the local sheet
             ShareMergeMode::Skip => {
                 // Directly remove conflicting items
-                for path in precheck.duplicate_mapping {
+                for path in conflicts.duplicate_mapping {
                     copy_share.mappings.remove(&path);
                 }
-                for path in precheck.duplicate_file {
+                for path in conflicts.duplicate_file {
                     copy_share.mappings.remove(&path);
                 }
             }
+            // Reject all mode: reject all shares
+            ShareMergeMode::RejectAll => {
+                reject_mode = true; // Only mark as rejected
+            }
         }
 
-        // Subsequent merging
-        copy_sheet
-            .mapping_mut()
-            .extend(copy_share.mappings.into_iter());
+        if !reject_mode {
+            // Subsequent merging
+            copy_sheet
+                .mapping_mut()
+                .extend(copy_share.mappings.into_iter());
 
-        // Merge completed
-        self.data = copy_sheet; // Write the result
+            // Merge completed
+            self.data = copy_sheet; // Write the result
 
-        // Merge completed, consume the sheet
-        self.persist().await.map_err(|err| {
-            Error::new(
-                std::io::ErrorKind::NotFound,
-                format!("Write sheet failed: {}", err),
-            )
-        })?;
+            // Merge completed, consume the sheet
+            self.persist().await.map_err(|err| {
+                Error::new(
+                    std::io::ErrorKind::NotFound,
+                    format!("Write sheet failed: {}", err),
+                )
+            })?;
+        }
 
         // Persistence succeeded, continue to consume the share item
         share.remove().await.map_err(|err| {
