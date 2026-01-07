@@ -72,7 +72,13 @@ pub fn find_local_path(path: impl Into<PathBuf>) -> Option<PathBuf> {
     None
 }
 
-/// Get the system's document directory and join with jvcs
+/// Get the system's document directory and join with the appropriate application name
 pub fn current_cfg_dir() -> Option<PathBuf> {
-    dirs::config_local_dir().map(|path| path.join("jvcs"))
+    dirs::config_local_dir().map(|path| {
+        if cfg!(target_os = "linux") {
+            path.join("jvcs")
+        } else {
+            path.join("JustEnoughVCS")
+        }
+    })
 }
