@@ -53,16 +53,17 @@ pub async fn make_sheet_action(
 
     if ctx.is_proc_on_remote() {
         let vault = try_get_vault(&ctx)?;
+        let holder = if is_host_mode {
+            VAULT_HOST_NAME.to_string()
+        } else {
+            member_id
+        };
 
         // Check if the sheet already exists
         if let Ok(mut sheet) = vault.sheet(&sheet_name).await {
             // If the sheet has no holder, assign it to the current member (restore operation)
             if sheet.holder().is_none() {
-                sheet.set_holder(if is_host_mode {
-                    VAULT_HOST_NAME.to_string()
-                } else {
-                    member_id
-                });
+                sheet.set_holder(holder.clone());
                 match sheet.persist().await {
                     Ok(_) => {
                         write_and_return!(instance, MakeSheetActionResult::SuccessRestore);
@@ -79,7 +80,7 @@ pub async fn make_sheet_action(
             }
         } else {
             // Create the sheet
-            match vault.create_sheet(&sheet_name, &member_id).await {
+            match vault.create_sheet(&sheet_name, &holder).await {
                 Ok(_) => {
                     write_and_return!(instance, MakeSheetActionResult::Success);
                 }
