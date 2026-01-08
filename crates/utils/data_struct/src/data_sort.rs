@@ -73,7 +73,7 @@ where
 
 #[cfg(test)]
 pub mod sort_test {
-    use crate::dada_sort::{quick_sort, quick_sort_with_cmp};
+    use crate::data_sort::{quick_sort, quick_sort_with_cmp};
 
     #[test]
     fn test_quick_sort_ascending() {
