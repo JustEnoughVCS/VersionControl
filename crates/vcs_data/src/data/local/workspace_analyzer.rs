@@ -200,7 +200,7 @@ impl<'a> AnalyzeResult<'a> {
                                 // Using the most recently recorded Hash can more accurately identify moved items,
                                 // but if it doesn't exist, fall back to the initially recorded Hash
                                 mapping_data
-                                    .last_modifiy_check_hash
+                                    .last_modify_check_hash
                                     .as_ref()
                                     .cloned()
                                     .unwrap_or(mapping_data.hash_when_updated.clone()),
@@ -295,16 +295,16 @@ impl<'a> AnalyzeResult<'a> {
                 result.modified.insert(path.clone());
 
                 // Update last modified check time to modified time
-                mapping_data.last_modifiy_check_time = modified_time;
-                mapping_data.last_modifiy_check_result = true;
+                mapping_data.last_modify_check_time = modified_time;
+                mapping_data.last_modify_check_result = true;
             } else {
                 // Update last modified check time to modified time
-                mapping_data.last_modifiy_check_time = modified_time;
-                mapping_data.last_modifiy_check_result = false;
+                mapping_data.last_modify_check_time = modified_time;
+                mapping_data.last_modify_check_result = false;
             }
 
             // Record latest hash
-            mapping_data.last_modifiy_check_hash = Some(hash_calc.hash)
+            mapping_data.last_modify_check_hash = Some(hash_calc.hash)
         }
 
         // Persist the local sheet data

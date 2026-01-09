@@ -67,15 +67,15 @@ pub struct LocalMappingMetadata {
 
     /// Latest modifiy check time
     #[serde(rename = "check_time")]
-    pub(crate) last_modifiy_check_time: SystemTime,
+    pub(crate) last_modify_check_time: SystemTime,
 
     /// Latest modifiy check result
     #[serde(rename = "modified")]
-    pub(crate) last_modifiy_check_result: bool,
+    pub(crate) last_modify_check_result: bool,
 
     /// Latest modifiy check hash result
     #[serde(rename = "current_hash")]
-    pub(crate) last_modifiy_check_hash: Option<String>,
+    pub(crate) last_modify_check_hash: Option<String>,
 }
 
 impl LocalSheetData {
@@ -115,9 +115,9 @@ impl LocalMappingMetadata {
             version_desc_when_updated,
             version_when_updated,
             mapping_vfid,
-            last_modifiy_check_time,
-            last_modifiy_check_result,
-            last_modifiy_check_hash: None,
+            last_modify_check_time: last_modifiy_check_time,
+            last_modify_check_result: last_modifiy_check_result,
+            last_modify_check_hash: None,
         }
     }
 
@@ -183,32 +183,32 @@ impl LocalMappingMetadata {
 
     /// Getter for last_modifiy_check_time
     pub fn last_modifiy_check_time(&self) -> &SystemTime {
-        &self.last_modifiy_check_time
+        &self.last_modify_check_time
     }
 
     /// Setter for last_modifiy_check_time
     pub fn set_last_modifiy_check_time(&mut self, time: SystemTime) {
-        self.last_modifiy_check_time = time;
+        self.last_modify_check_time = time;
     }
 
     /// Getter for last_modifiy_check_result
     pub fn last_modifiy_check_result(&self) -> bool {
-        self.last_modifiy_check_result
+        self.last_modify_check_result
     }
 
     /// Setter for last_modifiy_check_result
     pub fn set_last_modifiy_check_result(&mut self, result: bool) {
-        self.last_modifiy_check_result = result;
+        self.last_modify_check_result = result;
     }
 
     /// Getter for last_modifiy_check_hash
     pub fn last_modifiy_check_hash(&self) -> &Option<String> {
-        &self.last_modifiy_check_hash
+        &self.last_modify_check_hash
     }
 
     /// Setter for last_modifiy_check_hash
     pub fn set_last_modifiy_check_hash(&mut self, hash: Option<String>) {
-        self.last_modifiy_check_hash = hash;
+        self.last_modify_check_hash = hash;
     }
 }
 
@@ -221,9 +221,9 @@ impl Default for LocalMappingMetadata {
             version_desc_when_updated: Default::default(),
             version_when_updated: Default::default(),
             mapping_vfid: Default::default(),
-            last_modifiy_check_time: SystemTime::now(),
-            last_modifiy_check_result: false,
-            last_modifiy_check_hash: None,
+            last_modify_check_time: SystemTime::now(),
+            last_modify_check_result: false,
+            last_modify_check_hash: None,
         }
     }
 }
