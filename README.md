@@ -14,6 +14,7 @@
 				<img src="https://img.shields.io/badge/Status-In%20Progress-yellow?style=for-the-badge">
 				<img src="https://img.shields.io/badge/Release-Not%20Available-lightgrey?style=for-the-badge">
 </p>
+
 ## Foreword
 
 > [!Warning]
