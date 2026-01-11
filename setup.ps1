@@ -12,9 +12,6 @@ if (Test-Path "docs/Documents/.git") {
 if (Test-Path .cargo) {
     attrib +h .cargo
 }
-if (Test-Path .github) {
-    attrib +h .github
-}
 if (Test-Path .temp) {
     attrib +h .temp
 }
