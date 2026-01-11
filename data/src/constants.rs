@@ -9,6 +9,15 @@ pub const PORT: u16 = 25331;
 // Vault Host Name
 pub const VAULT_HOST_NAME: &str = "host";
 
+// Default Virtual File Version and Direction
+pub const DEFAULT_VF_VERSION: &str = "0.1.0";
+pub const DEFAULT_VF_DESCRIPTION: &str = "_";
+
+// -------------------------------------------------------------------------------------
+
+// Prefix
+pub const VF_PREFIX: &str = "vf-";
+
 // -------------------------------------------------------------------------------------
 
 // Suffix
@@ -35,6 +44,19 @@ pub const CLIENT_SUFFIX_LOCAL_SHEET_FILE_NO_DOT: &str = "lst";
 
 pub const CLIENT_SUFFIX_CACHED_SHEET_FILE: &str = ".st";
 pub const CLIENT_SUFFIX_CACHED_SHEET_FILE_NO_DOT: &str = "st";
+
+// -------------------------------------------------------------------------------------
+
+// Keys
+pub const KEY_SHEET_NAME: &str = "{sheet_name}";
+pub const KEY_MEMBER_ID: &str = "{member_id}";
+pub const KEY_TEMP_NAME: &str = "{temp_name}";
+pub const KEY_VF_INDEX: &str = "{vf_index}";
+pub const KEY_VF_ID: &str = "{vf_id}";
+pub const KEY_VF_VERSION: &str = "{vf_version}";
+pub const KEY_ACCOUNT: &str = "{account}";
+pub const KEY_SELF_ID: &str = "{self_id}";
+pub const KEY_SHARE_ID: &str = "{share_id}";
 
 // -------------------------------------------------------------------------------------
 

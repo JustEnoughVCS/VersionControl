@@ -7,14 +7,12 @@ use std::{
 use cfg_file::config::ConfigFile;
 
 use crate::{
-    constants::{USER_FILE_ACCOUNTS, USER_FILE_KEY, USER_FILE_MEMBER},
+    constants::{KEY_SELF_ID, USER_FILE_ACCOUNTS, USER_FILE_KEY, USER_FILE_MEMBER},
     data::{
         member::{Member, MemberId},
         user::UserDirectory,
     },
 };
-
-const SELF_ID: &str = "{self_id}";
 
 /// Account Management
 impl UserDirectory {
@@ -32,7 +30,7 @@ impl UserDirectory {
     pub fn account_ids(&self) -> Result<Vec<MemberId>, std::io::Error> {
         let accounts_path = self
             .local_path
-            .join(USER_FILE_ACCOUNTS.replace(SELF_ID, ""));
+            .join(USER_FILE_ACCOUNTS.replace(KEY_SELF_ID, ""));
 
         if !accounts_path.exists() {
             return Ok(Vec::new());
@@ -96,7 +94,7 @@ impl UserDirectory {
         // Ensure accounts directory exists
         let accounts_dir = self
             .local_path
-            .join(USER_FILE_ACCOUNTS.replace(SELF_ID, ""));
+            .join(USER_FILE_ACCOUNTS.replace(KEY_SELF_ID, ""));
         if !accounts_dir.exists() {
             fs::create_dir_all(&accounts_dir)?;
         }
@@ -153,12 +151,12 @@ impl UserDirectory {
     /// Get the account's configuration file path, but do not check if the file exists
     pub fn account_cfg_path(&self, id: &MemberId) -> PathBuf {
         self.local_path
-            .join(USER_FILE_MEMBER.replace(SELF_ID, id.to_string().as_str()))
+            .join(USER_FILE_MEMBER.replace(KEY_SELF_ID, id.to_string().as_str()))
     }
 
     /// Get the account's private key file path, but do not check if the file exists
     pub fn account_private_key_path(&self, id: &MemberId) -> PathBuf {
         self.local_path
-            .join(USER_FILE_KEY.replace(SELF_ID, id.to_string().as_str()))
+            .join(USER_FILE_KEY.replace(KEY_SELF_ID, id.to_string().as_str()))
     }
 }

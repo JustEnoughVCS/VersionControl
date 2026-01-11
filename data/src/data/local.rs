@@ -14,7 +14,7 @@ use crate::{
     constants::{
         CLIENT_CONTENT_GITIGNORE, CLIENT_FILE_GITIGNORE, CLIENT_FILE_LOCAL_SHEET,
         CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE, CLIENT_FOLDER_WORKSPACE_ROOT_NAME,
-        CLIENT_PATH_LOCAL_SHEET, CLIENT_SUFFIX_LOCAL_SHEET_FILE,
+        CLIENT_PATH_LOCAL_SHEET, CLIENT_SUFFIX_LOCAL_SHEET_FILE, KEY_ACCOUNT, KEY_SHEET_NAME,
     },
     current::{current_local_path, find_local_path},
     data::{
@@ -36,9 +36,6 @@ pub mod local_files;
 pub mod local_sheet;
 pub mod vault_modified;
 pub mod workspace_analyzer;
-
-const SHEET_NAME: &str = "{sheet_name}";
-const ACCOUNT_NAME: &str = "{account}";
 
 pub struct LocalWorkspace {
     config: Arc<Mutex<LocalConfig>>,
@@ -120,8 +117,8 @@ impl LocalWorkspace {
     pub fn local_sheet_path(&self, member: &MemberId, sheet: &SheetName) -> PathBuf {
         self.local_path.join(
             CLIENT_FILE_LOCAL_SHEET
-                .replace(ACCOUNT_NAME, member)
-                .replace(SHEET_NAME, sheet),
+                .replace(KEY_ACCOUNT, member)
+                .replace(KEY_SHEET_NAME, sheet),
         )
     }
 

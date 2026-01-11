@@ -4,7 +4,7 @@ use cfg_file::{ConfigFile, config::ConfigFile};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    constants::SERVER_FILE_SHEET,
+    constants::{KEY_SHEET_NAME, SERVER_FILE_SHEET},
     data::{
         member::MemberId,
         vault::{
@@ -16,8 +16,6 @@ use crate::{
 
 pub type SheetName = String;
 pub type SheetPathBuf = PathBuf;
-
-const SHEET_NAME: &str = "{sheet_name}";
 
 pub struct Sheet<'a> {
     /// The name of the current sheet
@@ -233,7 +231,7 @@ impl<'a> Sheet<'a> {
     pub fn sheet_path_with_name(vault: &Vault, name: impl AsRef<str>) -> PathBuf {
         vault
             .vault_path()
-            .join(SERVER_FILE_SHEET.replace(SHEET_NAME, name.as_ref()))
+            .join(SERVER_FILE_SHEET.replace(KEY_SHEET_NAME, name.as_ref()))
     }
 
     /// Clone the data of the sheet

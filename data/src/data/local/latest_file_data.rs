@@ -4,15 +4,13 @@ use cfg_file::ConfigFile;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    constants::{CLIENT_FILE_LATEST_DATA, CLIENT_FILE_MEMBER_HELD_NOSET},
+    constants::{CLIENT_FILE_LATEST_DATA, CLIENT_FILE_MEMBER_HELD_NOSET, KEY_ACCOUNT},
     current::current_local_path,
     data::{
         member::MemberId,
         vault::virtual_file::{VirtualFileId, VirtualFileVersion, VirtualFileVersionDescription},
     },
 };
-
-const ACCOUNT: &str = "{account}";
 
 /// # Latest file data
 /// Records the file holder and the latest version for permission and update checks
@@ -54,7 +52,7 @@ impl LatestFileData {
                 "Workspace not found.",
             ));
         };
-        Ok(local_path.join(CLIENT_FILE_LATEST_DATA.replace(ACCOUNT, account)))
+        Ok(local_path.join(CLIENT_FILE_LATEST_DATA.replace(KEY_ACCOUNT, account)))
     }
 
     /// Get the member who holds the file with the given ID.

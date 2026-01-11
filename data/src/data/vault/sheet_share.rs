@@ -8,7 +8,8 @@ use tokio::fs;
 
 use crate::{
     constants::{
-        SERVER_FILE_SHEET_SHARE, SERVER_PATH_SHARES, SERVER_SUFFIX_SHEET_SHARE_FILE_NO_DOT,
+        KEY_SHARE_ID, KEY_SHEET_NAME, SERVER_FILE_SHEET_SHARE, SERVER_PATH_SHARES,
+        SERVER_SUFFIX_SHEET_SHARE_FILE_NO_DOT,
     },
     data::{
         member::MemberId,
@@ -18,9 +19,6 @@ use crate::{
 };
 
 pub type SheetShareId = String;
-
-const SHEET_NAME: &str = "{sheet_name}";
-const SHARE_ID: &str = "{share_id}";
 
 #[derive(Default, Serialize, Deserialize, ConfigFile, Clone, Debug)]
 pub struct Share {
@@ -87,8 +85,8 @@ impl Vault {
 
         // Format the path to remove "./" prefix and normalize it
         let path_str = SERVER_FILE_SHEET_SHARE
-            .replace(SHEET_NAME, &sheet_name)
-            .replace(SHARE_ID, &share_id);
+            .replace(KEY_SHEET_NAME, &sheet_name)
+            .replace(KEY_SHARE_ID, &share_id);
 
         // Use format_path to normalize the path
         match format_path::format_path_str(&path_str) {
@@ -105,7 +103,7 @@ impl Vault {
         let sheet_name = snake_case!(sheet_name.clone());
         let shares_dir = self
             .vault_path()
-            .join(SERVER_PATH_SHARES.replace(SHEET_NAME, &sheet_name));
+            .join(SERVER_PATH_SHARES.replace(KEY_SHEET_NAME, &sheet_name));
 
         let mut result = Vec::new();
         if let Ok(mut entries) = fs::read_dir(shares_dir).await {

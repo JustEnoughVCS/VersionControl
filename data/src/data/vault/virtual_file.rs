@@ -13,20 +13,15 @@ use uuid::Uuid;
 
 use crate::{
     constants::{
-        SERVER_FILE_VF_META, SERVER_FILE_VF_VERSION_INSTANCE, SERVER_PATH_VF_ROOT,
-        SERVER_PATH_VF_STORAGE, SERVER_PATH_VF_TEMP,
+        DEFAULT_VF_DESCRIPTION, DEFAULT_VF_VERSION, KEY_TEMP_NAME, KEY_VF_ID, KEY_VF_INDEX,
+        KEY_VF_VERSION, SERVER_FILE_VF_META, SERVER_FILE_VF_VERSION_INSTANCE, SERVER_PATH_VF_ROOT,
+        SERVER_PATH_VF_STORAGE, SERVER_PATH_VF_TEMP, VF_PREFIX,
     },
     data::{member::MemberId, vault::Vault},
 };
 
 pub type VirtualFileId = String;
 pub type VirtualFileVersion = String;
-
-const VF_PREFIX: &str = "vf-";
-const ID_PARAM: &str = "{vf_id}";
-const ID_INDEX: &str = "{vf_index}";
-const VERSION_PARAM: &str = "{vf_version}";
-const TEMP_NAME: &str = "{temp_name}";
 
 pub struct VirtualFile<'a> {
     /// Unique identifier for the virtual file
@@ -82,7 +77,7 @@ impl Vault {
     pub fn virtual_file_temp_path(&self) -> PathBuf {
         let random_receive_name = format!("{}", uuid::Uuid::new_v4());
         self.vault_path
-            .join(SERVER_PATH_VF_TEMP.replace(TEMP_NAME, &random_receive_name))
+            .join(SERVER_PATH_VF_TEMP.replace(KEY_TEMP_NAME, &random_receive_name))
     }
 
     /// Get the directory where virtual files are stored
@@ -94,8 +89,8 @@ impl Vault {
     pub fn virtual_file_dir(&self, id: &VirtualFileId) -> Result<PathBuf, std::io::Error> {
         Ok(self.vault_path().join(
             SERVER_PATH_VF_STORAGE
-                .replace(ID_PARAM, &id.to_string())
-                .replace(ID_INDEX, &Self::vf_index(id)?),
+                .replace(KEY_VF_ID, &id.to_string())
+                .replace(KEY_VF_INDEX, &Self::vf_index(id)?),
         ))
     }
 
@@ -145,9 +140,9 @@ impl Vault {
     ) -> PathBuf {
         self.vault_path().join(
             SERVER_FILE_VF_VERSION_INSTANCE
-                .replace(ID_PARAM, &id.to_string())
-                .replace(ID_INDEX, &Self::vf_index(id).unwrap_or_default())
-                .replace(VERSION_PARAM, &version.to_string()),
+                .replace(KEY_VF_ID, &id.to_string())
+                .replace(KEY_VF_INDEX, &Self::vf_index(id).unwrap_or_default())
+                .replace(KEY_VF_VERSION, &version.to_string()),
         )
     }
 
@@ -155,8 +150,8 @@ impl Vault {
     pub fn virtual_file_meta_path(&self, id: &VirtualFileId) -> PathBuf {
         self.vault_path().join(
             SERVER_FILE_VF_META
-                .replace(ID_PARAM, &id.to_string())
-                .replace(ID_INDEX, &Self::vf_index(id).unwrap_or_default()),
+                .replace(KEY_VF_ID, &id.to_string())
+                .replace(KEY_VF_INDEX, &Self::vf_index(id).unwrap_or_default()),
         )
     }
 
@@ -211,10 +206,9 @@ impl Vault {
         instance: &mut ConnectionInstance,
         member_id: &MemberId,
     ) -> Result<VirtualFileId, std::io::Error> {
-        const FIRST_VERSION: &str = "0.1.0";
         let receive_path = self.virtual_file_temp_path();
         let new_id = format!("{}{}", VF_PREFIX, Uuid::new_v4());
-        let move_path = self.virtual_file_real_path(&new_id, &FIRST_VERSION.to_string());
+        let move_path = self.virtual_file_real_path(&new_id, &DEFAULT_VF_VERSION.to_string());
 
         match instance.read_file(receive_path.clone()).await {
             Ok(_) => {
@@ -223,22 +217,22 @@ impl Vault {
                 let mut version_description =
                     HashMap::<VirtualFileVersion, VirtualFileVersionDescription>::new();
                 version_description.insert(
-                    FIRST_VERSION.to_string(),
+                    DEFAULT_VF_VERSION.to_string(),
                     VirtualFileVersionDescription {
                         creator: member_id.clone(),
-                        description: "Track".to_string(),
+                        description: DEFAULT_VF_DESCRIPTION.to_string(),
                     },
                 );
                 // Create metadata
                 let mut meta = VirtualFileMeta {
-                    current_version: FIRST_VERSION.to_string(),
+                    current_version: DEFAULT_VF_VERSION.to_string(),
                     hold_member: member_id.clone(), // The holder of the newly created virtual file is the creator by default
                     version_description,
                     histories: Vec::default(),
                 };
 
                 // Add first version
-                meta.histories.push(FIRST_VERSION.to_string());
+                meta.histories.push(DEFAULT_VF_VERSION.to_string());
 
                 // Write metadata to file
                 VirtualFileMeta::write_to(&meta, self.virtual_file_meta_path(&new_id)).await?;

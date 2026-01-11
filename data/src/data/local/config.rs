@@ -11,15 +11,14 @@ use crate::constants::CLIENT_FILE_WORKSPACE;
 use crate::constants::CLIENT_FOLDER_WORKSPACE_ROOT_NAME;
 use crate::constants::CLIENT_PATH_LOCAL_DRAFT;
 use crate::constants::CLIENT_PATH_WORKSPACE_ROOT;
+use crate::constants::KEY_ACCOUNT;
+use crate::constants::KEY_SHEET_NAME;
 use crate::constants::PORT;
 use crate::current::current_local_path;
 use crate::data::local::latest_info::LatestInfo;
 use crate::data::member::MemberId;
 use crate::data::sheet::SheetName;
 use crate::data::vault::config::VaultUuid;
-
-const ACCOUNT: &str = "{account}";
-const SHEET_NAME: &str = "{sheet_name}";
 
 #[derive(Serialize, Deserialize, ConfigFile, Clone)]
 #[cfg_file(path = CLIENT_FILE_WORKSPACE)]
@@ -351,8 +350,8 @@ impl LocalConfig {
         let account_str = snake_case!(account.as_str());
         let sheet_name_str = snake_case!(sheet_name.as_str());
         let draft_path = CLIENT_PATH_LOCAL_DRAFT
-            .replace(ACCOUNT, &account_str)
-            .replace(SHEET_NAME, &sheet_name_str);
+            .replace(KEY_ACCOUNT, &account_str)
+            .replace(KEY_SHEET_NAME, &sheet_name_str);
         local_workspace_path.into().join(draft_path)
     }
 

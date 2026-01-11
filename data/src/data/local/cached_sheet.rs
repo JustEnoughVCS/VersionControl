@@ -7,15 +7,13 @@ use tokio::fs;
 use crate::{
     constants::{
         CLIENT_FILE_CACHED_SHEET, CLIENT_PATH_CACHED_SHEET, CLIENT_SUFFIX_CACHED_SHEET_FILE,
+        KEY_SHEET_NAME,
     },
     current::current_local_path,
     data::sheet::{SheetData, SheetName},
 };
 
 pub type CachedSheetPathBuf = PathBuf;
-
-const SHEET_NAME: &str = "{sheet_name}";
-const ACCOUNT_NAME: &str = "{account}";
 
 /// # Cached Sheet
 /// The cached sheet is a read-only version cloned from the upstream repository to the local environment,
@@ -43,7 +41,7 @@ impl CachedSheet {
         let current_workspace = current_local_path()?;
         Some(
             current_workspace
-                .join(CLIENT_FILE_CACHED_SHEET.replace(SHEET_NAME, &sheet_name.to_string())),
+                .join(CLIENT_FILE_CACHED_SHEET.replace(KEY_SHEET_NAME, &sheet_name.to_string())),
         )
     }
 
@@ -57,12 +55,13 @@ impl CachedSheet {
 
             if path.is_file()
                 && let Some(file_name) = path.file_name().and_then(|n| n.to_str())
-                    && file_name.ends_with(CLIENT_SUFFIX_CACHED_SHEET_FILE) {
-                        let name_without_ext = file_name
-                            .trim_end_matches(CLIENT_SUFFIX_CACHED_SHEET_FILE)
-                            .to_string();
-                        sheet_names.push(name_without_ext);
-                    }
+                && file_name.ends_with(CLIENT_SUFFIX_CACHED_SHEET_FILE)
+            {
+                let name_without_ext = file_name
+                    .trim_end_matches(CLIENT_SUFFIX_CACHED_SHEET_FILE)
+                    .to_string();
+                sheet_names.push(name_without_ext);
+            }
         }
 
         Ok(sheet_names)
@@ -84,9 +83,10 @@ impl CachedSheet {
 
             if path.is_file()
                 && let Some(file_name) = path.file_name().and_then(|n| n.to_str())
-                    && file_name.ends_with(CLIENT_SUFFIX_CACHED_SHEET_FILE) {
-                        sheet_paths.push(format_path(workspace_path.join(path))?);
-                    }
+                && file_name.ends_with(CLIENT_SUFFIX_CACHED_SHEET_FILE)
+            {
+                sheet_paths.push(format_path(workspace_path.join(path))?);
+            }
         }
 
         Ok(sheet_paths)

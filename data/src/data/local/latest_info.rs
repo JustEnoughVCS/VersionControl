@@ -8,7 +8,7 @@ use cfg_file::ConfigFile;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    constants::{CLIENT_FILE_LATEST_INFO, CLIENT_FILE_LATEST_INFO_NOSET},
+    constants::{CLIENT_FILE_LATEST_INFO, CLIENT_FILE_LATEST_INFO_NOSET, KEY_ACCOUNT},
     data::{
         member::{Member, MemberId},
         sheet::{SheetData, SheetName, SheetPathBuf},
@@ -18,8 +18,6 @@ use crate::{
         },
     },
 };
-
-const ACCOUNT: &str = "{account}";
 
 /// # Latest Info
 /// Locally cached latest information,
@@ -69,7 +67,7 @@ pub struct LatestInfo {
 impl LatestInfo {
     /// Get the path to the latest info file for a given workspace and member ID
     pub fn latest_info_path(local_workspace_path: &Path, member_id: &MemberId) -> PathBuf {
-        local_workspace_path.join(CLIENT_FILE_LATEST_INFO.replace(ACCOUNT, member_id))
+        local_workspace_path.join(CLIENT_FILE_LATEST_INFO.replace(KEY_ACCOUNT, member_id))
     }
 }
 
