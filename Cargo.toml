@@ -24,28 +24,28 @@ vcs = []
 members = [
     "examples",
 
-    "crates/utils/cfg_file",
-    "crates/utils/cfg_file/cfg_file_derive",
-    "crates/utils/cfg_file/cfg_file_test",
+    "utils/cfg_file",
+    "utils/cfg_file/cfg_file_derive",
+    "utils/cfg_file/cfg_file_test",
 
-    "crates/utils/data_struct",
+    "utils/data_struct",
 
-    "crates/utils/sha1_hash",
+    "utils/sha1_hash",
 
-    "crates/utils/tcp_connection",
-    "crates/utils/tcp_connection/tcp_connection_test",
+    "utils/tcp_connection",
+    "utils/tcp_connection/tcp_connection_test",
 
-    "crates/utils/string_proc",
+    "utils/string_proc",
 
-    "crates/system_action",
-    "crates/system_action/action_macros",
+    "systems/action",
+    "systems/action/action_macros",
 
-    "crates/vcs_data",
-    "crates/vcs_data/vcs_data_test",
+    "data",
+    "data/tests",
 
-    "crates/vcs_actions",
+    "actions",
 
-    "crates/vcs_docs",
+    "docs",
 ]
 
 [workspace.package]
@@ -75,14 +75,14 @@ chrono = "0.4"
 toml = "0.9"
 
 [dependencies]
-cfg_file = { path = "crates/utils/cfg_file" }
-data_struct = { path = "crates/utils/data_struct" }
-sha1_hash = { path = "crates/utils/sha1_hash" }
-tcp_connection = { path = "crates/utils/tcp_connection" }
-string_proc = { path = "crates/utils/string_proc" }
+cfg_file = { path = "utils/cfg_file" }
+data_struct = { path = "utils/data_struct" }
+sha1_hash = { path = "utils/sha1_hash" }
+tcp_connection = { path = "utils/tcp_connection" }
+string_proc = { path = "utils/string_proc" }
 
-action_system = { path = "crates/system_action" }
+action_system = { path = "systems/action" }
 
-vcs_docs = { path = "crates/vcs_docs" }
-vcs_data = { path = "crates/vcs_data" }
-vcs_actions = { path = "crates/vcs_actions" }
+vcs_docs = { path = "docs" }
+vcs_data = { path = "data" }
+vcs_actions = { path = "actions" }

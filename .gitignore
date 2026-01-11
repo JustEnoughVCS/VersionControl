@@ -34,4 +34,4 @@
 ### BUILT-IN DOCUMENTS ###
 ##########################
 /src/data/compile_info.rs
-/crates/vcs_docs/src/docs.rs
+/docs/src/docs.rs

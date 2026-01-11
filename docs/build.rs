@@ -19,13 +19,13 @@ const PARAM_DOCUMENT_PATH_SNAKE_CASE: &str = "{{DOCUMENT_PATH_SNAKE_CASE}}";
 
 fn main() -> io::Result<()> {
     println!("cargo:rerun-if-changed=src/docs.rs.template");
-    println!("cargo:rerun-if-changed=../../docs/Documents");
+    println!("cargo:rerun-if-changed=Documents");
 
     let out_dir = env::var("OUT_DIR").unwrap();
     let dest_path = Path::new(&out_dir).join("docs.rs");
 
     // Read all markdown files from docs directory recursively
-    let docs_dir = Path::new("../../docs/Documents");
+    let docs_dir = Path::new("./Documents");
     let mut documents = Vec::new();
 
     if docs_dir.exists() {
@@ -182,7 +182,7 @@ fn collect_text_files(dir: &Path, documents: &mut Vec<(String, String)>) -> io::
                 || ext == "yml"
                 || ext == "json"
                 || ext == "rs"
-        }) && let Ok(relative_path) = path.strip_prefix("../../docs/Documents")
+        }) && let Ok(relative_path) = path.strip_prefix("./Documents")
             && let Some(relative_path_str) = relative_path.to_str()
         {
             let content = fs::read_to_string(&path)?;

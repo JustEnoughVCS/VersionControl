@@ -13,8 +13,8 @@ tcp_connection = { path = "../utils/tcp_connection" }
 string_proc = { path = "../utils/string_proc" }
 
 # Core
-action_system = { path = "../system_action" }
-vcs_docs = { path = "../vcs_docs" }
+action_system = { path = "../systems/action" }
+vcs_docs = { path = "../docs" }
 
 # Random
 rand = "0.9.2"

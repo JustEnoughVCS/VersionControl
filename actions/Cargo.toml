@@ -12,8 +12,8 @@ sha1_hash = { path = "../utils/sha1_hash" }
 string_proc = { path = "../utils/string_proc" }
 
 # Core dependencies
-action_system = { path = "../system_action" }
-vcs_data = { path = "../vcs_data" }
+action_system = { path = "../systems/action" }
+vcs_data = { path = "../data" }
 
 # Error handling
 thiserror = "2.0.17"

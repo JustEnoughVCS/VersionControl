@@ -10,12 +10,12 @@ path = "src/bin/example_action_system.rs"
 [dependencies]
 
 # Utils
-tcp_connection = { path = "../crates/utils/tcp_connection" }
-cfg_file = { path = "../crates/utils/cfg_file", features = ["default"] }
-string_proc = { path = "../crates/utils/string_proc" }
+tcp_connection = { path = "../utils/tcp_connection" }
+cfg_file = { path = "../utils/cfg_file", features = ["default"] }
+string_proc = { path = "../utils/string_proc" }
 
 # Core
-action_system = { path = "../crates/system_action" }
+action_system = { path = "../systems/action" }
 
 # Async & Networking
 tokio = { version = "1.48.0", features = ["full"] }
