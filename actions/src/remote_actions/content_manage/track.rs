@@ -12,7 +12,7 @@ use sha1_hash::calc_sha1;
 use tcp_connection::{error::TcpTargetError, instance::ConnectionInstance};
 use tokio::{fs, sync::Mutex};
 use vcs_data::{
-    constants::CLIENT_FILE_TEMP_FILE,
+    constants::{CLIENT_FILE_TEMP_FILE, KEY_TEMP_NAME},
     data::{
         local::{
             cached_sheet::CachedSheet, latest_file_data::LatestFileData,
@@ -29,17 +29,15 @@ use vcs_data::{
 };
 
 use crate::{
-    actions::{
+    local_println,
+    remote_actions::{
         auth_member, check_connection_instance, get_current_sheet_name, try_get_local_output,
         try_get_local_workspace, try_get_vault,
     },
-    local_println,
 };
 
 pub type NextVersion = String;
 pub type UpdateDescription = String;
-
-const TEMP_NAME: &str = "{temp_name}";
 
 #[derive(Serialize, Deserialize)]
 pub struct TrackFileActionArguments {
@@ -842,7 +840,7 @@ async fn proc_sync_tasks_local(
         // Generate a temp path
         let temp_path = workspace
             .local_path()
-            .join(CLIENT_FILE_TEMP_FILE.replace(TEMP_NAME, &VaultUuid::new_v4().to_string()));
+            .join(CLIENT_FILE_TEMP_FILE.replace(KEY_TEMP_NAME, &VaultUuid::new_v4().to_string()));
 
         let copy_to = workspace.local_path().join(&path);
 

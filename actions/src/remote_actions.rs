@@ -15,11 +15,11 @@ use vcs_data::{
     },
 };
 
-pub mod local_actions;
-pub mod sheet_actions;
-pub mod track_action;
-pub mod user_actions;
-pub mod vault_actions;
+pub mod content_manage;
+pub mod edit_right_manage;
+pub mod mapping_manage;
+pub mod sheet_manage;
+pub mod workspace_manage;
 
 /// Check if the connection instance is valid in the given context.
 /// This function is used to verify the connection instance in actions that require remote calls.

@@ -1,7 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
     io::ErrorKind,
-    net::SocketAddr,
     path::PathBuf,
     time::SystemTime,
 };
@@ -19,7 +18,6 @@ use vcs_data::{
     data::{
         local::{
             cached_sheet::CachedSheet,
-            config::LocalConfig,
             latest_file_data::LatestFileData,
             latest_info::{LatestInfo, SheetInfo},
             vault_modified::sign_vault_modified,
@@ -27,105 +25,15 @@ use vcs_data::{
         member::MemberId,
         sheet::{SheetData, SheetName, SheetPathBuf},
         vault::{
-            config::VaultUuid,
             sheet_share::{Share, SheetShareId},
             virtual_file::{VirtualFileId, VirtualFileVersion, VirtualFileVersionDescription},
         },
     },
 };
 
-use crate::actions::{
+use crate::remote_actions::{
     auth_member, check_connection_instance, try_get_local_workspace, try_get_vault,
 };
-
-#[derive(Serialize, Deserialize)]
-pub enum SetUpstreamVaultActionResult {
-    // Success
-    DirectedAndStained,
-    Redirected,
-
-    // Fail
-    AlreadyStained,
-    AuthorizeFailed(String),
-    RedirectFailed(String),
-    SameUpstream,
-
-    Done,
-}
-
-#[action_gen]
-pub async fn set_upstream_vault_action(
-    ctx: ActionContext,
-    upstream: SocketAddr,
-) -> Result<SetUpstreamVaultActionResult, TcpTargetError> {
-    let instance = check_connection_instance(&ctx)?;
-
-    // Auth Member
-    if let Err(e) = auth_member(&ctx, instance).await {
-        return Ok(SetUpstreamVaultActionResult::AuthorizeFailed(e.to_string()));
-    }
-
-    // Direct
-    if ctx.is_proc_on_remote() {
-        let vault = try_get_vault(&ctx)?;
-        instance
-            .lock()
-            .await
-            .write(*vault.config().vault_uuid())
-            .await?;
-        return Ok(SetUpstreamVaultActionResult::Done);
-    }
-
-    if ctx.is_proc_on_local() {
-        info!("Authorize successful. directing to upstream vault.");
-
-        // Read the vault UUID from the instance
-        let vault_uuid = instance.lock().await.read::<VaultUuid>().await?;
-
-        let local_workspace = try_get_local_workspace(&ctx)?;
-        let local_config = local_workspace.config();
-
-        let mut mut_local_config = local_config.lock().await;
-        if !mut_local_config.stained() {
-            // Stain the local workspace
-            mut_local_config.stain(vault_uuid);
-
-            // Set the upstream address
-            mut_local_config.set_vault_addr(upstream);
-
-            // Store the updated config
-            LocalConfig::write(&mut_local_config).await?;
-
-            info!("Workspace stained!");
-            return Ok(SetUpstreamVaultActionResult::DirectedAndStained);
-        } else {
-            // Local workspace is already stained, redirecting
-            let Some(stained_uuid) = mut_local_config.stained_uuid() else {
-                return Ok(SetUpstreamVaultActionResult::RedirectFailed(
-                    "Stained uuid not found".to_string(),
-                ));
-            };
-            let local_upstream = mut_local_config.upstream_addr();
-
-            // Address changed, but same UUID.
-            if vault_uuid == stained_uuid {
-                if local_upstream != upstream {
-                    // Set the upstream address
-                    mut_local_config.set_vault_addr(upstream);
-
-                    // Store the updated config
-                    LocalConfig::write(&mut_local_config).await?;
-                    return Ok(SetUpstreamVaultActionResult::Redirected);
-                } else {
-                    return Ok(SetUpstreamVaultActionResult::SameUpstream);
-                }
-            }
-            return Ok(SetUpstreamVaultActionResult::AlreadyStained);
-        }
-    }
-
-    Err(TcpTargetError::NoResult("No result.".to_string()))
-}
 
 #[derive(Serialize, Deserialize)]
 pub enum UpdateToLatestInfoResult {

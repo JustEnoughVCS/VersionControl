@@ -1,13 +1,20 @@
 use action_system::action_pool::ActionPool;
 
-use crate::actions::{
-    local_actions::{register_set_upstream_vault_action, register_update_to_latest_info_action},
-    sheet_actions::{
-        register_drop_sheet_action, register_edit_mapping_action, register_make_sheet_action,
-        register_merge_share_mapping_action, register_share_mapping_action,
+use crate::remote_actions::{
+    content_manage::track::register_track_file_action,
+    edit_right_manage::change_virtual_file_edit_right::register_change_virtual_file_edit_right_action,
+    mapping_manage::{
+        edit_mapping::register_edit_mapping_action,
+        merge_share_mapping::register_merge_share_mapping_action,
+        share_mapping::register_share_mapping_action,
     },
-    track_action::register_track_file_action,
-    user_actions::register_change_virtual_file_edit_right_action,
+    sheet_manage::{
+        drop_sheet::register_drop_sheet_action, make_sheet::register_make_sheet_action,
+    },
+    workspace_manage::{
+        set_upstream_vault::register_set_upstream_vault_action,
+        update_to_latest_info::register_update_to_latest_info_action,
+    },
 };
 
 pub fn server_action_pool() -> ActionPool {
