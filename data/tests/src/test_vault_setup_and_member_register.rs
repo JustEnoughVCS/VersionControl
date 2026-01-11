@@ -8,7 +8,7 @@ use vcs_data::{
     },
     data::{
         member::Member,
-        vault::{Vault, config::VaultConfig},
+        vault::{Vault, vault_config::VaultConfig},
     },
 };
 

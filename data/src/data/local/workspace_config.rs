@@ -14,11 +14,11 @@ use crate::constants::CLIENT_PATH_WORKSPACE_ROOT;
 use crate::constants::KEY_ACCOUNT;
 use crate::constants::KEY_SHEET_NAME;
 use crate::constants::PORT;
-use crate::current::current_local_path;
 use crate::data::local::latest_info::LatestInfo;
 use crate::data::member::MemberId;
 use crate::data::sheet::SheetName;
-use crate::data::vault::config::VaultUuid;
+use crate::data::vault::vault_config::VaultUuid;
+use crate::env::current_local_path;
 
 #[derive(Serialize, Deserialize, ConfigFile, Clone)]
 #[cfg_file(path = CLIENT_FILE_WORKSPACE)]

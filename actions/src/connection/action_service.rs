@@ -15,7 +15,7 @@ use tokio::{
     select, signal, spawn,
     sync::mpsc,
 };
-use vcs_data::data::vault::{Vault, config::VaultConfig};
+use vcs_data::data::vault::{Vault, vault_config::VaultConfig};
 
 use crate::{
     connection::protocol::RemoteActionInvoke, registry::server_registry::server_action_pool,

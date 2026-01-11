@@ -5,11 +5,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     constants::{CLIENT_FILE_LATEST_DATA, CLIENT_FILE_MEMBER_HELD_NOSET, KEY_ACCOUNT},
-    current::current_local_path,
     data::{
         member::MemberId,
         vault::virtual_file::{VirtualFileId, VirtualFileVersion, VirtualFileVersionDescription},
     },
+    env::current_local_path,
 };
 
 /// # Latest file data

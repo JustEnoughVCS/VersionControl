@@ -6,7 +6,7 @@ use vcs_data::{
     data::{
         member::{Member, MemberId},
         sheet::SheetName,
-        vault::{Vault, config::VaultConfig, virtual_file::VirtualFileId},
+        vault::{Vault, vault_config::VaultConfig, virtual_file::VirtualFileId},
     },
 };
 

@@ -7,7 +7,7 @@ use tokio::sync::{Mutex, mpsc::Sender};
 use vcs_data::{
     constants::{SERVER_PATH_MEMBER_PUB, VAULT_HOST_NAME},
     data::{
-        local::{LocalWorkspace, config::LocalConfig, latest_info::LatestInfo},
+        local::{LocalWorkspace, latest_info::LatestInfo, workspace_config::LocalConfig},
         member::MemberId,
         sheet::SheetName,
         user::UserDirectory,

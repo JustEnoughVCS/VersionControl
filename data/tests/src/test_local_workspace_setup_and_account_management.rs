@@ -4,7 +4,7 @@ use cfg_file::config::ConfigFile;
 use vcs_data::{
     constants::{CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE, USER_FILE_KEY, USER_FILE_MEMBER},
     data::{
-        local::{LocalWorkspace, config::LocalConfig},
+        local::{LocalWorkspace, workspace_config::LocalConfig},
         member::Member,
         user::UserDirectory,
     },

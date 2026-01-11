@@ -16,13 +16,13 @@ use vcs_data::{
     data::{
         local::{
             cached_sheet::CachedSheet, latest_file_data::LatestFileData,
-            local_sheet::LocalMappingMetadata, vault_modified::sign_vault_modified,
+            local_sheet::LocalMappingMetadata, modified_status::sign_vault_modified,
             workspace_analyzer::AnalyzeResult,
         },
         member::MemberId,
         sheet::SheetName,
         vault::{
-            config::VaultUuid,
+            vault_config::VaultUuid,
             virtual_file::{VirtualFileId, VirtualFileVersion, VirtualFileVersionDescription},
         },
     },

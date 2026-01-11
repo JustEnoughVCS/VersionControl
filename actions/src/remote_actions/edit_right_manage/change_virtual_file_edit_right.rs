@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use action_system::{action::ActionContext, macros::action_gen};
 use serde::{Deserialize, Serialize};
 use tcp_connection::error::TcpTargetError;
-use vcs_data::data::local::vault_modified::sign_vault_modified;
+use vcs_data::data::local::modified_status::sign_vault_modified;
 
 use crate::remote_actions::{
     auth_member, check_connection_instance, get_current_sheet_name, try_get_vault,

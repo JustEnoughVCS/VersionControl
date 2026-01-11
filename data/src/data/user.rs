@@ -1,4 +1,4 @@
-use crate::current::current_cfg_dir;
+use crate::env::current_cfg_dir;
 use std::path::PathBuf;
 
 pub mod accounts;

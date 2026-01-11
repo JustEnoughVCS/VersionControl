@@ -14,7 +14,7 @@ use vcs_data::{
     constants::SERVER_FILE_VAULT,
     data::{
         member::Member,
-        vault::{Vault, config::VaultConfig, virtual_file::VirtualFileVersionDescription},
+        vault::{Vault, vault_config::VaultConfig, virtual_file::VirtualFileVersionDescription},
     },
 };
 

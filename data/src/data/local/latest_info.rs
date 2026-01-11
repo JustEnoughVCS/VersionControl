@@ -13,7 +13,7 @@ use crate::{
         member::{Member, MemberId},
         sheet::{SheetData, SheetName, SheetPathBuf},
         vault::{
-            sheet_share::{Share, SheetShareId},
+            mapping_share::{Share, SheetShareId},
             virtual_file::VirtualFileId,
         },
     },

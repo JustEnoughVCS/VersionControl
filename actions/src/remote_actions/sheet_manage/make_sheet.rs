@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use tcp_connection::error::TcpTargetError;
 use vcs_data::{
     constants::VAULT_HOST_NAME,
-    data::{local::vault_modified::sign_vault_modified, sheet::SheetName},
+    data::{local::modified_status::sign_vault_modified, sheet::SheetName},
 };
 
 use crate::{

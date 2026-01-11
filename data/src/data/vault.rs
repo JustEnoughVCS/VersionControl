@@ -8,15 +8,15 @@ use crate::{
         REF_SHEET_NAME, SERVER_FILE_README, SERVER_FILE_VAULT, SERVER_PATH_MEMBER_PUB,
         SERVER_PATH_MEMBERS, SERVER_PATH_SHEETS, SERVER_PATH_VF_ROOT, VAULT_HOST_NAME,
     },
-    current::{current_vault_path, find_vault_path},
-    data::{member::Member, vault::config::VaultConfig},
+    data::{member::Member, vault::vault_config::VaultConfig},
+    env::{current_vault_path, find_vault_path},
 };
 
-pub mod config;
-pub mod member;
-pub mod service;
-pub mod sheet_share;
-pub mod sheets;
+pub mod lock_status;
+pub mod mapping_share;
+pub mod member_manage;
+pub mod sheet_manage;
+pub mod vault_config;
 pub mod virtual_file;
 
 pub struct Vault {

@@ -16,26 +16,26 @@ use crate::{
         CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE, CLIENT_FOLDER_WORKSPACE_ROOT_NAME,
         CLIENT_PATH_LOCAL_SHEET, CLIENT_SUFFIX_LOCAL_SHEET_FILE, KEY_ACCOUNT, KEY_SHEET_NAME,
     },
-    current::{current_local_path, find_local_path},
     data::{
         local::{
-            config::LocalConfig,
             local_sheet::{LocalSheet, LocalSheetData, LocalSheetPathBuf},
+            workspace_config::LocalConfig,
         },
         member::MemberId,
         sheet::SheetName,
     },
+    env::{current_local_path, find_local_path},
 };
 
-pub mod align;
+pub mod align_tasks;
 pub mod cached_sheet;
-pub mod config;
 pub mod latest_file_data;
 pub mod latest_info;
 pub mod local_files;
 pub mod local_sheet;
-pub mod vault_modified;
+pub mod modified_status;
 pub mod workspace_analyzer;
+pub mod workspace_config;
 
 pub struct LocalWorkspace {
     config: Arc<Mutex<LocalConfig>>,

@@ -4,7 +4,7 @@ use action_system::{action::ActionContext, action_pool::ActionPool};
 use cfg_file::config::ConfigFile;
 use tcp_connection::error::TcpTargetError;
 use vcs_data::data::{
-    local::{LocalWorkspace, config::LocalConfig},
+    local::{LocalWorkspace, workspace_config::LocalConfig},
     user::UserDirectory,
 };
 

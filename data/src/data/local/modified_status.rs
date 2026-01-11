@@ -1,4 +1,4 @@
-use crate::{constants::CLIENT_FILE_VAULT_MODIFIED, current::current_local_path};
+use crate::{constants::CLIENT_FILE_VAULT_MODIFIED, env::current_local_path};
 
 pub async fn check_vault_modified() -> bool {
     let Some(current_dir) = current_local_path() else {

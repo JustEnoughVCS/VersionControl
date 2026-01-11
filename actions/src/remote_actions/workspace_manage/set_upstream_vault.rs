@@ -5,7 +5,7 @@ use cfg_file::config::ConfigFile;
 use log::info;
 use serde::{Deserialize, Serialize};
 use tcp_connection::error::TcpTargetError;
-use vcs_data::data::{local::config::LocalConfig, vault::config::VaultUuid};
+use vcs_data::data::{local::workspace_config::LocalConfig, vault::vault_config::VaultUuid};
 
 use crate::remote_actions::{
     auth_member, check_connection_instance, try_get_local_workspace, try_get_vault,

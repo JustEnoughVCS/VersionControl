@@ -8,8 +8,8 @@ use vcs_data::{
         sheet::{SheetName, SheetPathBuf},
         vault::{
             Vault,
-            config::VaultConfig,
-            sheet_share::{Share, ShareMergeMode, SheetShareId},
+            mapping_share::{Share, ShareMergeMode, SheetShareId},
+            vault_config::VaultConfig,
             virtual_file::VirtualFileId,
         },
     },
