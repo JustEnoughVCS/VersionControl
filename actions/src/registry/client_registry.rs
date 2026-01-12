@@ -11,7 +11,7 @@ use vcs_data::data::{
 use crate::{
     connection::protocol::RemoteActionInvoke,
     remote_actions::{
-        content_manage::track::register_track_file_action,
+        content_manage::track_file::register_track_file_action,
         edit_right_manage::change_virtual_file_edit_right::register_change_virtual_file_edit_right_action,
         mapping_manage::{
             edit_mapping::register_edit_mapping_action,
