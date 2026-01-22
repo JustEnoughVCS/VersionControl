@@ -28,6 +28,23 @@ pub struct LocalSheet<'a> {
     pub(crate) data: LocalSheetData,
 }
 
+impl<'a> LocalSheet<'a> {
+    /// Create a new LocalSheet instance
+    pub fn new(
+        local_workspace: &'a LocalWorkspace,
+        member: MemberId,
+        sheet_name: String,
+        data: LocalSheetData,
+    ) -> Self {
+        Self {
+            local_workspace,
+            member,
+            sheet_name,
+            data,
+        }
+    }
+}
+
 #[derive(Debug, Default, Serialize, Deserialize, ConfigFile, Clone)]
 #[cfg_file(path = CLIENT_FILE_LOCAL_SHEET_NOSET)] // Do not use LocalSheet::write or LocalSheet::read
 pub struct LocalSheetData {
