@@ -167,9 +167,9 @@ Encountered any issues or have suggestions while using JustEnoughVCS?
 
 ## License
 
-This project is licensed under the **MIT License**.
+This project is licensed under the **MIT** or **Apache 2.0** License.
 
-For the full license terms, please see the *./LICENSE-MIT.md* file in the project root directory.
+For the full license terms, please see the *./LICENSE-MIT* and *./LICENSE-APACHE-2.0* files in the project root directory.
 
 ---
 
