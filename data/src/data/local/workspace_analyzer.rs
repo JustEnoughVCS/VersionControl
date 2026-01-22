@@ -41,6 +41,36 @@ pub struct AnalyzeResult<'a> {
     pub modified: HashSet<ModifiedRelativePathBuf>,
 }
 
+pub struct AnalyzeResultPure {
+    /// Moved local files
+    pub moved: HashMap<VirtualFileId, (FromRelativePathBuf, ToRelativePathBuf)>,
+
+    /// Newly created local files
+    pub created: HashSet<CreatedRelativePathBuf>,
+
+    /// Lost local files
+    pub lost: HashSet<LostRelativePathBuf>,
+
+    /// Erased local files
+    pub erased: HashSet<LostRelativePathBuf>,
+
+    /// Modified local files (excluding moved files)
+    /// For files that were both moved and modified, changes can only be detected after LocalSheet mapping is aligned with actual files
+    pub modified: HashSet<ModifiedRelativePathBuf>,
+}
+
+impl<'a> From<AnalyzeResult<'a>> for AnalyzeResultPure {
+    fn from(result: AnalyzeResult<'a>) -> Self {
+        AnalyzeResultPure {
+            moved: result.moved,
+            created: result.created,
+            lost: result.lost,
+            erased: result.erased,
+            modified: result.modified,
+        }
+    }
+}
+
 struct AnalyzeContext<'a> {
     member: MemberId,
     sheet_name: SheetName,
