@@ -271,7 +271,7 @@ impl<'a> From<&'a LocalSheet<'a>> for &'a LocalSheetData {
     }
 }
 
-impl<'a> LocalSheet<'a> {
+impl LocalSheetData {
     /// Add mapping to local sheet data
     pub fn add_mapping(
         &mut self,
@@ -279,16 +279,15 @@ impl<'a> LocalSheet<'a> {
         mapping: LocalMappingMetadata,
     ) -> Result<(), std::io::Error> {
         let path = format_path(path)?;
-        if self.data.mapping.contains_key(&path)
-            || self.data.vfs.contains_key(&mapping.mapping_vfid)
-        {
+        if self.mapping.contains_key(&path) || self.vfs.contains_key(&mapping.mapping_vfid) {
             return Err(Error::new(
                 std::io::ErrorKind::AlreadyExists,
                 "Mapping already exists",
             ));
         }
 
-        self.data.mapping.insert(path, mapping);
+        self.mapping.insert(path.clone(), mapping.clone());
+        self.vfs.insert(mapping.mapping_vfid.clone(), path);
         Ok(())
     }
 
@@ -300,21 +299,23 @@ impl<'a> LocalSheet<'a> {
     ) -> Result<(), std::io::Error> {
         let from = format_path(from)?;
         let to = format_path(to)?;
-        if self.data.mapping.contains_key(&to) {
+        if self.mapping.contains_key(&to) {
             return Err(Error::new(
                 std::io::ErrorKind::AlreadyExists,
                 "To path already exists.",
             ));
         }
 
-        let Some(old_value) = self.data.mapping.remove(&from) else {
+        let Some(old_value) = self.mapping.remove(&from) else {
             return Err(Error::new(
                 std::io::ErrorKind::NotFound,
                 "From path is not found.",
             ));
         };
 
-        self.data.mapping.insert(to, old_value);
+        // Update vfs mapping
+        self.vfs.insert(old_value.mapping_vfid.clone(), to.clone());
+        self.mapping.insert(to, old_value);
 
         Ok(())
     }
@@ -325,8 +326,11 @@ impl<'a> LocalSheet<'a> {
         path: &LocalFilePathBuf,
     ) -> Result<LocalMappingMetadata, std::io::Error> {
         let path = format_path(path)?;
-        match self.data.mapping.remove(&path) {
-            Some(mapping) => Ok(mapping),
+        match self.mapping.remove(&path) {
+            Some(mapping) => {
+                self.vfs.remove(&mapping.mapping_vfid);
+                Ok(mapping)
+            }
             None => Err(Error::new(
                 std::io::ErrorKind::NotFound,
                 "Path is not found.",
@@ -340,7 +344,7 @@ impl<'a> LocalSheet<'a> {
         path: &LocalFilePathBuf,
     ) -> Result<&LocalMappingMetadata, std::io::Error> {
         let path = format_path(path)?;
-        let Some(data) = self.data.mapping.get(&path) else {
+        let Some(data) = self.mapping.get(&path) else {
             return Err(Error::new(
                 std::io::ErrorKind::NotFound,
                 "Path is not found.",
@@ -349,19 +353,68 @@ impl<'a> LocalSheet<'a> {
         Ok(data)
     }
 
-    /// Get muttable mapping data
+    /// Get mutable mapping data
     pub fn mapping_data_mut(
         &mut self,
         path: &LocalFilePathBuf,
     ) -> Result<&mut LocalMappingMetadata, std::io::Error> {
         let path = format_path(path)?;
-        let Some(data) = self.data.mapping.get_mut(&path) else {
+        let Some(data) = self.mapping.get_mut(&path) else {
             return Err(Error::new(
                 std::io::ErrorKind::NotFound,
                 "Path is not found.",
             ));
         };
         Ok(data)
+    }
+
+    /// Get path by VirtualFileId
+    pub fn path_by_id(&self, vfid: &VirtualFileId) -> Option<&PathBuf> {
+        self.vfs.get(vfid)
+    }
+}
+
+impl<'a> LocalSheet<'a> {
+    /// Add mapping to local sheet data
+    pub fn add_mapping(
+        &mut self,
+        path: &LocalFilePathBuf,
+        mapping: LocalMappingMetadata,
+    ) -> Result<(), std::io::Error> {
+        self.data.add_mapping(path, mapping)
+    }
+
+    /// Move mapping to other path
+    pub fn move_mapping(
+        &mut self,
+        from: &LocalFilePathBuf,
+        to: &LocalFilePathBuf,
+    ) -> Result<(), std::io::Error> {
+        self.data.move_mapping(from, to)
+    }
+
+    /// Remove mapping from local sheet
+    pub fn remove_mapping(
+        &mut self,
+        path: &LocalFilePathBuf,
+    ) -> Result<LocalMappingMetadata, std::io::Error> {
+        self.data.remove_mapping(path)
+    }
+
+    /// Get immutable mapping data
+    pub fn mapping_data(
+        &self,
+        path: &LocalFilePathBuf,
+    ) -> Result<&LocalMappingMetadata, std::io::Error> {
+        self.data.mapping_data(path)
+    }
+
+    /// Get mutable mapping data
+    pub fn mapping_data_mut(
+        &mut self,
+        path: &LocalFilePathBuf,
+    ) -> Result<&mut LocalMappingMetadata, std::io::Error> {
+        self.data.mapping_data_mut(path)
     }
 
     /// Write the sheet to disk
@@ -375,20 +428,12 @@ impl<'a> LocalSheet<'a> {
     /// Write the sheet to custom path
     pub async fn write_to_path(&mut self, path: impl Into<PathBuf>) -> Result<(), std::io::Error> {
         let path = path.into();
-
-        self.data.vfs = HashMap::new();
-        for (path, mapping) in self.data.mapping.iter() {
-            self.data
-                .vfs
-                .insert(mapping.mapping_vfid.clone(), path.clone());
-        }
-
         LocalSheetData::write_to(&self.data, path).await?;
         Ok(())
     }
 
     /// Get path by VirtualFileId
     pub fn path_by_id(&self, vfid: &VirtualFileId) -> Option<&PathBuf> {
-        self.data.vfs.get(vfid)
+        self.data.path_by_id(vfid)
     }
 }
