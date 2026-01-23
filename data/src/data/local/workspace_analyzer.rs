@@ -4,6 +4,7 @@ use std::{
     path::PathBuf,
 };
 
+use serde::Serialize;
 use sha1_hash::calc_sha1_multi;
 use string_proc::format_path::format_path;
 use walkdir::WalkDir;
@@ -41,6 +42,7 @@ pub struct AnalyzeResult<'a> {
     pub modified: HashSet<ModifiedRelativePathBuf>,
 }
 
+#[derive(Serialize, Default)]
 pub struct AnalyzeResultPure {
     /// Moved local files
     pub moved: HashMap<VirtualFileId, (FromRelativePathBuf, ToRelativePathBuf)>,
