@@ -61,6 +61,14 @@ impl FormatProcesser {
     }
 
     /// Convert to camelCase format (brewCoffee)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string_proc::format_processer::FormatProcesser;
+    /// let processor = FormatProcesser::from("brew_coffee");
+    /// assert_eq!(processor.to_camel_case(), "brewCoffee");
+    /// ```
     pub fn to_camel_case(&self) -> String {
         let mut result = String::new();
         for (i, word) in self.content.iter().enumerate() {
@@ -78,6 +86,14 @@ impl FormatProcesser {
     }
 
     /// Convert to PascalCase format (BrewCoffee)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string_proc::format_processer::FormatProcesser;
+    /// let processor = FormatProcesser::from("brew_coffee");
+    /// assert_eq!(processor.to_pascal_case(), "BrewCoffee");
+    /// ```
     pub fn to_pascal_case(&self) -> String {
         let mut result = String::new();
         for word in &self.content {
@@ -91,21 +107,53 @@ impl FormatProcesser {
     }
 
     /// Convert to kebab-case format (brew-coffee)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string_proc::format_processer::FormatProcesser;
+    /// let processor = FormatProcesser::from("brew_coffee");
+    /// assert_eq!(processor.to_kebab_case(), "brew-coffee");
+    /// ```
     pub fn to_kebab_case(&self) -> String {
         self.content.join("-").to_lowercase()
     }
 
     /// Convert to snake_case format (brew_coffee)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string_proc::format_processer::FormatProcesser;
+    /// let processor = FormatProcesser::from("brewCoffee");
+    /// assert_eq!(processor.to_snake_case(), "brew_coffee");
+    /// ```
     pub fn to_snake_case(&self) -> String {
         self.content.join("_").to_lowercase()
     }
 
     /// Convert to dot.case format (brew.coffee)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string_proc::format_processer::FormatProcesser;
+    /// let processor = FormatProcesser::from("brew_coffee");
+    /// assert_eq!(processor.to_dot_case(), "brew.coffee");
+    /// ```
     pub fn to_dot_case(&self) -> String {
         self.content.join(".").to_lowercase()
     }
 
     /// Convert to Title Case format (Brew Coffee)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string_proc::format_processer::FormatProcesser;
+    /// let processor = FormatProcesser::from("brew_coffee");
+    /// assert_eq!(processor.to_title_case(), "Brew Coffee");
+    /// ```
     pub fn to_title_case(&self) -> String {
         let mut result = String::new();
         for word in &self.content {
@@ -121,12 +169,74 @@ impl FormatProcesser {
     }
 
     /// Convert to lower case format (brew coffee)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string_proc::format_processer::FormatProcesser;
+    /// let processor = FormatProcesser::from("BREW COFFEE");
+    /// assert_eq!(processor.to_lower_case(), "brew coffee");
+    /// ```
     pub fn to_lower_case(&self) -> String {
         self.content.join(" ").to_lowercase()
     }
 
     /// Convert to UPPER CASE format (BREW COFFEE)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string_proc::format_processer::FormatProcesser;
+    /// let processor = FormatProcesser::from("brew coffee");
+    /// assert_eq!(processor.to_upper_case(), "BREW COFFEE");
+    /// ```
     pub fn to_upper_case(&self) -> String {
         self.content.join(" ").to_uppercase()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::format_processer::FormatProcesser;
+
+    #[test]
+    fn test_processer() {
+        let test_cases = vec![
+            ("brew_coffee", "brewCoffee"),
+            ("brew, coffee", "brewCoffee"),
+            ("brew-coffee", "brewCoffee"),
+            ("Brew.Coffee", "brewCoffee"),
+            ("bRewCofFee", "bRewCofFee"),
+            ("brewCoffee", "brewCoffee"),
+            ("b&rewCoffee", "brewCoffee"),
+            ("BrewCoffee", "brewCoffee"),
+            ("brew.coffee", "brewCoffee"),
+            ("Brew_Coffee", "brewCoffee"),
+            ("BREW COFFEE", "brewCoffee"),
+        ];
+
+        for (input, expected) in test_cases {
+            let processor = FormatProcesser::from(input);
+            assert_eq!(
+                processor.to_camel_case(),
+                expected,
+                "Failed for input: '{}'",
+                input
+            );
+        }
+    }
+
+    #[test]
+    fn test_conversions() {
+        let processor = FormatProcesser::from("brewCoffee");
+
+        assert_eq!(processor.to_upper_case(), "BREW COFFEE");
+        assert_eq!(processor.to_lower_case(), "brew coffee");
+        assert_eq!(processor.to_title_case(), "Brew Coffee");
+        assert_eq!(processor.to_dot_case(), "brew.coffee");
+        assert_eq!(processor.to_snake_case(), "brew_coffee");
+        assert_eq!(processor.to_kebab_case(), "brew-coffee");
+        assert_eq!(processor.to_pascal_case(), "BrewCoffee");
+        assert_eq!(processor.to_camel_case(), "brewCoffee");
     }
 }
