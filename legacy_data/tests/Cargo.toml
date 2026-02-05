@@ -7,7 +7,7 @@ version.workspace = true
 tcp_connection = { path = "../../utils/tcp_connection" }
 tcp_connection_test = { path = "../../utils/tcp_connection/tcp_connection_test" }
 cfg_file = { path = "../../utils/cfg_file", features = ["default"] }
-vcs_data = { path = "../../data" }
+vcs_data = { path = "../../legacy_data" }
 
 # Async & Networking
 tokio = { version = "1.48.0", features = ["full"] }

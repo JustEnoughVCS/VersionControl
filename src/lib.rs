@@ -1,9 +1,9 @@
 /// Data
 pub mod data;
 
-// Feature `vcs`
-#[cfg(feature = "vcs")]
-pub mod vcs {
+// Feature `lib`
+#[cfg(feature = "lib")]
+pub mod lib {
     pub extern crate vcs_data;
     pub use vcs_data::*;
 

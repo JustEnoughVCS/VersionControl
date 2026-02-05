@@ -1,3 +1,8 @@
+# Set location to script directory
+$scriptPath = $MyInvocation.MyCommand.Path
+$scriptDir = Split-Path $scriptPath -Parent
+Set-Location (Join-Path $scriptDir "..\..")
+
 # Setup documents repo
 if (Test-Path "docs/Documents/.git") {
     Push-Location "docs/Documents"

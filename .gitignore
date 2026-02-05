@@ -7,6 +7,8 @@
 **/mutants.out*/
 **/.temp/
 
+*[T|t]odo*.txt
+
 ########################
 ### IGNORE DIRECTORY ###
 ########################

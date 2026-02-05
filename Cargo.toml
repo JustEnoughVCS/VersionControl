@@ -1,7 +1,7 @@
 [package]
 name = "just_enough_vcs"
 edition = "2024"
-license-file = "LICENSE-MIT.md"
+license-file = "LICENSE-MIT"
 authors = ["Weicao-CatilGrass (GitHub)"]
 
 [features]
@@ -11,19 +11,17 @@ all = [
     "sha1_hash",
     "tcp_connection",
     "string_proc",
-    "vcs",
+    "lib",
 ]
 cfg_file = []
 data_struct = []
 sha1_hash = []
 tcp_connection = []
 string_proc = []
-vcs = []
+lib = []
 
 [workspace]
 members = [
-    "examples",
-
     "utils/cfg_file",
     "utils/cfg_file/cfg_file_derive",
     "utils/cfg_file/cfg_file_test",
@@ -40,10 +38,10 @@ members = [
     "systems/action",
     "systems/action/action_macros",
 
-    "data",
-    "data/tests",
+    "legacy_data",
+    "legacy_data/tests",
 
-    "actions",
+    "legacy_actions",
 
     "docs",
 ]
@@ -84,5 +82,5 @@ string_proc = { path = "utils/string_proc" }
 action_system = { path = "systems/action" }
 
 vcs_docs = { path = "docs" }
-vcs_data = { path = "data" }
-vcs_actions = { path = "actions" }
+vcs_data = { path = "legacy_data" }
+vcs_actions = { path = "legacy_actions" }
