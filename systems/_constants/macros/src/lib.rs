@@ -1,5 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
+use string_proc::pascal_case;
 use syn::{Expr, ExprLit, Ident, Item, ItemMod, Lit, LitStr, parse_macro_input};
 
 #[proc_macro_attribute]
@@ -10,6 +11,7 @@ pub fn constants(attr: TokenStream, item: TokenStream) -> TokenStream {
     if let Some((_, items)) = &mut input_mod.content {
         // Collect functions to generate
         let mut generated_functions = Vec::new();
+        let mut generated_ffi_functions = Vec::new();
 
         for item in items.iter_mut() {
             if let Item::Macro(macro_item) = item {
@@ -24,9 +26,12 @@ pub fn constants(attr: TokenStream, item: TokenStream) -> TokenStream {
                         if let Some((const_name, const_value)) =
                             extract_const_name_and_value(&assign)
                         {
-                            // Process constant and generate function
-                            if let Some(func) = process_constant(&prefix, const_name, const_value) {
-                                generated_functions.push(func);
+                            // Process constant and generate functions
+                            if let Some((rust_func, ffi_func)) =
+                                process_constant(&prefix, const_name, const_value)
+                            {
+                                generated_functions.push(rust_func);
+                                generated_ffi_functions.push(ffi_func);
                             }
                         }
                     }
@@ -35,6 +40,9 @@ pub fn constants(attr: TokenStream, item: TokenStream) -> TokenStream {
         }
 
         for func in generated_functions {
+            items.push(Item::Verbatim(func));
+        }
+        for func in generated_ffi_functions {
             items.push(Item::Verbatim(func));
         }
     }
@@ -57,7 +65,7 @@ fn process_constant(
     prefix: &str,
     const_name: Ident,
     const_value: Box<Expr>,
-) -> Option<proc_macro2::TokenStream> {
+) -> Option<(proc_macro2::TokenStream, proc_macro2::TokenStream)> {
     if let Expr::Lit(ExprLit {
         lit: Lit::Str(lit_str),
         ..
@@ -71,7 +79,7 @@ fn process_constant(
 
             if !params.is_empty() {
                 // With parameters
-                Some(generate_function_with_params(
+                Some(generate_functions_with_params(
                     prefix,
                     &const_name,
                     &value_str,
@@ -80,7 +88,7 @@ fn process_constant(
                 ))
             } else {
                 // Without parameters
-                Some(generate_function_without_params(
+                Some(generate_functions_without_params(
                     prefix,
                     &const_name,
                     &value_str,
@@ -88,7 +96,7 @@ fn process_constant(
             }
         } else {
             // Without parameters
-            Some(generate_function_without_params(
+            Some(generate_functions_without_params(
                 prefix,
                 &const_name,
                 &value_str,
@@ -126,13 +134,13 @@ fn extract_placeholder_params(value_str: &str) -> Vec<String> {
     params
 }
 
-fn generate_function_with_params(
+fn generate_functions_with_params(
     prefix: &str,
     const_name: &Ident,
     value_str: &str,
     params: &[String],
     value_span: proc_macro2::Span,
-) -> proc_macro2::TokenStream {
+) -> (proc_macro2::TokenStream, proc_macro2::TokenStream) {
     let fn_name = format!("{}_{}", prefix, const_name.to_string().to_lowercase());
     let fn_ident = Ident::new(&fn_name, const_name.span());
 
@@ -141,7 +149,7 @@ fn generate_function_with_params(
     let format_args = param_idents.iter().map(|ident| quote! { #ident });
 
     // Generate format! code
-    let doc_format_vaule = params.join(", ");
+    let doc_format_value = params.join(", ");
 
     let mut doc_format_template = value_str.to_string();
     for param in params {
@@ -151,7 +159,7 @@ fn generate_function_with_params(
 
     let doc_format_code = format!(
         "format!(\"{}\", {});",
-        doc_format_template, doc_format_vaule
+        doc_format_template, doc_format_value
     );
 
     // Replace {xxx} with {} format
@@ -160,30 +168,104 @@ fn generate_function_with_params(
         format_str = format_str.replace(&format!("{{{}}}", param), "{}");
     }
 
-    quote! {
+    // Generate Rust function
+    let rust_func = quote! {
         #[doc = "```ignore"]
         #[doc = #doc_format_code]
         #[doc = "```"]
         pub fn #fn_ident(#(#param_idents: &str),*) -> String {
             format!(#format_str, #(#format_args),*)
         }
-    }
+    };
+
+    // Generate FFI function
+    let pascal_name = pascal_case!(const_name.to_string());
+    let pascal_prefix = pascal_case!(prefix);
+    let ffi_fn_name = format!("JV_Const_{}{}", pascal_prefix, pascal_name);
+    let ffi_fn_ident = Ident::new(&ffi_fn_name, const_name.span());
+
+    // Generate parameter list for FFI
+    let ffi_param_idents: Vec<Ident> = (0..params.len())
+        .map(|i| Ident::new(&format!("p{}", i), value_span))
+        .collect();
+
+    let ffi_param_decls = ffi_param_idents.iter().map(|ident| {
+        quote! { #ident: *const libc::c_char }
+    });
+
+    let ffi_param_checks = ffi_param_idents.iter().map(|ident| {
+        quote! { if #ident.is_null() { return std::ptr::null_mut(); } }
+    });
+
+    let ffi_param_conversions = ffi_param_idents.iter().map(|ident| {
+        quote! {
+            let #ident = match std::ffi::CStr::from_ptr(#ident).to_str() {
+                Ok(s) => s,
+                Err(_) => return std::ptr::null_mut(),
+            };
+        }
+    });
+
+    let ffi_format_args = ffi_param_idents.iter().map(|ident| quote! { #ident });
+
+    let ffi_func = quote! {
+        #[unsafe(no_mangle)]
+        #[allow(nonstandard_style)]
+        pub extern "C" fn #ffi_fn_ident(#(#ffi_param_decls),*) -> *mut libc::c_char {
+            unsafe {
+                #(#ffi_param_checks)*
+
+                #(#ffi_param_conversions)*
+
+                let result = format!(#format_str, #(#ffi_format_args),*);
+
+                match std::ffi::CString::new(result) {
+                    Ok(c) => c.into_raw(),
+                    Err(_) => std::ptr::null_mut(),
+                }
+            }
+        }
+    };
+
+    (rust_func, ffi_func)
 }
 
-fn generate_function_without_params(
+fn generate_functions_without_params(
     prefix: &str,
     const_name: &Ident,
     value_str: &str,
-) -> proc_macro2::TokenStream {
+) -> (proc_macro2::TokenStream, proc_macro2::TokenStream) {
     let fn_name = format!("{}_{}", prefix, const_name.to_string().to_lowercase());
     let fn_ident = Ident::new(&fn_name, const_name.span());
 
-    quote! {
+    // Generate Rust function
+    let rust_func = quote! {
         #[doc = "`"]
         #[doc = #value_str]
         #[doc = "`"]
         pub fn #fn_ident() -> &'static str {
             #value_str
         }
-    }
+    };
+
+    // Generate FFI function
+    let pascal_name = pascal_case!(const_name.to_string());
+    let pascal_prefix = pascal_case!(prefix);
+    let ffi_fn_name = format!("JV_Const_{}{}", pascal_prefix, pascal_name);
+    let ffi_fn_ident = Ident::new(&ffi_fn_name, const_name.span());
+
+    let ffi_func = quote! {
+        #[unsafe(no_mangle)]
+        #[allow(nonstandard_style)]
+        pub extern "C" fn #ffi_fn_ident() -> *mut libc::c_char {
+            let s = #value_str;
+
+            match std::ffi::CString::new(s) {
+                Ok(c) => c.into_raw(),
+                Err(_) => std::ptr::null_mut(),
+            }
+        }
+    };
+
+    (rust_func, ffi_func)
 }

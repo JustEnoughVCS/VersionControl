@@ -1,0 +1,14 @@
+[package]
+name = "jvlib"
+edition = "2024"
+version.workspace = true
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+name = "jvlib"
+
+[dependencies]
+libc = "0.2"
+
+# FFI Import
+constants = { path = "../systems/_constants" }

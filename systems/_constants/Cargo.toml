@@ -5,3 +5,4 @@ version.workspace = true
 
 [dependencies]
 macros = { path = "macros" }
+libc = "0.2"

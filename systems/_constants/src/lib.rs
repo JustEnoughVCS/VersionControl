@@ -13,7 +13,7 @@ pub mod server {
     pub mod files {
         c! { CONFIG = "./config.toml" }
         c! { JOIN_REQUEST_KEY = "./.temp/join_requests/{member_name}.pem" }
-        c! { KEY = "./keys/{member_name}.pem" }
+        c! { KEY = "./key/{member_name}.pem" }
         c! { MEMBER_METADATA = "./meta/{member_name}.toml" }
     }
 

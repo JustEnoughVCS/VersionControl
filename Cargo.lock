@@ -293,6 +293,7 @@ checksum = "7c74b8349d32d297c9134b8c88677813a227df8f779daa29bfc29c183fe3dca6"
 name = "constants"
 version = "0.1.0"
 dependencies = [
+ "libc",
  "macros",
 ]
 
@@ -689,6 +690,7 @@ dependencies = [
  "chrono",
  "constants",
  "data_struct",
+ "jvlib",
  "sha1_hash",
  "string_proc",
  "tcp_connection",
@@ -696,6 +698,14 @@ dependencies = [
  "vcs_actions",
  "vcs_data",
  "vcs_docs",
+]
+
+[[package]]
+name = "jvlib"
+version = "0.1.0"
+dependencies = [
+ "constants",
+ "libc",
 ]
 
 [[package]]

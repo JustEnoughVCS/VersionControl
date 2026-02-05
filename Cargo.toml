@@ -46,7 +46,9 @@ members = [
 
     "legacy_actions",
 
-    "docs", "systems/_constants",
+    "docs",
+
+    "ffi",
 ]
 
 [workspace.package]
@@ -86,6 +88,9 @@ string_proc = { path = "utils/string_proc" }
 # Systems
 action_system = { path = "systems/action" }
 constants = { path = "systems/_constants" }
+
+# ffi
+jvlib = { path = "ffi" }
 
 # Documents
 vcs_docs = { path = "docs" }
