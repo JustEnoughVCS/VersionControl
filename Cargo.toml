@@ -38,12 +38,15 @@ members = [
     "systems/action",
     "systems/action/action_macros",
 
+    "systems/_constants",
+    "systems/_constants/macros",
+
     "legacy_data",
     "legacy_data/tests",
 
     "legacy_actions",
 
-    "docs",
+    "docs", "systems/_constants",
 ]
 
 [workspace.package]
@@ -73,14 +76,20 @@ chrono = "0.4"
 toml = "0.9"
 
 [dependencies]
+# Utils
 cfg_file = { path = "utils/cfg_file" }
 data_struct = { path = "utils/data_struct" }
 sha1_hash = { path = "utils/sha1_hash" }
 tcp_connection = { path = "utils/tcp_connection" }
 string_proc = { path = "utils/string_proc" }
 
+# Systems
 action_system = { path = "systems/action" }
+constants = { path = "systems/_constants" }
 
+# Documents
 vcs_docs = { path = "docs" }
+
+# Legacy
 vcs_data = { path = "legacy_data" }
 vcs_actions = { path = "legacy_actions" }

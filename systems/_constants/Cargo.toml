@@ -1,0 +1,7 @@
+[package]
+name = "constants"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
+macros = { path = "macros" }
