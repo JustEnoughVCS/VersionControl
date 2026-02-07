@@ -5,11 +5,14 @@ macro_rules! c {
     };
 }
 
+pub const TEMP_FILE_PREFIX: &str = ".tmp_";
+pub const LOCK_FILE_PREFIX: &str = "~";
+
 /// File and directory path constants for the server root
 #[allow(unused)]
 pub mod server {
     /// File constants
-    #[macros::constants("server_file")]
+    #[constants_macros::constants("server_file")]
     pub mod files {
         c! { CONFIG = "./config.toml" }
         c! { JOIN_REQUEST_KEY = "./.temp/join_requests/{member_name}.pem" }
@@ -18,7 +21,7 @@ pub mod server {
     }
 
     /// Directory path constants
-    #[macros::constants("server_dir")]
+    #[constants_macros::constants("server_dir")]
     pub mod dirs {
         c! { KEYS = "./key/" }
         c! { JOIN_REQUEST_KEYS = "./.temp/join_requests/" }
@@ -31,7 +34,7 @@ pub mod server {
 #[allow(unused)]
 pub mod vault {
     /// File path constants
-    #[macros::constants("vault_file")]
+    #[constants_macros::constants("vault_file")]
     pub mod files {
         // ### Configs ###
         c! { CONFIG = "./vault.toml" }
@@ -40,9 +43,6 @@ pub mod vault {
 
         // Reference sheet
         c! { REFSHEET = "./ref/{ref_sheet_name}.sheet" }
-
-        // Editable instance of a reference sheet, maintained by one of the vault's Hosts, written back to the sheet file after editing
-        c! { REFSHEET_EDIT = "./ref/~{ref_sheet_name}.sheet" }
 
         // Member sheet backup, only used to temporarily store a member's local workspace file structure, fully controlled by the corresponding member
         c! { MEMBER_SHEET_BACKUP = "./_member/{member_name}/backups/{sheet_name}.sheet" }
@@ -60,9 +60,6 @@ pub mod vault {
         // Whether an index is locked; if the file exists, the member name written inside is the current holder
         c! { INDEX_LOCK = "./index/{index_slice_1}/{index_slice_2}/{index_name}/LOCK" }
 
-        // Editable instance of an index's version sequence, maintained by the holder, written back to the ver file after editing
-        c! { INDEX_VER_EDIT = "./index/{index_slice_1}/{index_slice_2}/{index_name}/~ver" }
-
         // Index version sequence
         c! { INDEX_VER = "./index/{index_slice_1}/{index_slice_2}/{index_name}/ver" }
 
@@ -74,7 +71,7 @@ pub mod vault {
     }
 
     /// Directory path constants
-    #[macros::constants("vault_dir")]
+    #[constants_macros::constants("vault_dir")]
     pub mod dirs {
         c! { REFSHEETS = "./ref/" }
         c! { SHARES_TO_REF = "./req/{ref_sheet_name}/" }
@@ -89,7 +86,7 @@ pub mod vault {
 #[allow(unused)]
 pub mod workspace {
     /// File path constants
-    #[macros::constants("workspace_file")]
+    #[constants_macros::constants("workspace_file")]
     pub mod files {
         // ### Config ###
         c! { CONFIG = "./.jv/workspace.toml" }
@@ -109,7 +106,7 @@ pub mod workspace {
     }
 
     /// Directory path constants
-    #[macros::constants("workspace_dir")]
+    #[constants_macros::constants("workspace_dir")]
     pub mod dirs {
         c! { WORKSPACE = "./.jv" }
         c! { VAULT_MIRROR = "./.jv/UPSTREAM/" }
@@ -123,7 +120,7 @@ pub mod workspace {
 #[allow(unused)]
 pub mod user {
     /// File path constants
-    #[macros::constants("user_file")]
+    #[constants_macros::constants("user_file")]
     pub mod files {
         // Upstream public key, stored after initial login, used to verify the trustworthiness of that upstream
         c! { UPSTREAM_PUB = "./upstreams/{upstream_addr}.pem" }
@@ -138,7 +135,7 @@ pub mod user {
     }
 
     /// Directory path constants
-    #[macros::constants("user_dir")]
+    #[constants_macros::constants("user_dir")]
     pub mod dirs {
         c! { UPSTREAM_PUBS = "./upstreams/" }
         c! { PRIVATE_KEYS = "./private/" }

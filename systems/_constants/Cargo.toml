@@ -4,5 +4,5 @@ edition = "2024"
 version.workspace = true
 
 [dependencies]
-macros = { path = "macros" }
+constants_macros = { path = "macros" }
 libc = "0.2"

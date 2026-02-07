@@ -81,6 +81,36 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
 
 [[package]]
+name = "asset"
+version = "0.1.0"
+dependencies = [
+ "asset_macros",
+ "constants",
+ "string_proc",
+ "thiserror 1.0.69",
+ "tokio",
+ "winapi",
+]
+
+[[package]]
+name = "asset_macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "string_proc",
+ "syn",
+]
+
+[[package]]
+name = "asset_test"
+version = "0.1.0"
+dependencies = [
+ "asset",
+ "tokio",
+]
+
+[[package]]
 name = "async-trait"
 version = "0.1.89"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -293,8 +323,19 @@ checksum = "7c74b8349d32d297c9134b8c88677813a227df8f779daa29bfc29c183fe3dca6"
 name = "constants"
 version = "0.1.0"
 dependencies = [
+ "constants_macros",
  "libc",
- "macros",
+]
+
+[[package]]
+name = "constants_macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "regex",
+ "string_proc",
+ "syn",
 ]
 
 [[package]]
@@ -686,6 +727,7 @@ name = "just_enough_vcs"
 version = "0.0.0"
 dependencies = [
  "action_system",
+ "asset",
  "cfg_file",
  "chrono",
  "constants",
@@ -754,17 +796,6 @@ name = "log"
 version = "0.4.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34080505efa8e45a4b816c349525ebe327ceaa8559756f0356cba97ef3bf7432"
-
-[[package]]
-name = "macros"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "regex",
- "string_proc",
- "syn",
-]
 
 [[package]]
 name = "memchr"
@@ -1068,7 +1099,7 @@ checksum = "a4e608c6638b9c18977b00b475ac1f28d14e84b27d8d42f70e0bf1e3dec127ac"
 dependencies = [
  "getrandom 0.2.16",
  "libredox",
- "thiserror",
+ "thiserror 2.0.17",
 ]
 
 [[package]]
@@ -1456,7 +1487,7 @@ dependencies = [
  "rsa",
  "serde",
  "serde_json",
- "thiserror",
+ "thiserror 2.0.17",
  "tokio",
  "uuid",
 ]
@@ -1472,11 +1503,31 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
+version = "1.0.69"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b6aaf5339b578ea85b50e080feb250a3e8ae8cfcdff9a461c9ec2904bc923f52"
+dependencies = [
+ "thiserror-impl 1.0.69",
+]
+
+[[package]]
+name = "thiserror"
 version = "2.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f63587ca0f12b72a0600bcba1d40081f830876000bb46dd2337a3051618f4fc8"
 dependencies = [
- "thiserror-impl",
+ "thiserror-impl 2.0.17",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "1.0.69"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -1605,7 +1656,7 @@ dependencies = [
  "sha1_hash",
  "string_proc",
  "tcp_connection",
- "thiserror",
+ "thiserror 2.0.17",
  "tokio",
  "vcs_data",
 ]

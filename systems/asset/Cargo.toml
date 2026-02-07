@@ -1,0 +1,15 @@
+[package]
+name = "asset"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
+string_proc = { path = "../../utils/string_proc" }
+
+asset_macros = { path = "macros" }
+tokio = { version = "1.48.0", features = ["full"] }
+thiserror = "1.0.69"
+
+winapi = { version = "0.3", features = ["winnt"] }
+
+constants = { path = "../_constants" }

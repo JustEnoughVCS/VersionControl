@@ -35,16 +35,21 @@ members = [
 
     "utils/string_proc",
 
+    "systems/asset",
+    "systems/asset/macros",
+    "systems/asset/test",
+
     "systems/action",
     "systems/action/action_macros",
 
     "systems/_constants",
     "systems/_constants/macros",
 
+    # LEGACY AREA
     "legacy_data",
     "legacy_data/tests",
-
     "legacy_actions",
+    # LEGACY AREA
 
     "docs",
 
@@ -86,6 +91,7 @@ tcp_connection = { path = "utils/tcp_connection" }
 string_proc = { path = "utils/string_proc" }
 
 # Systems
+asset = { path = "systems/asset" }
 action_system = { path = "systems/action" }
 constants = { path = "systems/_constants" }
 
