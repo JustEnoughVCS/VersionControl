@@ -81,7 +81,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
 
 [[package]]
-name = "asset"
+name = "asset_macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "string_proc",
+ "syn",
+]
+
+[[package]]
+name = "asset_system"
 version = "0.1.0"
 dependencies = [
  "asset_macros",
@@ -93,20 +103,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "asset_macros"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "string_proc",
- "syn",
-]
-
-[[package]]
 name = "asset_test"
 version = "0.1.0"
 dependencies = [
- "asset",
+ "asset_system",
  "tokio",
 ]
 
@@ -727,7 +727,7 @@ name = "just_enough_vcs"
 version = "0.0.0"
 dependencies = [
  "action_system",
- "asset",
+ "asset_system",
  "cfg_file",
  "chrono",
  "constants",

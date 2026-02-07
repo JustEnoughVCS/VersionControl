@@ -91,7 +91,7 @@ tcp_connection = { path = "utils/tcp_connection" }
 string_proc = { path = "utils/string_proc" }
 
 # Systems
-asset = { path = "systems/asset" }
+asset_system = { path = "systems/asset" }
 action_system = { path = "systems/action" }
 constants = { path = "systems/_constants" }
 

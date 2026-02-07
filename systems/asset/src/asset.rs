@@ -522,17 +522,17 @@ macro_rules! apply {
             ];
 
             // Batch precheck
-            if let Err(e) = asset::asset::apply_precheck_rename_operations(&rename_ops).await {
-                return Err(asset::error::DataApplyError::PrecheckFailed(e));
+            if let Err(e) = asset_system::asset::apply_precheck_rename_operations(&rename_ops).await {
+                return Err(asset_system::error::DataApplyError::PrecheckFailed(e));
             }
 
             // Per-handle precheck
-            if let Err(e) = asset::asset::apply_precheck(&$first).await {
-                return Err(asset::error::DataApplyError::PrecheckFailed(e));
+            if let Err(e) = asset_system::asset::apply_precheck(&$first).await {
+                return Err(asset_system::error::DataApplyError::PrecheckFailed(e));
             }
             $(
-                if let Err(e) = asset::asset::apply_precheck(&$rest).await {
-                    return Err(asset::error::DataApplyError::PrecheckFailed(e));
+                if let Err(e) = asset_system::asset::apply_precheck(&$rest).await {
+                    return Err(asset_system::error::DataApplyError::PrecheckFailed(e));
                 }
             )+
 

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use asset::{
+use asset_system::{
     RWDataTest, ensure_eq,
     error::{DataReadError, DataWriteError},
     rw::RWData,

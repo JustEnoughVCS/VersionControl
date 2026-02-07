@@ -15,12 +15,16 @@ pub mod lib {
 }
 
 pub mod system {
+    pub mod constants {
+        pub use constants::*;
+    }
+
     pub mod action_system {
         pub use action_system::*;
     }
 
-    pub mod constants {
-        pub use constants::*;
+    pub mod asset_system {
+        pub use asset_system::*;
     }
 }
 

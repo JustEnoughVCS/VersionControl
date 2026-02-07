@@ -16,7 +16,7 @@ pub fn rw_data_test_derive(input: TokenStream) -> TokenStream {
         #[cfg(test)]
         mod #test_mod_name {
             use super::*;
-            use asset::rw::RWData;
+            use asset_system::rw::RWData;
 
             #[tokio::test]
             async fn test() {

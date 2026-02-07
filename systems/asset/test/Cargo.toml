@@ -4,6 +4,6 @@ version.workspace = true
 edition = "2024"
 
 [dependencies]
-asset = { path = "../" }
+asset_system = { path = "../" }
 
 tokio = { version = "1.48.0", features = ["full"] }

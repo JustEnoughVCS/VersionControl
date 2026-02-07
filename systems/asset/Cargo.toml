@@ -1,5 +1,5 @@
 [package]
-name = "asset"
+name = "asset_system"
 edition = "2024"
 version.workspace = true
 
