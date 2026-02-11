@@ -14,6 +14,7 @@ pub mod lib {
     pub use vcs_docs::*;
 }
 
+#[cfg(feature = "lib")]
 pub mod system {
     pub mod constants {
         pub use constants::*;

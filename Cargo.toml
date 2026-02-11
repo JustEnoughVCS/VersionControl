@@ -6,12 +6,15 @@ authors = ["Weicao-CatilGrass (GitHub)"]
 
 [features]
 all = [
+    "utils",
+    "lib",
+]
+utils = [
     "cfg_file",
     "data_struct",
     "sha1_hash",
     "tcp_connection",
     "string_proc",
-    "lib",
 ]
 cfg_file = []
 data_struct = []
@@ -22,38 +25,30 @@ lib = []
 
 [workspace]
 members = [
+    "docs",
+    "ffi",
+    "systems/_asset",
+    "systems/_asset/macros",
+    "systems/_asset/test",
+    "systems/_constants",
+    "systems/_constants/macros",
+    "systems/action",
+    "systems/action/action_macros",
+    "systems/sheet",
     "utils/cfg_file",
     "utils/cfg_file/cfg_file_derive",
     "utils/cfg_file/cfg_file_test",
-
     "utils/data_struct",
-
     "utils/sha1_hash",
-
+    "utils/string_proc",
     "utils/tcp_connection",
     "utils/tcp_connection/tcp_connection_test",
-
-    "utils/string_proc",
-
-    "systems/asset",
-    "systems/asset/macros",
-    "systems/asset/test",
-
-    "systems/action",
-    "systems/action/action_macros",
-
-    "systems/_constants",
-    "systems/_constants/macros",
 
     # LEGACY AREA
     "legacy_data",
     "legacy_data/tests",
     "legacy_actions",
     # LEGACY AREA
-
-    "docs",
-
-    "ffi",
 ]
 
 [workspace.package]
@@ -83,6 +78,12 @@ chrono = "0.4"
 toml = "0.9"
 
 [dependencies]
+# ffi
+jvlib = { path = "ffi" }
+
+# Documents
+vcs_docs = { path = "docs" }
+
 # Utils
 cfg_file = { path = "utils/cfg_file" }
 data_struct = { path = "utils/data_struct" }
@@ -91,15 +92,9 @@ tcp_connection = { path = "utils/tcp_connection" }
 string_proc = { path = "utils/string_proc" }
 
 # Systems
-asset_system = { path = "systems/asset" }
-action_system = { path = "systems/action" }
+asset_system = { path = "systems/_asset" }
 constants = { path = "systems/_constants" }
-
-# ffi
-jvlib = { path = "ffi" }
-
-# Documents
-vcs_docs = { path = "docs" }
+action_system = { path = "systems/action" }
 
 # Legacy
 vcs_data = { path = "legacy_data" }

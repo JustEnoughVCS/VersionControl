@@ -15,15 +15,29 @@ pub mod server {
     #[constants_macros::constants("server_file")]
     pub mod files {
         c! { CONFIG = "./config.toml" }
+
+        // Storage location for keys and passwords
+        c! { KEY = "./auth/key/{member_name}.pem" }
+        c! { PASSWORD = "./auth/pswd/{member_name}.pswd" }
+
+        // Only Key holders are allowed to initiate Join Request
         c! { JOIN_REQUEST_KEY = "./.temp/join_requests/{member_name}.pem" }
-        c! { KEY = "./key/{member_name}.pem" }
+
+        // User metadata is stored here
+        // Typically includes:
+        // - Nickname
+        // - Email
+        // - Other information
+        //
+        // Facilitates queries by other members
         c! { MEMBER_METADATA = "./meta/{member_name}.toml" }
     }
 
     /// Directory path constants
     #[constants_macros::constants("server_dir")]
     pub mod dirs {
-        c! { KEYS = "./key/" }
+        c! { KEYS = "./auth/key/" }
+        c! { PASSWORDS = "./auth/pswd/" }
         c! { JOIN_REQUEST_KEYS = "./.temp/join_requests/" }
         c! { MEMBER_METADATAS = "./meta/" }
         c! { VAULTS = "./v/" }
@@ -47,11 +61,8 @@ pub mod vault {
         // Member sheet backup, only used to temporarily store a member's local workspace file structure, fully controlled by the corresponding member
         c! { MEMBER_SHEET_BACKUP = "./_member/{member_name}/backups/{sheet_name}.sheet" }
 
-        // Share sent to a reference sheet, selectively merged into that reference sheet by a Host
-        c! { SHARE_TO_REF = "./req/{ref_sheet_name}/{share_id}.sheet" }
-
-        // Share sent to a specific member, fully controlled by that member, who can optionally merge it into any of their own sheets
-        c! { SHARE_TO_MEMBER = "./_member/{member_name}/shares/{share_id}.sheet" }
+        // ### Rules ###
+        c! { IGNORE_RULE_SCRIPT = "./rules/ignore/{script_name}.lua" }
 
         // ### Storages ###
         c! { CHANGE_FILE = "./changes/CURRENT" }
@@ -74,10 +85,9 @@ pub mod vault {
     #[constants_macros::constants("vault_dir")]
     pub mod dirs {
         c! { REFSHEETS = "./ref/" }
-        c! { SHARES_TO_REF = "./req/{ref_sheet_name}/" }
         c! { MEMBER = "./_member/{member_name}/" }
         c! { MEMBER_SHEET_BACKUPS = "./_member/{member_name}/backups/" }
-        c! { MEMBER_SHARES = "./_member/{member_name}/shares/" }
+        c! { IGNORE_RULES = "./rules/ignore/" }
         c! { CHANGES = "./changes/" }
     }
 }
