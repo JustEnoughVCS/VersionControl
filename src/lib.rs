@@ -20,12 +20,16 @@ pub mod system {
         pub use constants::*;
     }
 
+    pub mod asset_system {
+        pub use asset_system::*;
+    }
+
     pub mod action_system {
         pub use action_system::*;
     }
 
-    pub mod asset_system {
-        pub use asset_system::*;
+    pub mod sheet_system {
+        pub use sheet_system::*;
     }
 }
 

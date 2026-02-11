@@ -1,0 +1,12 @@
+[package]
+name = "sheet_system_macros"
+version.workspace = true
+edition = "2024"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "2.0", features = ["full", "extra-traits"] }
+quote = "1.0"
+proc-macro2 = "1.0"

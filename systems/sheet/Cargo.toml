@@ -1,6 +1,9 @@
 [package]
-name = "sheet"
+name = "sheet_system"
 edition = "2024"
 version.workspace = true
 
 [dependencies]
+sheet_system_macros = { path = "macros" }
+string_proc = { path = "../../utils/string_proc" }
+asset_system = { path = "../_asset" }
