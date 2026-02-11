@@ -1,6 +1,5 @@
 use std::path::Path;
 
-use rand::TryRngCore;
 use rsa::{
     RsaPrivateKey, RsaPublicKey,
     pkcs1::{DecodeRsaPrivateKey, DecodeRsaPublicKey},
@@ -43,12 +42,7 @@ impl ConnectionInstance {
         public_key_dir: impl AsRef<Path>,
     ) -> Result<(bool, String), TcpTargetError> {
         // Generate random challenge
-        let mut challenge = [0u8; 32];
-        rand::rngs::OsRng
-            .try_fill_bytes(&mut challenge)
-            .map_err(|e| {
-                TcpTargetError::Crypto(format!("Failed to generate random challenge: {}", e))
-            })?;
+        let challenge = Self::gen_challenge()?;
 
         // Send challenge to target
         self.stream.write_all(&challenge).await?;
@@ -104,6 +98,15 @@ impl ConnectionInstance {
         };
 
         Ok((verified, key_id))
+    }
+
+    fn gen_challenge() -> Result<[u8; 32], TcpTargetError> {
+        let mut challenge = [0u8; 32];
+        let mut rng = rand::rng();
+        rand::TryRng::try_fill_bytes(&mut rng, &mut challenge).map_err(|e| {
+            TcpTargetError::Crypto(format!("Failed to generate random challenge: {}", e))
+        })?;
+        return Ok(challenge);
     }
 
     /// Accepts a challenge from the target machine to verify connection security
