@@ -4,7 +4,7 @@ use crate::{
     index_source::IndexSource,
     mapping::{LocalMapping, LocalMappingForward},
     sheet::{
-        SheetData, constants::HEADER_SIZE, reader::read_sheet_data,
+        SheetData, reader::read_sheet_data, v1::constants::HEADER_SIZE,
         writer::convert_sheet_data_to_bytes,
     },
 };

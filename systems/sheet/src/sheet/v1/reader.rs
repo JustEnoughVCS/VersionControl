@@ -3,16 +3,16 @@ use crate::{
     mapping::{LocalMapping, LocalMappingForward, Mapping},
     sheet::{
         SheetData,
-        constants::{
+        error::ReadSheetDataError,
+        v1::constants::{
             CURRENT_SHEET_VERSION, HEADER_SIZE, INDEX_ENTRY_SIZE, MAPPING_BUCKET_MIN_SIZE,
             MAPPING_DIR_ENTRY_SIZE,
         },
-        error::ReadSheetDataError,
+        v1::writer::calculate_path_hash,
     },
 };
 use std::collections::HashSet;
 
-/// Reconstruct complete SheetData from full sheet data
 pub fn read_sheet_data(full_sheet_data: &[u8]) -> Result<SheetData, ReadSheetDataError> {
     if full_sheet_data.len() < HEADER_SIZE {
         return Err(std::io::Error::new(
@@ -125,7 +125,6 @@ pub fn read_sheet_data(full_sheet_data: &[u8]) -> Result<SheetData, ReadSheetDat
     Ok(SheetData { mappings })
 }
 
-/// Read mapping information for a specific node from complete sheet data
 pub fn read_mapping<'a>(
     full_sheet_data: &'a [u8],
     node: &[&str],
@@ -176,7 +175,7 @@ pub fn read_mapping<'a>(
 
     // Calculate hash prefix for target node
     let node_path: Vec<String> = node.iter().map(|s| s.to_string()).collect();
-    let target_hash = crate::sheet::writer::calculate_path_hash(&node_path);
+    let target_hash = calculate_path_hash(&node_path);
     let target_bucket_key = target_hash >> 24; // Take high 8 bits as bucket key
 
     // Find corresponding bucket in mapping directory using binary search

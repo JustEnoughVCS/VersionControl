@@ -507,6 +507,11 @@ impl LocalMapping {
     pub fn set_forward(&mut self, forward: &LocalMappingForward) {
         self.forward = forward.clone();
     }
+
+    /// Replace the forward direction of the current LocalMapping
+    pub fn replace_forward(&mut self, forward: LocalMappingForward) {
+        self.forward = forward;
+    }
 }
 
 #[inline(always)]
@@ -590,4 +595,32 @@ impl std::borrow::Borrow<Vec<String>> for MappingBuf {
     fn borrow(&self) -> &Vec<String> {
         &self.val
     }
+}
+
+/// Convert a string into a Node suitable for Mapping
+///
+/// # Examples
+///
+/// ```
+/// # use sheet_system::mapping::node;
+/// assert_eq!(
+///     node("./home/path1/"),
+///     vec!["home".to_string(), "path1".to_string(), "".to_string()]
+/// );
+/// assert_eq!(
+///     node("./home/path2"),
+///     vec!["home".to_string(), "path2".to_string()]
+/// );
+/// assert_eq!(
+///     node(".\\home\\path3\\"),
+///     vec!["home".to_string(), "path3".to_string(), "".to_string()]
+/// );
+/// assert_eq!(
+///     node("home/path4"),
+///     vec!["home".to_string(), "path4".to_string()]
+/// );
+/// ```
+pub fn node(str: impl Into<String>) -> Vec<String> {
+    let str = just_fmt::fmt_path::fmt_path_str(str).unwrap_or_default();
+    str.split("/").into_iter().map(|f| f.to_string()).collect()
 }

@@ -1,12 +1,19 @@
-use crate::sheet::SheetEditItem;
-
 #[derive(Debug, thiserror::Error)]
 pub enum SheetEditError {
-    #[error("Edit `{0}` Failed: Node already exists: `{1}`")]
-    NodeAlreadyExist(SheetEditItem, String),
+    #[error("Edit Failed: Node already exists: `{0}`")]
+    NodeAlreadyExist(String),
 
-    #[error("Edit `{0}` Failed: Node not found: `{1}`")]
-    NodeNotFound(SheetEditItem, String),
+    #[error("Edit Failed: Node not found: `{0}`")]
+    NodeNotFound(String),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum SheetApplyError {
+    #[error("Node already exists: `{0}` (Unexpected)")]
+    UnexpectedAlreadyExist(String),
+
+    #[error("Unexpected error: Node not found: `{0}` (Unexpected)")]
+    UnexpectedNotFound(String),
 }
 
 #[derive(Debug, thiserror::Error)]

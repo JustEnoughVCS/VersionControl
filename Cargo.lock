@@ -794,6 +794,7 @@ dependencies = [
  "chrono",
  "constants",
  "data_struct",
+ "hex_display",
  "jvlib",
  "sha1_hash",
  "sheet_system",
@@ -807,9 +808,9 @@ dependencies = [
 
 [[package]]
 name = "just_fmt"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61c95f58372d20b5d57843d9e060974f5b15619c77ac52df281f344f97681c5b"
+checksum = "5454cda0d57db59778608d7a47bff5b16c6705598265869fb052b657f66cf05e"
 
 [[package]]
 name = "jvlib"

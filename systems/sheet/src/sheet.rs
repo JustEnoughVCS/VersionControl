@@ -1,6 +1,7 @@
 use std::{
     collections::HashSet,
     fs::File,
+    mem::replace,
     path::{Path, PathBuf},
 };
 
@@ -11,19 +12,18 @@ use crate::{
     index_source::IndexSource,
     mapping::{LocalMapping, LocalMappingForward, Mapping, MappingBuf},
     sheet::{
-        error::{ReadSheetDataError, SheetEditError},
+        error::{ReadSheetDataError, SheetApplyError, SheetEditError},
         reader::{read_mapping, read_sheet_data},
         writer::convert_sheet_data_to_bytes,
     },
 };
 
-pub mod constants;
 pub mod error;
 pub mod reader;
 pub mod writer;
 
-#[cfg(test)]
-pub mod test;
+// Format
+pub mod v1;
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct Sheet {
@@ -59,6 +59,21 @@ pub struct SheetDataMmap {
 pub struct SheetEdit {
     /// Edit history
     list: Vec<SheetEditItem>,
+
+    /// List of lost nodes
+    lost_nodes: HashSet<Vec<String>>,
+
+    /// List of filled nodes
+    filled_nodes: HashSet<Vec<String>>,
+}
+
+impl SheetEdit {
+    /// Clear current SheetEdit information
+    pub fn clear(&mut self) {
+        self.list.clear();
+        self.lost_nodes.clear();
+        self.filled_nodes.clear();
+    }
 }
 
 #[derive(Default, Debug, Clone, PartialEq)]
@@ -119,7 +134,7 @@ impl std::fmt::Display for SheetEditItem {
                 )
             }
             SheetEditItem::EraseMapping { node } => {
-                write!(f, "Earse \"{}\"", display_node_helper(node),)
+                write!(f, "erase \"{}\"", display_node_helper(node),)
             }
             SheetEditItem::InsertMapping { mapping } => {
                 write!(f, "Insert {}", mapping.to_string())
@@ -207,7 +222,7 @@ impl SheetData {
         Sheet {
             name: sheet_name.into(),
             data: self,
-            edit: SheetEdit { list: Vec::new() },
+            edit: SheetEdit::default(),
         }
     }
 }
@@ -244,8 +259,16 @@ impl Sheet {
         self.data
     }
 
-    /// Check if a mapping exists in the Sheet
+    /// Check if a mapping exists in this sheet (including unapplied edits)
+    /// The difference from `contains_mapping_actual` is:
+    /// This method will consider edit operations that have not yet been `apply()`-ed
     pub fn contains_mapping(&self, value: &Vec<String>) -> bool {
+        self.data.contains_mapping(value) && !self.edit.lost_nodes.contains(value)
+            || self.edit.filled_nodes.contains(value)
+    }
+
+    /// Check if a mapping actually exists in this sheet
+    pub fn contains_mapping_actual(&self, value: &Vec<String>) -> bool {
         self.data.contains_mapping(value)
     }
 
@@ -262,20 +285,30 @@ impl Sheet {
         }
     }
 
-    /// Insert mapping modification
-    pub fn insert_mapping(
+    /// Insert mapping move
+    pub fn move_mapping(
         &mut self,
-        mapping: impl Into<LocalMapping>,
+        from_node: Vec<String>,
+        to_node: Vec<String>,
     ) -> Result<(), SheetEditError> {
-        self.edit.list.push(SheetEditItem::InsertMapping {
-            mapping: mapping.into(),
-        });
-        Ok(())
-    }
+        if !self.contains_mapping(&from_node) {
+            return Err(SheetEditError::NodeNotFound(from_node.join("/")));
+        }
 
-    /// Insert mapping erasure
-    pub fn earse_mapping(&mut self, node: Vec<String>) -> Result<(), SheetEditError> {
-        self.edit.list.push(SheetEditItem::EraseMapping { node });
+        if self.contains_mapping(&to_node) {
+            return Err(SheetEditError::NodeAlreadyExist(to_node.join("/")));
+        }
+
+        self.edit.filled_nodes.remove(&from_node);
+        self.edit.lost_nodes.remove(&to_node);
+
+        self.edit.lost_nodes.insert(from_node.clone());
+        self.edit.filled_nodes.insert(to_node.clone());
+
+        self.edit
+            .list
+            .push(SheetEditItem::Move { from_node, to_node });
+
         Ok(())
     }
 
@@ -285,19 +318,49 @@ impl Sheet {
         node_a: Vec<String>,
         node_b: Vec<String>,
     ) -> Result<(), SheetEditError> {
+        if !self.contains_mapping(&node_a) {
+            return Err(SheetEditError::NodeNotFound(node_a.join("/")));
+        }
+
+        if !self.contains_mapping(&node_b) {
+            return Err(SheetEditError::NodeNotFound(node_b.join("/")));
+        }
+
         self.edit.list.push(SheetEditItem::Swap { node_a, node_b });
         Ok(())
     }
 
-    /// Insert mapping move
-    pub fn move_mapping(
+    /// Insert mapping erasure
+    pub fn erase_mapping(&mut self, node: Vec<String>) -> Result<(), SheetEditError> {
+        if !self.contains_mapping(&node) {
+            return Err(SheetEditError::NodeNotFound(node.join("/")));
+        }
+
+        self.edit.filled_nodes.remove(&node);
+        self.edit.lost_nodes.insert(node.clone());
+
+        self.edit.list.push(SheetEditItem::EraseMapping { node });
+        Ok(())
+    }
+
+    /// Insert mapping modification
+    pub fn insert_mapping(
         &mut self,
-        from_node: Vec<String>,
-        to_node: Vec<String>,
+        mapping: impl Into<LocalMapping>,
     ) -> Result<(), SheetEditError> {
+        let mapping = mapping.into();
+        let node = mapping.value();
+
+        if self.contains_mapping(node) {
+            return Err(SheetEditError::NodeAlreadyExist(node.join("/")));
+        }
+
+        self.edit.lost_nodes.remove(node);
+        self.edit.filled_nodes.insert(node.clone());
+
         self.edit
             .list
-            .push(SheetEditItem::Move { from_node, to_node });
+            .push(SheetEditItem::InsertMapping { mapping });
         Ok(())
     }
 
@@ -307,6 +370,10 @@ impl Sheet {
         node: Vec<String>,
         source: IndexSource,
     ) -> Result<(), SheetEditError> {
+        if !self.contains_mapping(&node) {
+            return Err(SheetEditError::NodeNotFound(node.join("/")));
+        }
+
         self.edit
             .list
             .push(SheetEditItem::ReplaceSource { node, source });
@@ -319,6 +386,10 @@ impl Sheet {
         node: Vec<String>,
         forward: LocalMappingForward,
     ) -> Result<(), SheetEditError> {
+        if !self.contains_mapping(&node) {
+            return Err(SheetEditError::NodeNotFound(node.join("/")));
+        }
+
         self.edit
             .list
             .push(SheetEditItem::UpdateForward { node, forward });
@@ -326,13 +397,70 @@ impl Sheet {
     }
 
     /// Apply changes
-    pub fn apply(&mut self) {
-        // Logic for applying changes
-        todo!();
+    pub fn apply(&mut self) -> Result<(), SheetApplyError> {
+        let items = replace(&mut self.edit.list, Vec::new());
+        for item in items {
+            match item {
+                SheetEditItem::DoNothing => continue,
+                SheetEditItem::Move { from_node, to_node } => {
+                    let mut moved =
+                        self.data.mappings.take(&from_node).ok_or_else(|| {
+                            SheetApplyError::UnexpectedNotFound(from_node.join("/"))
+                        })?;
+                    moved.set_value(to_node);
+                    self.data.mappings.insert(moved);
+                }
+                SheetEditItem::Swap { node_a, node_b } => {
+                    let mut a = self
+                        .data
+                        .mappings
+                        .take(&node_a)
+                        .ok_or_else(|| SheetApplyError::UnexpectedNotFound(node_a.join("/")))?;
+                    let mut b = self
+                        .data
+                        .mappings
+                        .take(&node_b)
+                        .ok_or_else(|| SheetApplyError::UnexpectedNotFound(node_b.join("/")))?;
+                    let val_a = a.value().clone();
+                    let val_b = b.value().clone();
+                    a.set_value(val_b);
+                    b.set_value(val_a);
+                }
+                SheetEditItem::EraseMapping { node } => {
+                    if !self.data.mappings.remove(&node) {
+                        return Err(SheetApplyError::UnexpectedNotFound(node.join("/")));
+                    }
+                }
+                SheetEditItem::InsertMapping { mapping } => {
+                    let node = mapping.value().clone();
+                    if !self.data.mappings.insert(mapping) {
+                        return Err(SheetApplyError::UnexpectedAlreadyExist(node.join("/")));
+                    }
+                }
+                SheetEditItem::ReplaceSource { node, source } => {
+                    let mut target = self
+                        .data
+                        .mappings
+                        .take(&node)
+                        .ok_or_else(|| SheetApplyError::UnexpectedNotFound(node.join("/")))?;
+                    target.replace_source(source);
+                    self.data.mappings.insert(target);
+                }
+                SheetEditItem::UpdateForward { node, forward } => {
+                    let mut target = self
+                        .data
+                        .mappings
+                        .take(&node)
+                        .ok_or_else(|| SheetApplyError::UnexpectedNotFound(node.join("/")))?;
+                    target.replace_forward(forward);
+                    self.data.mappings.insert(target);
+                }
+            }
+        }
 
         // Clear the edit list
-        #[allow(unreachable_code)] // Note: Remove after todo!() is completed
-        self.edit.list.clear();
+        self.edit.clear();
+        Ok(())
     }
 }
 

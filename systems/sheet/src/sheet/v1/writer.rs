@@ -1,13 +1,12 @@
 use crate::index_source::IndexSource;
 use crate::mapping::LocalMapping;
 use crate::sheet::SheetData;
-use crate::sheet::constants::{
+use crate::sheet::v1::constants::{
     CURRENT_SHEET_VERSION, HEADER_SIZE, INDEX_ENTRY_SIZE, MAPPING_DIR_ENTRY_SIZE,
 };
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashMap};
 
-/// Convert SheetData to byte array
 pub fn convert_sheet_data_to_bytes(sheet_data: SheetData) -> Vec<u8> {
     // Collect all mappings
     let mappings: Vec<LocalMapping> = sheet_data.mappings.into_iter().collect();
@@ -97,7 +96,6 @@ pub fn convert_sheet_data_to_bytes(sheet_data: SheetData) -> Vec<u8> {
     result
 }
 
-/// Calculate path hash (SHA256, take first 4 bytes)
 pub fn calculate_path_hash(path: &[String]) -> u32 {
     let mut hasher = Sha256::new();
     for segment in path {
@@ -156,7 +154,7 @@ fn serialize_path(path: &[String]) -> Vec<u8> {
 /// Test only: Calculate single mapping bucket entry size
 #[cfg(test)]
 fn calculate_mapping_bucket_size(mapping: &LocalMapping) -> usize {
-    use crate::sheet::constants::MAPPING_BUCKET_MIN_SIZE;
+    use crate::sheet::v1::constants::MAPPING_BUCKET_MIN_SIZE;
 
     let path_size = serialize_path(mapping.value()).len();
     let (_, forward_info_len, _) = mapping.forward().unpack();
@@ -167,7 +165,7 @@ fn calculate_mapping_bucket_size(mapping: &LocalMapping) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{mapping::LocalMappingForward, sheet::constants::MAPPING_BUCKET_MIN_SIZE};
+    use crate::{mapping::LocalMappingForward, sheet::v1::constants::MAPPING_BUCKET_MIN_SIZE};
 
     #[test]
     fn test_serialize_path() {

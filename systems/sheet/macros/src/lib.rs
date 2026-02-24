@@ -3,8 +3,6 @@ use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::quote;
 use syn::parse_str;
 
-const INDEX_SOURCE_BUF: &str =
-    "just_enough_vcs::system::sheet_system::index_source::IndexSourceBuf";
 const INDEX_SOURCE: &str = "just_enough_vcs::system::sheet_system::index_source::IndexSource";
 
 const LOCAL_MAPPING_PATH: &str = "just_enough_vcs::system::sheet_system::mapping::LocalMapping";
@@ -38,7 +36,7 @@ fn parse_sheet_path(input: &str) -> Result<(String, Vec<String>), String> {
 }
 
 /// Parse strings in the format "id/ver"
-fn parse_id_version(input: &str) -> Result<(String, String), String> {
+fn parse_id_version(input: &str) -> Result<(u32, u16), String> {
     let parts: Vec<&str> = input.split('/').collect();
     if parts.len() != 2 {
         return Err(format!(
@@ -47,15 +45,22 @@ fn parse_id_version(input: &str) -> Result<(String, String), String> {
         ));
     }
 
-    let id = parts[0].trim().to_string();
-    let ver = parts[1].trim().to_string();
+    let id_str = parts[0].trim();
+    let ver_str = parts[1].trim();
 
-    if id.is_empty() {
+    if id_str.is_empty() {
         return Err("ID cannot be empty".to_string());
     }
-    if ver.is_empty() {
+    if ver_str.is_empty() {
         return Err("Version cannot be empty".to_string());
     }
+
+    let id = id_str
+        .parse::<u32>()
+        .map_err(|e| format!("Failed to parse id as u32: {}", e))?;
+    let ver = ver_str
+        .parse::<u16>()
+        .map_err(|e| format!("Failed to parse version as u16: {}", e))?;
 
     Ok((id, ver))
 }
@@ -121,14 +126,14 @@ pub fn mapping_buf(input: TokenStream) -> TokenStream {
 
     let mapping_buf_path: syn::Path =
         parse_str(MAPPING_BUF_PATH).expect("Failed to parse MAPPING_BUF_PATH");
-    let index_source_buf_path: syn::Path =
-        parse_str(INDEX_SOURCE_BUF).expect("Failed to parse INDEX_SOURCE_BUF");
+    let index_source_path: syn::Path =
+        parse_str(INDEX_SOURCE).expect("Failed to parse INDEX_SOURCE");
 
     let expanded = quote! {
         #mapping_buf_path::new(
             #sheet.to_string(),
             #path_vec_tokens,
-            #index_source_buf_path::new(#id.to_string(), #ver.to_string())
+            #index_source_path::new(#id, #ver)
         )
     };
 
@@ -198,9 +203,9 @@ pub fn mapping(input: TokenStream) -> TokenStream {
 }
 
 enum LocalMappingParts {
-    Latest(String, String, String),
-    Version(String, String, String),
-    WithRef(String, String, String, String),
+    Latest(String, u32, u16),
+    Version(String, u32, u16),
+    WithRef(String, u32, u16, String),
 }
 
 impl LocalMappingParts {
@@ -317,8 +322,8 @@ pub fn local_mapping(input: TokenStream) -> TokenStream {
         parse_str(LOCAL_MAPPING_PATH).expect("Failed to parse LOCAL_MAPPING_PATH");
     let local_mapping_forward_path: syn::Path =
         parse_str(LOCAL_MAPPING_FORWARD_PATH).expect("Failed to parse LOCAL_MAPPING_FORWARD_PATH");
-    let index_source_buf_path: syn::Path =
-        parse_str(INDEX_SOURCE_BUF).expect("Failed to parse INDEX_SOURCE_BUF");
+    let index_source_path: syn::Path =
+        parse_str(INDEX_SOURCE).expect("Failed to parse INDEX_SOURCE");
 
     match parts {
         LocalMappingParts::Latest(path_str, id, ver) => {
@@ -328,7 +333,7 @@ pub fn local_mapping(input: TokenStream) -> TokenStream {
             let expanded = quote! {
                 #local_mapping_path::new(
                     #path_vec_tokens,
-                    #index_source_buf_path::new(#id.to_string(), #ver.to_string()),
+                    #index_source_path::new(#id, #ver),
                     #local_mapping_forward_path::Latest
                 )
             };
@@ -342,7 +347,7 @@ pub fn local_mapping(input: TokenStream) -> TokenStream {
             let expanded = quote! {
                 #local_mapping_path::new(
                     #path_vec_tokens,
-                    #index_source_buf_path::new(#id.to_string(), #ver.to_string()),
+                    #index_source_path::new(#id, #ver),
                     #local_mapping_forward_path::Version {
                         version_name: #ver.to_string()
                     }
@@ -358,7 +363,7 @@ pub fn local_mapping(input: TokenStream) -> TokenStream {
             let expanded = quote! {
                 #local_mapping_path::new(
                     #path_vec_tokens,
-                    #index_source_buf_path::new(#id.to_string(), #ver.to_string()),
+                    #index_source_path::new(#id, #ver),
                     #local_mapping_forward_path::Ref {
                         sheet_name: #ref_name.to_string()
                     }
