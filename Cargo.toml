@@ -40,6 +40,7 @@ members = [
     "utils/cfg_file/cfg_file_derive",
     "utils/cfg_file/cfg_file_test",
     "utils/data_struct",
+    "utils/hex_display",
     "utils/sha1_hash",
     "utils/string_proc",
     "utils/tcp_connection",
