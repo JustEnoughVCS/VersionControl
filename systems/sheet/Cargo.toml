@@ -4,5 +4,16 @@ edition = "2024"
 version.workspace = true
 
 [dependencies]
+hex_display = { path = "../../utils/hex_display" }
+
+constants = { path = "../_constants" }
 sheet_system_macros = { path = "macros" }
 asset_system = { path = "../_asset" }
+
+tokio = { version = "1.48", features = ["full"] }
+
+thiserror = "1.0.69"
+just_fmt = "0.1"
+
+memmap2 = "0.9"
+sha2 = "0.10.8"

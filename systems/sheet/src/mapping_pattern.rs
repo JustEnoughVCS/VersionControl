@@ -45,21 +45,24 @@ use crate::mapping::MappingBuf;
 
 pub struct MappingPattern {}
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum MappingPatternResult {
     Single(MappingBuf),
     Multi(Vec<MappingBuf>),
 }
 
 impl MappingPatternResult {
+    /// Create a new single mapping result
     pub fn new_single(mapping: MappingBuf) -> Self {
         Self::Single(mapping)
     }
 
+    /// Create a new multi mapping result
     pub fn new_multi(mappings: Vec<MappingBuf>) -> Self {
         Self::Multi(mappings)
     }
 
+    /// Check if the current result is a single mapping
     pub fn is_single(&self) -> bool {
         match self {
             MappingPatternResult::Single(_) => true,
@@ -67,6 +70,7 @@ impl MappingPatternResult {
         }
     }
 
+    /// Check if the current result is a multi mapping
     pub fn is_multi(&self) -> bool {
         match self {
             MappingPatternResult::Single(_) => false,
@@ -74,6 +78,7 @@ impl MappingPatternResult {
         }
     }
 
+    /// Extract the single mapping from the current result
     pub fn single(self) -> Option<MappingBuf> {
         match self {
             MappingPatternResult::Single(mapping) => Some(mapping),
@@ -81,6 +86,7 @@ impl MappingPatternResult {
         }
     }
 
+    /// Extract the multi mapping from the current result
     pub fn multi(self) -> Option<Vec<MappingBuf>> {
         match self {
             MappingPatternResult::Single(_) => None,
@@ -88,6 +94,7 @@ impl MappingPatternResult {
         }
     }
 
+    /// Ensure the current result is a multi mapping
     pub fn ensure_multi(self) -> Vec<MappingBuf> {
         match self {
             MappingPatternResult::Single(mapping) => vec![mapping],
@@ -95,6 +102,7 @@ impl MappingPatternResult {
         }
     }
 
+    /// Unwrap as Single
     pub fn unwrap_single(self) -> MappingBuf {
         match self {
             MappingPatternResult::Single(mapping) => mapping,
@@ -102,6 +110,7 @@ impl MappingPatternResult {
         }
     }
 
+    /// Unwrap as Multi
     pub fn unwrap_multi(self) -> Vec<MappingBuf> {
         match self {
             MappingPatternResult::Single(_) => {
@@ -111,6 +120,7 @@ impl MappingPatternResult {
         }
     }
 
+    /// Unwrap as Single or return the provided single mapping
     pub fn unwrap_single_or(self, or: MappingBuf) -> MappingBuf {
         match self {
             MappingPatternResult::Single(mapping) => mapping,
@@ -118,6 +128,7 @@ impl MappingPatternResult {
         }
     }
 
+    /// Unwrap as Multi or return the provided multi mapping
     pub fn unwrap_multi_or(self, or: Vec<MappingBuf>) -> Vec<MappingBuf> {
         match self {
             MappingPatternResult::Single(_) => or,
@@ -125,6 +136,7 @@ impl MappingPatternResult {
         }
     }
 
+    /// Unwrap as Single or execute the provided function
     pub fn unwrap_single_or_else<F>(self, or: F) -> MappingBuf
     where
         F: FnOnce() -> MappingBuf,
@@ -135,6 +147,7 @@ impl MappingPatternResult {
         }
     }
 
+    /// Unwrap as Multi or execute the provided function
     pub fn unwrap_multi_or_else<F>(self, or: F) -> Vec<MappingBuf>
     where
         F: FnOnce() -> Vec<MappingBuf>,
@@ -145,6 +158,7 @@ impl MappingPatternResult {
         }
     }
 
+    /// Get the length of the current Result
     pub fn len(&self) -> usize {
         match self {
             MappingPatternResult::Single(_) => 1,
@@ -152,6 +166,8 @@ impl MappingPatternResult {
         }
     }
 
+    /// Check if the current Result is empty
+    /// Only possible to be empty in Multi mode
     pub fn is_empty(&self) -> bool {
         match self {
             MappingPatternResult::Single(_) => false,

@@ -1,3 +1,4 @@
+pub mod index_source;
 pub mod mapping;
 pub mod mapping_pattern;
 pub mod sheet;

@@ -3,9 +3,15 @@ use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::quote;
 use syn::parse_str;
 
+const INDEX_SOURCE_BUF: &str =
+    "just_enough_vcs::system::sheet_system::index_source::IndexSourceBuf";
+const INDEX_SOURCE: &str = "just_enough_vcs::system::sheet_system::index_source::IndexSource";
+
 const LOCAL_MAPPING_PATH: &str = "just_enough_vcs::system::sheet_system::mapping::LocalMapping";
+
 const MAPPING_BUF_PATH: &str = "just_enough_vcs::system::sheet_system::mapping::MappingBuf";
 const MAPPING_PATH: &str = "just_enough_vcs::system::sheet_system::mapping::Mapping";
+
 const LOCAL_MAPPING_FORWARD_PATH: &str =
     "just_enough_vcs::system::sheet_system::mapping::LocalMappingForward";
 
@@ -115,13 +121,14 @@ pub fn mapping_buf(input: TokenStream) -> TokenStream {
 
     let mapping_buf_path: syn::Path =
         parse_str(MAPPING_BUF_PATH).expect("Failed to parse MAPPING_BUF_PATH");
+    let index_source_buf_path: syn::Path =
+        parse_str(INDEX_SOURCE_BUF).expect("Failed to parse INDEX_SOURCE_BUF");
 
     let expanded = quote! {
         #mapping_buf_path::new(
             #sheet.to_string(),
             #path_vec_tokens,
-            #id.to_string(),
-            #ver.to_string()
+            #index_source_buf_path::new(#id.to_string(), #ver.to_string())
         )
     };
 
@@ -135,7 +142,7 @@ pub fn mapping_buf(input: TokenStream) -> TokenStream {
 /// let mapping = mapping!(
 ///     // Map the `version` of index `index_id`
 ///     // to `your_dir/your_file.suffix` in `your_sheet`
-///     "your_sheet:/your_dir/your_file.suffix" => "index_id/version"
+///     "your_sheet:/your_dir/your_file.suffix" => "id/ver"
 /// );
 /// ```
 #[proc_macro]
@@ -176,13 +183,14 @@ pub fn mapping(input: TokenStream) -> TokenStream {
     let path = path_vec.join("/");
 
     let mapping_path: syn::Path = parse_str(MAPPING_PATH).expect("Failed to parse MAPPING_PATH");
+    let index_source_path: syn::Path =
+        parse_str(INDEX_SOURCE).expect("Failed to parse INDEX_SOURCE");
 
     let expanded = quote! {
         #mapping_path::new(
             #sheet,
             #path,
-            #id,
-            #ver
+            #index_source_path::new(#id, #ver)
         )
     };
 
@@ -305,21 +313,22 @@ pub fn local_mapping(input: TokenStream) -> TokenStream {
         Err(err) => return err.to_compile_error().into(),
     };
 
+    let local_mapping_path: syn::Path =
+        parse_str(LOCAL_MAPPING_PATH).expect("Failed to parse LOCAL_MAPPING_PATH");
+    let local_mapping_forward_path: syn::Path =
+        parse_str(LOCAL_MAPPING_FORWARD_PATH).expect("Failed to parse LOCAL_MAPPING_FORWARD_PATH");
+    let index_source_buf_path: syn::Path =
+        parse_str(INDEX_SOURCE_BUF).expect("Failed to parse INDEX_SOURCE_BUF");
+
     match parts {
         LocalMappingParts::Latest(path_str, id, ver) => {
             let path_vec = parse_path_string(&path_str);
             let path_vec_tokens = path_vec_to_tokens(&path_vec);
 
-            let local_mapping_path: syn::Path =
-                parse_str(LOCAL_MAPPING_PATH).expect("Failed to parse LOCAL_MAPPING_PATH");
-            let local_mapping_forward_path: syn::Path = parse_str(LOCAL_MAPPING_FORWARD_PATH)
-                .expect("Failed to parse LOCAL_MAPPING_FORWARD_PATH");
-
             let expanded = quote! {
                 #local_mapping_path::new(
                     #path_vec_tokens,
-                    #id.to_string(),
-                    #ver.to_string(),
+                    #index_source_buf_path::new(#id.to_string(), #ver.to_string()),
                     #local_mapping_forward_path::Latest
                 )
             };
@@ -330,16 +339,10 @@ pub fn local_mapping(input: TokenStream) -> TokenStream {
             let path_vec = parse_path_string(&path_str);
             let path_vec_tokens = path_vec_to_tokens(&path_vec);
 
-            let local_mapping_path: syn::Path =
-                parse_str(LOCAL_MAPPING_PATH).expect("Failed to parse LOCAL_MAPPING_PATH");
-            let local_mapping_forward_path: syn::Path = parse_str(LOCAL_MAPPING_FORWARD_PATH)
-                .expect("Failed to parse LOCAL_MAPPING_FORWARD_PATH");
-
             let expanded = quote! {
                 #local_mapping_path::new(
                     #path_vec_tokens,
-                    #id.to_string(),
-                    #ver.to_string(),
+                    #index_source_buf_path::new(#id.to_string(), #ver.to_string()),
                     #local_mapping_forward_path::Version {
                         version_name: #ver.to_string()
                     }
@@ -352,16 +355,10 @@ pub fn local_mapping(input: TokenStream) -> TokenStream {
             let path_vec = parse_path_string(&path_str);
             let path_vec_tokens = path_vec_to_tokens(&path_vec);
 
-            let local_mapping_path: syn::Path =
-                parse_str(LOCAL_MAPPING_PATH).expect("Failed to parse LOCAL_MAPPING_PATH");
-            let local_mapping_forward_path: syn::Path = parse_str(LOCAL_MAPPING_FORWARD_PATH)
-                .expect("Failed to parse LOCAL_MAPPING_FORWARD_PATH");
-
             let expanded = quote! {
                 #local_mapping_path::new(
                     #path_vec_tokens,
-                    #id.to_string(),
-                    #ver.to_string(),
+                    #index_source_buf_path::new(#id.to_string(), #ver.to_string()),
                     #local_mapping_forward_path::Ref {
                         sheet_name: #ref_name.to_string()
                     }

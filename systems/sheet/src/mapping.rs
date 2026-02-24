@@ -1,20 +1,23 @@
-use string_proc::{
-    format_path::{PathFormatConfig, format_path_str, format_path_str_with_config},
-    snake_case,
-};
+use just_fmt::fmt_path::{PathFormatConfig, fmt_path_str, fmt_path_str_custom};
+
+use crate::{index_source::IndexSource, mapping::error::ParseMappingError};
+
+pub mod error;
+
+// Validation rules for LocalMapping
+// LocalMapping is a key component for writing and reading SheetData
+// According to the SheetData protocol specification, all variable-length fields store length information using the u8 type
+// Therefore, the lengths of the index_id, version, mapping_value, and forward fields must not exceed `u8::MAX`
 
 /// Local mapping
 /// It is stored inside a Sheet and will be exposed externally as Mapping or MappingBuf
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, Clone)]
 pub struct LocalMapping {
     /// The value of the local mapping
     val: Vec<String>,
 
-    /// The ID of the local mapping
-    id: String,
-
-    /// The version of the local mapping
-    ver: String,
+    /// Index source
+    source: IndexSource,
 
     /// The version direction of the local mapping
     forward: LocalMappingForward,
@@ -22,9 +25,10 @@ pub struct LocalMapping {
 
 /// The forward direction of the current Mapping
 /// It indicates the expected asset update method for the current Mapping
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Default, Debug, PartialEq, Eq, Clone)]
 pub enum LocalMappingForward {
     /// Expect the current index version to be the latest
+    #[default]
     Latest,
 
     /// Expect the current index version to point to a specific Ref
@@ -33,28 +37,78 @@ pub enum LocalMappingForward {
     Ref { sheet_name: String },
 
     /// Expect the current index version to point to a specific version
-    Version { version_name: String },
+    Version { version: u16 },
 }
 
 /// Mapping
 /// It stores basic mapping information and only participates in comparison and parsing
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Mapping<'a> {
     sheet_name: &'a str,
     val: &'a str,
-    id: &'a str,
-    ver: &'a str,
+    source: IndexSource,
 }
 
 /// MappingBuf
 /// It stores complete mapping information and participates in complex mapping editing operations like storage and modification
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct MappingBuf {
     sheet_name: String,
     val: Vec<String>,
     val_joined: String,
-    id: String,
-    ver: String,
+    source: IndexSource,
+}
+
+// Implement conversions for LocalMappingForward
+
+impl LocalMappingForward {
+    /// Check if the forward direction length is valid
+    pub fn is_len_valid(&self) -> bool {
+        match self {
+            LocalMappingForward::Latest => true,
+            LocalMappingForward::Ref { sheet_name } => sheet_name.len() <= u8::MAX as usize,
+            LocalMappingForward::Version { version: _ } => true,
+        }
+    }
+
+    /// Get the forward direction type ID
+    pub fn forward_type_id(&self) -> u8 {
+        match self {
+            LocalMappingForward::Latest => 0,
+            LocalMappingForward::Ref { sheet_name: _ } => 1,
+            LocalMappingForward::Version { version: _ } => 2,
+        }
+    }
+
+    /// Unpack into raw information
+    /// (id, len, bytes)
+    pub fn unpack(&self) -> (u8, u8, Vec<u8>) {
+        let b = match self {
+            LocalMappingForward::Latest => vec![],
+            LocalMappingForward::Ref { sheet_name } => sheet_name.as_bytes().to_vec(),
+            LocalMappingForward::Version {
+                version: version_name,
+            } => version_name.to_be_bytes().to_vec(),
+        };
+        (self.forward_type_id(), b.len() as u8, b)
+    }
+
+    /// Reconstruct into a forward direction
+    pub fn pack(id: u8, bytes: &[u8]) -> Option<Self> {
+        if bytes.len() > u8::MAX as usize {
+            return None;
+        }
+        match id {
+            0 => Some(Self::Latest),
+            1 => Some(Self::Ref {
+                sheet_name: String::from_utf8(bytes.to_vec()).ok()?,
+            }),
+            2 => Some(Self::Version {
+                version: u16::from_be_bytes(bytes.try_into().ok()?),
+            }),
+            _ => None,
+        }
+    }
 }
 
 // Implement creation and mutual conversion for MappingBuf, LocalMapping and Mapping
@@ -63,15 +117,23 @@ impl LocalMapping {
     /// Create a new LocalMapping
     pub fn new(
         val: Vec<String>,
-        id: impl Into<String>,
-        ver: impl Into<String>,
+        source: IndexSource,
         forward: LocalMappingForward,
-    ) -> Self {
-        Self {
-            val,
-            id: id.into(),
-            ver: ver.into(),
-            forward,
+    ) -> Option<Self> {
+        // Note:
+        // LocalMapping will be stored in SheetData
+        // Strict validity checks are required; the lengths of forward, and even val must not exceed limits
+        // Otherwise, errors will occur that prevent correct writing to SheetData
+        let valid = forward.is_len_valid() && val.join("/").len() <= u8::MAX as usize;
+
+        if valid {
+            Some(Self {
+                val,
+                source,
+                forward,
+            })
+        } else {
+            None
         }
     }
 
@@ -80,14 +142,19 @@ impl LocalMapping {
         &self.val
     }
 
+    /// Get the IndexSource of LocalMapping
+    pub fn index_source(&self) -> IndexSource {
+        self.source
+    }
+
     /// Get the mapped index ID of LocalMapping
-    pub fn mapped_id(&self) -> &String {
-        &self.id
+    pub fn mapped_id(&self) -> u32 {
+        self.source.id()
     }
 
     /// Get the mapped index version of LocalMapping
-    pub fn mapped_version(&self) -> &String {
-        &self.ver
+    pub fn mapped_version(&self) -> u16 {
+        self.source.version()
     }
 
     /// Get the forward direction of LocalMapping
@@ -97,35 +164,24 @@ impl LocalMapping {
 
     /// Clone and generate a MappingBuf from LocalMapping
     pub fn to_mapping_buf_cloned(&self, sheet_name: impl Into<String>) -> MappingBuf {
-        MappingBuf::new(
-            sheet_name.into(),
-            self.val.clone(),
-            self.id.clone(),
-            self.ver.clone(),
-        )
+        MappingBuf::new(sheet_name.into(), self.val.clone(), self.source.clone())
     }
 
     /// Generate a MappingBuf from LocalMapping
     pub fn to_mapping_buf(self, sheet_name: impl Into<String>) -> MappingBuf {
-        MappingBuf::new(sheet_name.into(), self.val, self.id, self.ver)
+        MappingBuf::new(sheet_name.into(), self.val, self.source)
     }
 }
 
 impl MappingBuf {
     /// Create a new MappingBuf
-    pub fn new(
-        sheet_name: impl Into<String>,
-        val: Vec<String>,
-        id: impl Into<String>,
-        ver: impl Into<String>,
-    ) -> Self {
+    pub fn new(sheet_name: impl Into<String>, val: Vec<String>, source: IndexSource) -> Self {
         let val_joined = val.join("/");
         Self {
             sheet_name: sheet_name.into(),
             val,
             val_joined,
-            id: id.into(),
-            ver: ver.into(),
+            source,
         }
     }
 
@@ -144,45 +200,56 @@ impl MappingBuf {
         &self.val_joined
     }
 
+    /// Get the IndexSource of MappingBuf
+    pub fn index_source(&self) -> IndexSource {
+        self.source
+    }
+
     /// Get the mapped index ID of MappingBuf
-    pub fn mapped_id(&self) -> &String {
-        &self.id
+    pub fn mapped_id(&self) -> u32 {
+        self.source.id()
     }
 
     /// Get the mapped index version of MappingBuf
-    pub fn mapped_version(&self) -> &String {
-        &self.ver
+    pub fn mapped_version(&self) -> u16 {
+        self.source.version()
     }
 
     /// Generate a Mapping from MappingBuf
     pub fn as_mapping(&self) -> Mapping<'_> {
-        Mapping::new(&self.sheet_name, &self.val_joined, &self.id, &self.ver)
+        Mapping::new(&self.sheet_name, &self.val_joined, self.source)
     }
 
     /// Clone and generate a LocalMapping from MappingBuf
-    pub fn to_local_mapping_cloned(&self, forward: &LocalMappingForward) -> LocalMapping {
-        LocalMapping::new(
-            self.val.clone(),
-            self.id.clone(),
-            self.ver.clone(),
-            forward.clone(),
-        )
+    ///
+    /// If any of the following conditions exist in MappingBuf or its members,
+    /// the conversion will be invalid and return None
+    /// - The final length of the recorded mapping value exceeds `u8::MAX`
+    ///
+    /// Additionally, if the length of the given forward value exceeds `u8::MAX`, it will also return None
+    pub fn to_local_mapping_cloned(&self, forward: &LocalMappingForward) -> Option<LocalMapping> {
+        LocalMapping::new(self.val.clone(), self.source.clone(), forward.clone())
     }
 
     /// Generate a LocalMapping from MappingBuf
-    pub fn to_local_mapping(self, forward: LocalMappingForward) -> LocalMapping {
-        LocalMapping::new(self.val, self.id, self.ver, forward)
+    ///
+    /// If any of the following conditions exist in MappingBuf or its members,
+    /// the conversion will be invalid and return None
+    /// - The final length of the recorded mapping value exceeds `u8::MAX`
+    ///
+    /// Additionally, if the length of the given forward value exceeds `u8::MAX`, it will also return None
+    pub fn to_local_mapping(self, forward: LocalMappingForward) -> Option<LocalMapping> {
+        LocalMapping::new(self.val, self.source, forward)
     }
 }
 
 impl<'a> Mapping<'a> {
     /// Create a new Mapping
-    pub fn new(sheet_name: &'a str, val: &'a str, id: &'a str, ver: &'a str) -> Self {
+    pub fn new(sheet_name: &'a str, val: &'a str, source: IndexSource) -> Self {
         Self {
             sheet_name,
             val,
-            id,
-            ver,
+            source,
         }
     }
 
@@ -193,7 +260,7 @@ impl<'a> Mapping<'a> {
 
     /// Build a Vec of Mapping values from the stored address
     pub fn value(&self) -> Vec<String> {
-        format_path_str(self.val.to_string())
+        fmt_path_str(self.val.to_string())
             .unwrap_or_default()
             .split("/")
             .map(|s| s.to_string())
@@ -205,50 +272,87 @@ impl<'a> Mapping<'a> {
         &self.val
     }
 
+    /// Get the IndexSource of Mapping
+    pub fn index_source(&self) -> IndexSource {
+        self.source
+    }
+
     /// Get the mapped index ID of Mapping
-    pub fn mapped_id(&self) -> &str {
-        &self.id
+    pub fn mapped_id(&self) -> u32 {
+        self.source.id()
     }
 
     /// Get the mapped index version of Mapping
-    pub fn mapped_version(&self) -> &str {
-        &self.ver
+    pub fn mapped_version(&self) -> u16 {
+        self.source.version()
     }
 
     /// Generate a MappingBuf from Mapping
     pub fn to_mapping_buf(&self) -> MappingBuf {
         MappingBuf::new(
             self.sheet_name.to_string(),
-            format_path_str(self.val)
+            fmt_path_str(self.val)
                 .unwrap_or_default()
                 .split('/')
                 .into_iter()
                 .map(|s| s.to_string())
                 .collect(),
-            self.id.to_string(),
-            self.ver.to_string(),
+            self.source,
         )
     }
 
-    /// Generate a LocalMapping from MappingBuf
-    pub fn to_local_mapping(self, forward: LocalMappingForward) -> LocalMapping {
+    /// Generate a LocalMapping from Mapping
+    ///
+    /// If any of the following conditions exist in Mapping or its members,
+    /// the conversion will be invalid and return None
+    /// - The final length of the recorded mapping value exceeds `u8::MAX`
+    ///
+    /// Additionally, if the length of the given forward value exceeds `u8::MAX`, it will also return None
+    pub fn to_local_mapping(self, forward: LocalMappingForward) -> Option<LocalMapping> {
         LocalMapping::new(
-            format_path_str(self.val)
+            fmt_path_str(self.val)
                 .unwrap_or_default()
                 .split("/")
                 .into_iter()
                 .map(|s| s.to_string())
                 .collect(),
-            self.id.to_string(),
-            self.ver.to_string(),
+            self.source,
             forward,
         )
+    }
+}
+
+impl<'a> From<Mapping<'a>> for Vec<String> {
+    fn from(mapping: Mapping<'a>) -> Vec<String> {
+        mapping.value()
     }
 }
 
 impl<'a> From<Mapping<'a>> for MappingBuf {
     fn from(mapping: Mapping<'a>) -> Self {
         mapping.to_mapping_buf()
+    }
+}
+
+impl<'a> TryFrom<Mapping<'a>> for LocalMapping {
+    type Error = ParseMappingError;
+
+    fn try_from(value: Mapping<'a>) -> Result<Self, Self::Error> {
+        match value.to_local_mapping(LocalMappingForward::Latest) {
+            Some(m) => Ok(m),
+            None => Err(ParseMappingError::InvalidMapping),
+        }
+    }
+}
+
+impl TryFrom<MappingBuf> for LocalMapping {
+    type Error = ParseMappingError;
+
+    fn try_from(value: MappingBuf) -> Result<Self, Self::Error> {
+        match value.to_local_mapping(LocalMappingForward::Latest) {
+            Some(m) => Ok(m),
+            None => Err(ParseMappingError::InvalidMapping),
+        }
     }
 }
 
@@ -261,31 +365,73 @@ impl<'a> From<Mapping<'a>> for MappingBuf {
 // When presenting, only the snake_case converted sheet_name and the path formed by joining val are shown.
 
 macro_rules! fmt_mapping {
-    ($f:expr, $sheet_name:expr, $val:expr) => {
+    ($f:expr, $sheet_name:expr, $val:expr, $source:expr) => {
         write!(
             $f,
-            "{}:/{}",
-            snake_case!($sheet_name),
-            format_path_str($val).unwrap_or_default()
+            "\"{}:/{}\" => \"{}\"",
+            just_fmt::snake_case!($sheet_name),
+            just_fmt::fmt_path::fmt_path_str($val).unwrap_or_default(),
+            $source
         )
     };
 }
 
 impl<'a> std::fmt::Display for Mapping<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fmt_mapping!(f, self.sheet_name, self.val)
+        fmt_mapping!(f, self.sheet_name, self.val, self.source.to_string())
     }
 }
 
 impl std::fmt::Display for MappingBuf {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fmt_mapping!(f, self.sheet_name.to_string(), &self.val.join("/"))
+        fmt_mapping!(
+            f,
+            self.sheet_name.to_string(),
+            &self.val.join("/"),
+            self.source.to_string()
+        )
     }
 }
 
 impl std::fmt::Display for LocalMapping {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.val.join("/"))
+        match &self.forward {
+            LocalMappingForward::Latest => {
+                write!(
+                    f,
+                    "\"{}\" => \"{}\"",
+                    self.val.join("/"),
+                    self.source.to_string()
+                )
+            }
+            LocalMappingForward::Ref { sheet_name } => {
+                write!(
+                    f,
+                    "\"{}\" => \"{}\" => \"{}\"",
+                    self.val.join("/"),
+                    self.source.to_string(),
+                    sheet_name
+                )
+            }
+            LocalMappingForward::Version { version } => {
+                if &self.mapped_version() == version {
+                    write!(
+                        f,
+                        "\"{}\" == \"{}\"",
+                        self.val.join("/"),
+                        self.source.to_string(),
+                    )
+                } else {
+                    write!(
+                        f,
+                        "\"{}\" => \"{}\" == \"{}\"",
+                        self.val.join("/"),
+                        self.source.to_string(),
+                        version
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -312,14 +458,19 @@ impl MappingBuf {
         self.val_joined = self.val.join("/");
     }
 
+    /// Replace the current IndexSource
+    pub fn replace_source(&mut self, new_source: IndexSource) {
+        self.source = new_source;
+    }
+
     /// Set the mapped index ID of the current MappingBuf
-    pub fn set_mapped_id(&mut self, id: impl Into<String>) {
-        self.id = id.into();
+    pub fn set_mapped_id(&mut self, id: u32) {
+        self.source.set_id(id);
     }
 
     /// Set the mapped index version of the current MappingBuf
-    pub fn set_mapped_version(&mut self, version: impl Into<String>) {
-        self.ver = version.into();
+    pub fn set_mapped_version(&mut self, version: u16) {
+        self.source.set_version(version);
     }
 }
 
@@ -337,14 +488,19 @@ impl LocalMapping {
         self.val = val;
     }
 
+    /// Replace the current IndexSource
+    pub fn replace_source(&mut self, new_source: IndexSource) {
+        self.source = new_source;
+    }
+
     /// Set the mapped index ID of the current LocalMapping
-    pub fn set_mapped_id(&mut self, id: impl Into<String>) {
-        self.id = id.into();
+    pub fn set_mapped_id(&mut self, id: u32) {
+        self.source.set_id(id);
     }
 
     /// Set the mapped index version of the current LocalMapping
-    pub fn set_mapped_version(&mut self, version: impl Into<String>) {
-        self.ver = version.into();
+    pub fn set_mapped_version(&mut self, version: u16) {
+        self.source.set_version(version);
     }
 
     /// Set the forward direction of the current LocalMapping
@@ -355,7 +511,7 @@ impl LocalMapping {
 
 #[inline(always)]
 fn join_helper(nodes: String, mut mapping_buf_val: Vec<String>) -> Vec<String> {
-    let formatted = format_path_str_with_config(
+    let formatted = fmt_path_str_custom(
         nodes,
         &PathFormatConfig {
             // Do not process ".." because it is used to go up one level
@@ -383,40 +539,55 @@ fn join_helper(nodes: String, mut mapping_buf_val: Vec<String>) -> Vec<String> {
     return mapping_buf_val;
 }
 
-// Implement mutual comparison for LocalMapping, MappingBuf, and Mapping
-
-impl<'a> PartialEq<Mapping<'a>> for LocalMapping {
-    fn eq(&self, other: &Mapping<'a>) -> bool {
-        self.val.join("/") == other.val && self.id == other.id && self.ver == other.ver
-    }
-}
-
-impl<'a> PartialEq<LocalMapping> for Mapping<'a> {
-    fn eq(&self, other: &LocalMapping) -> bool {
-        other == self
-    }
-}
-
-impl PartialEq<MappingBuf> for LocalMapping {
-    fn eq(&self, other: &MappingBuf) -> bool {
-        self.val == other.val && self.id == other.id && self.ver == other.ver
-    }
-}
-
-impl PartialEq<LocalMapping> for MappingBuf {
-    fn eq(&self, other: &LocalMapping) -> bool {
-        other == self
-    }
-}
+// Implement mutual comparison for MappingBuf and Mapping
+//
+// Note:
+// When either side's ID or Version is None, it indicates an invalid Source
+// The comparison result is false
 
 impl<'a> PartialEq<MappingBuf> for Mapping<'a> {
     fn eq(&self, other: &MappingBuf) -> bool {
-        self.val == other.val_joined && self.id == other.id && self.ver == other.ver
+        self.val == other.val_joined
+            && self.source.id() == other.source.id()
+            && self.source.version() == other.source.version()
     }
 }
 
-impl<'a> PartialEq<Mapping<'a>> for MappingBuf {
-    fn eq(&self, other: &Mapping<'a>) -> bool {
-        other == self
+// Implement comparison between LocalMappings
+//
+// Note:
+// LocalMappings are considered equal as long as their val (Node) values are the same
+
+impl PartialEq for LocalMapping {
+    fn eq(&self, other: &Self) -> bool {
+        self.val == other.val
+    }
+}
+
+impl PartialEq<Vec<String>> for LocalMapping {
+    fn eq(&self, other: &Vec<String>) -> bool {
+        &self.val == other
+    }
+}
+
+impl Eq for LocalMapping {}
+
+impl std::hash::Hash for LocalMapping {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.val.hash(state);
+    }
+}
+
+// Implement borrowing for LocalMapping and MappingBuf
+
+impl std::borrow::Borrow<Vec<String>> for LocalMapping {
+    fn borrow(&self) -> &Vec<String> {
+        &self.val
+    }
+}
+
+impl std::borrow::Borrow<Vec<String>> for MappingBuf {
+    fn borrow(&self) -> &Vec<String> {
+        &self.val
     }
 }
