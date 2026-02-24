@@ -425,6 +425,8 @@ impl Sheet {
                     let val_b = b.value().clone();
                     a.set_value(val_b);
                     b.set_value(val_a);
+                    self.data.mappings.insert(a);
+                    self.data.mappings.insert(b);
                 }
                 SheetEditItem::EraseMapping { node } => {
                     if !self.data.mappings.remove(&node) {
