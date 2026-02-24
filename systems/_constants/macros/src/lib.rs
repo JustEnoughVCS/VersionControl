@@ -1,6 +1,6 @@
+use just_fmt::pascal_case;
 use proc_macro::TokenStream;
 use quote::quote;
-use string_proc::pascal_case;
 use syn::{Expr, ExprLit, Ident, Item, ItemMod, Lit, LitStr, parse_macro_input};
 
 #[proc_macro_attribute]

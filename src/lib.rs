@@ -63,7 +63,7 @@ pub mod utils {
     }
 
     // Feature `string_proc`
-    #[cfg(feature = "string_proc")]
+    #[cfg(all(feature = "deprecated", feature = "string_proc"))]
     pub mod string_proc {
         extern crate string_proc;
         pub use string_proc::*;

@@ -22,6 +22,7 @@ sha1_hash = []
 tcp_connection = []
 string_proc = []
 lib = []
+deprecated = []
 
 [workspace]
 members = [

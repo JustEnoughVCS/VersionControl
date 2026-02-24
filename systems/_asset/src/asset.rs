@@ -384,7 +384,7 @@ async fn check_handle_is_cross_directory(
 
 fn check_path(file_name: &OsStr) -> Result<Cow<'_, str>, PrecheckFailed> {
     let file_name_str = file_name.to_string_lossy();
-    
+
     // When operating on a TEMP_FILE or LOCK_FILE,
     // names like `~~foo.txt` or `.tmp_.tmp_foo.txt` would be generated
     // This is not expected and should result in an error
