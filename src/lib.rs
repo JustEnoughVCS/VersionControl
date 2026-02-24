@@ -48,6 +48,13 @@ pub mod utils {
         pub use data_struct::*;
     }
 
+    // Feature `hex_display`
+    #[cfg(feature = "hex_display")]
+    pub mod hex_display {
+        extern crate hex_display;
+        pub use hex_display::*;
+    }
+
     // Feature `sha1_hash`
     #[cfg(feature = "sha1_hash")]
     pub mod sha1_hash {
