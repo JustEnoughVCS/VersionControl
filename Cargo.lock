@@ -337,10 +337,10 @@ dependencies = [
 name = "constants_macros"
 version = "0.1.0"
 dependencies = [
+ "just_fmt",
  "proc-macro2",
  "quote",
  "regex",
- "string_proc",
  "syn",
 ]
 
@@ -695,6 +695,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
+name = "hex_display"
+version = "0.1.0"
+
+[[package]]
 name = "hmac"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -802,6 +806,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "just_fmt"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "61c95f58372d20b5d57843d9e060974f5b15619c77ac52df281f344f97681c5b"
+
+[[package]]
 name = "jvlib"
 version = "0.1.0"
 dependencies = [
@@ -867,6 +877,15 @@ name = "memchr"
 version = "2.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273"
+
+[[package]]
+name = "memmap2"
+version = "0.9.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "744133e4a0e0a658e1374cf3bf8e415c4052a15a111acd372764c55b4177d490"
+dependencies = [
+ "libc",
+]
 
 [[package]]
 name = "mio"
@@ -1457,8 +1476,14 @@ name = "sheet_system"
 version = "0.1.0"
 dependencies = [
  "asset_system",
+ "constants",
+ "hex_display",
+ "just_fmt",
+ "memmap2",
+ "sha2 0.10.9",
  "sheet_system_macros",
- "string_proc",
+ "thiserror 1.0.69",
+ "tokio",
 ]
 
 [[package]]
