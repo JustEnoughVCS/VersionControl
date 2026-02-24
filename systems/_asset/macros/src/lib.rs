@@ -1,6 +1,6 @@
+use just_fmt::snake_case;
 use proc_macro::TokenStream;
 use quote::quote;
-use string_proc::snake_case;
 use syn::parse_macro_input;
 
 #[proc_macro_derive(RWDataTest)]

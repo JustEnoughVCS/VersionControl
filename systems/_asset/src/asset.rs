@@ -7,7 +7,7 @@ use std::{
 };
 
 use constants::{LOCK_FILE_PREFIX, TEMP_FILE_PREFIX};
-use string_proc::format_path::format_path;
+use just_fmt::fmt_path::fmt_path;
 
 use crate::{
     error::{DataApplyError, DataReadError, DataWriteError, HandleLockError, PrecheckFailed},
@@ -138,7 +138,7 @@ where
         let mut edit_path = self.path.clone();
         edit_path.set_file_name(format!("{}{}", LOCK_FILE_PREFIX, file_name_str));
 
-        let Ok(edit_path) = format_path(edit_path) else {
+        let Ok(edit_path) = fmt_path(edit_path) else {
             return Err(HandleLockError::ParsePathFailed);
         };
 
@@ -166,7 +166,7 @@ where
         let mut temp_path = self.path.clone();
         temp_path.set_file_name(format!("{}{}", TEMP_FILE_PREFIX, file_name_str));
 
-        let Ok(edit_path) = format_path(temp_path) else {
+        let Ok(edit_path) = fmt_path(temp_path) else {
             return Err(HandleLockError::ParsePathFailed);
         };
 
@@ -264,10 +264,10 @@ pub async fn apply_precheck<D>(handle: &Handle<D>) -> Result<(), PrecheckFailed>
 where
     D: RWData<D>,
 {
-    let Ok(from) = format_path(&handle.temp_path) else {
+    let Ok(from) = fmt_path(&handle.temp_path) else {
         return Err(PrecheckFailed::FormatPathFailed);
     };
-    let Ok(to) = format_path(&handle.asset_path) else {
+    let Ok(to) = fmt_path(&handle.asset_path) else {
         return Err(PrecheckFailed::FormatPathFailed);
     };
 

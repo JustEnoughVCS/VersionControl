@@ -90,9 +90,9 @@ checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
 name = "asset_macros"
 version = "0.1.0"
 dependencies = [
+ "just_fmt",
  "proc-macro2",
  "quote",
- "string_proc",
  "syn",
 ]
 
@@ -102,7 +102,7 @@ version = "0.1.0"
 dependencies = [
  "asset_macros",
  "constants",
- "string_proc",
+ "just_fmt",
  "thiserror 1.0.69",
  "tokio",
  "winapi",
