@@ -119,8 +119,8 @@ where
 
     /// Get the lock file name for the current `ReadOnlyAsset`
     /// ```
-    /// # use asset::rw::FooData;
-    /// # use asset::asset::ReadOnlyAsset;
+    /// # use asset_system::rw::FooData;
+    /// # use asset_system::asset::ReadOnlyAsset;
     /// let foo_asset = ReadOnlyAsset::<FooData>::from("my/foo.txt");
     /// let lock_path = foo_asset
     ///     .get_lock_path()
@@ -147,8 +147,8 @@ where
 
     /// Get the name of the temporary editing file for the current `ReadOnlyAsset`
     /// ```
-    /// # use asset::rw::FooData;
-    /// # use asset::asset::ReadOnlyAsset;
+    /// # use asset_system::rw::FooData;
+    /// # use asset_system::asset::ReadOnlyAsset;
     /// let foo_asset = ReadOnlyAsset::<FooData>::from("my/foo.txt");
     /// let temp_path = foo_asset
     ///     .get_temp_path()
