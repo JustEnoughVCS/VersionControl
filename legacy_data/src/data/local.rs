@@ -1,12 +1,13 @@
 use std::{
     collections::HashMap,
     env::current_dir,
+    io::ErrorKind,
     path::{Path, PathBuf},
     sync::Arc,
 };
 
 use cfg_file::config::ConfigFile;
-use string_proc::format_path::format_path;
+use just_fmt::fmt_path::fmt_path;
 use tokio::{fs, sync::Mutex};
 use vcs_docs::docs::READMES_LOCAL_WORKSPACE_TODOLIST;
 
@@ -176,7 +177,9 @@ impl LocalWorkspace {
                         && let Some(extension) = path.extension()
                         && extension == suffix.trim_start_matches('.')
                     {
-                        let formatted_path = format_path(path)?;
+                        let formatted_path = fmt_path(path).map_err(|e| {
+                            std::io::Error::new(ErrorKind::InvalidInput, e.to_string())
+                        })?;
                         paths.push(formatted_path);
                     }
                 }

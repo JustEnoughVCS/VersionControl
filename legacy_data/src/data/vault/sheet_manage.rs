@@ -1,7 +1,7 @@
 use std::{collections::HashMap, io::Error};
 
 use cfg_file::config::ConfigFile;
-use string_proc::snake_case;
+use just_fmt::snake_case;
 use tokio::fs;
 
 use crate::{

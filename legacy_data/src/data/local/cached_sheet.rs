@@ -1,7 +1,10 @@
-use std::{io::Error, path::PathBuf};
+use std::{
+    io::{Error, ErrorKind},
+    path::PathBuf,
+};
 
 use cfg_file::config::ConfigFile;
-use string_proc::{format_path::format_path, snake_case};
+use just_fmt::{fmt_path::fmt_path, snake_case};
 use tokio::fs;
 
 use crate::{
@@ -85,7 +88,10 @@ impl CachedSheet {
                 && let Some(file_name) = path.file_name().and_then(|n| n.to_str())
                 && file_name.ends_with(CLIENT_SUFFIX_CACHED_SHEET_FILE)
             {
-                sheet_paths.push(format_path(workspace_path.join(path))?);
+                sheet_paths
+                    .push(fmt_path(workspace_path.join(path)).map_err(|e| {
+                        std::io::Error::new(ErrorKind::InvalidInput, e.to_string())
+                    })?);
             }
         }
 

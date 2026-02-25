@@ -5,8 +5,8 @@ use std::{
 };
 
 use cfg_file::{ConfigFile, config::ConfigFile};
+use just_fmt::{dot_case, snake_case};
 use serde::{Deserialize, Serialize};
-use string_proc::{dot_case, snake_case};
 use tcp_connection::instance::ConnectionInstance;
 use tokio::fs;
 use uuid::Uuid;

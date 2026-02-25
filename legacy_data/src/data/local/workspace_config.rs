@@ -1,11 +1,11 @@
 use cfg_file::ConfigFile;
 use cfg_file::config::ConfigFile;
+use just_fmt::snake_case;
 use serde::{Deserialize, Serialize};
 use std::io::Error;
 use std::net::SocketAddr;
 use std::path::Path;
 use std::path::PathBuf;
-use string_proc::snake_case;
 
 use crate::constants::CLIENT_FILE_WORKSPACE;
 use crate::constants::CLIENT_FOLDER_WORKSPACE_ROOT_NAME;

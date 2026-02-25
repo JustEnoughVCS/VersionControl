@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use cfg_file::ConfigFile;
+use just_fmt::snake_case;
 use serde::{Deserialize, Serialize};
-use string_proc::snake_case;
 
 pub type MemberId = String;
 

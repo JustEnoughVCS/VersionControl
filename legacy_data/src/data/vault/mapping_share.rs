@@ -1,9 +1,9 @@
 use std::{collections::HashMap, io::Error, path::PathBuf};
 
 use cfg_file::{ConfigFile, config::ConfigFile};
+use just_fmt::{fmt_path::fmt_path_str, snake_case};
 use rand::{Rng, rng};
 use serde::{Deserialize, Serialize};
-use string_proc::{format_path, snake_case};
 use tokio::fs;
 
 use crate::{
@@ -89,7 +89,7 @@ impl Vault {
             .replace(KEY_SHARE_ID, &share_id);
 
         // Use format_path to normalize the path
-        match format_path::format_path_str(&path_str) {
+        match fmt_path_str(&path_str) {
             Ok(normalized_path) => self.vault_path().join(normalized_path),
             Err(_) => {
                 // Fallback to original behavior if formatting fails

@@ -89,7 +89,7 @@ fn generate_action_struct(input_fn: ItemFn, _is_local: bool) -> proc_macro2::Tok
 
         impl action_system::action::Action<#arg_type, #return_type> for #struct_name {
             fn action_name() -> &'static str {
-                Box::leak(string_proc::snake_case!(stringify!(#action_name_ident)).into_boxed_str())
+                Box::leak(just_fmt::snake_case!(stringify!(#action_name_ident)).into_boxed_str())
             }
 
             fn is_remote_action() -> bool {
@@ -116,7 +116,7 @@ fn generate_action_struct(input_fn: ItemFn, _is_local: bool) -> proc_macro2::Tok
                     tcp_connection::error::TcpTargetError::Serialization(e.to_string())
                 })?;
             let result_json = pool.process_json(
-                Box::leak(string_proc::snake_case!(stringify!(#action_name_ident)).into_boxed_str()),
+                Box::leak(just_fmt::snake_case!(stringify!(#action_name_ident)).into_boxed_str()), // LEAK??? OH SHIT
                 ctx,
                 args_json,
             ).await?;

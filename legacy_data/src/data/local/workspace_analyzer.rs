@@ -4,9 +4,9 @@ use std::{
     path::PathBuf,
 };
 
+use just_fmt::fmt_path::fmt_path;
 use serde::Serialize;
 use sha1_hash::calc_sha1_multi;
-use string_proc::format_path::format_path;
 use walkdir::WalkDir;
 
 use crate::data::{
@@ -116,7 +116,7 @@ impl<'a> AnalyzeResult<'a> {
                 if entry.file_type().is_file()
                     && let Ok(relative_path) = entry.path().strip_prefix(local_path)
                 {
-                    let format = format_path(relative_path.to_path_buf());
+                    let format = fmt_path(relative_path.to_path_buf());
                     let Ok(format) = format else {
                         continue;
                     };

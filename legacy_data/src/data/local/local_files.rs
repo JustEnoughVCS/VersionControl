@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use string_proc::format_path::format_path;
+use just_fmt::fmt_path::fmt_path;
 use tokio::fs;
 
 use crate::constants::CLIENT_FOLDER_WORKSPACE_ROOT_NAME;
@@ -59,7 +59,7 @@ async fn format_input_paths(
             continue;
         }
 
-        match format_path(path) {
+        match fmt_path(path) {
             Ok(path) => real_paths.push(path),
             Err(e) => {
                 return Err(std::io::Error::new(

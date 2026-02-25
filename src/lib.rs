@@ -68,11 +68,4 @@ pub mod utils {
         extern crate tcp_connection;
         pub use tcp_connection::*;
     }
-
-    // Feature `string_proc`
-    #[cfg(all(feature = "deprecated", feature = "string_proc"))]
-    pub mod string_proc {
-        extern crate string_proc;
-        pub use string_proc::*;
-    }
 }

@@ -1,7 +1,0 @@
-[package]
-name = "string_proc"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-strip-ansi-escapes = "0.2.1"

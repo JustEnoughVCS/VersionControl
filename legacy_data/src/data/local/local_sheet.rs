@@ -1,8 +1,13 @@
-use std::{collections::HashMap, io::Error, path::PathBuf, time::SystemTime};
+use std::{
+    collections::HashMap,
+    io::{Error, ErrorKind},
+    path::PathBuf,
+    time::SystemTime,
+};
 
 use ::serde::{Deserialize, Serialize};
 use cfg_file::{ConfigFile, config::ConfigFile};
-use string_proc::format_path::format_path;
+use just_fmt::fmt_path::fmt_path;
 
 use crate::{
     constants::CLIENT_FILE_LOCAL_SHEET_NOSET,
@@ -278,7 +283,8 @@ impl LocalSheetData {
         path: &LocalFilePathBuf,
         mapping: LocalMappingMetadata,
     ) -> Result<(), std::io::Error> {
-        let path = format_path(path)?;
+        let path = fmt_path(path)
+            .map_err(|e| std::io::Error::new(ErrorKind::InvalidInput, e.to_string()))?;
         if self.mapping.contains_key(&path) || self.vfs.contains_key(&mapping.mapping_vfid) {
             return Err(Error::new(
                 std::io::ErrorKind::AlreadyExists,
@@ -297,8 +303,10 @@ impl LocalSheetData {
         from: &LocalFilePathBuf,
         to: &LocalFilePathBuf,
     ) -> Result<(), std::io::Error> {
-        let from = format_path(from)?;
-        let to = format_path(to)?;
+        let from = fmt_path(from)
+            .map_err(|e| std::io::Error::new(ErrorKind::InvalidInput, e.to_string()))?;
+        let to = fmt_path(to)
+            .map_err(|e| std::io::Error::new(ErrorKind::InvalidInput, e.to_string()))?;
         if self.mapping.contains_key(&to) {
             return Err(Error::new(
                 std::io::ErrorKind::AlreadyExists,
@@ -325,7 +333,8 @@ impl LocalSheetData {
         &mut self,
         path: &LocalFilePathBuf,
     ) -> Result<LocalMappingMetadata, std::io::Error> {
-        let path = format_path(path)?;
+        let path = fmt_path(path)
+            .map_err(|e| std::io::Error::new(ErrorKind::InvalidInput, e.to_string()))?;
         match self.mapping.remove(&path) {
             Some(mapping) => {
                 self.vfs.remove(&mapping.mapping_vfid);
@@ -343,7 +352,8 @@ impl LocalSheetData {
         &self,
         path: &LocalFilePathBuf,
     ) -> Result<&LocalMappingMetadata, std::io::Error> {
-        let path = format_path(path)?;
+        let path = fmt_path(path)
+            .map_err(|e| std::io::Error::new(ErrorKind::InvalidInput, e.to_string()))?;
         let Some(data) = self.mapping.get(&path) else {
             return Err(Error::new(
                 std::io::ErrorKind::NotFound,
@@ -358,7 +368,8 @@ impl LocalSheetData {
         &mut self,
         path: &LocalFilePathBuf,
     ) -> Result<&mut LocalMappingMetadata, std::io::Error> {
-        let path = format_path(path)?;
+        let path = fmt_path(path)
+            .map_err(|e| std::io::Error::new(ErrorKind::InvalidInput, e.to_string()))?;
         let Some(data) = self.mapping.get_mut(&path) else {
             return Err(Error::new(
                 std::io::ErrorKind::NotFound,

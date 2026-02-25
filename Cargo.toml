@@ -15,14 +15,12 @@ utils = [
     "hex_display",
     "sha1_hash",
     "tcp_connection",
-    "string_proc",
 ]
 cfg_file = []
 data_struct = []
 hex_display = []
 sha1_hash = []
 tcp_connection = []
-string_proc = []
 lib = []
 deprecated = []
 
@@ -52,7 +50,6 @@ members = [
     "legacy_data",
     "legacy_data/tests",
     "legacy_actions",
-    "utils/string_proc", # Will be gradually migrated to `just_fmt`
     # LEGACY AREA
 ]
 
@@ -95,7 +92,6 @@ data_struct = { path = "utils/data_struct" }
 hex_display = { path = "utils/hex_display" }
 sha1_hash = { path = "utils/sha1_hash" }
 tcp_connection = { path = "utils/tcp_connection" }
-string_proc = { path = "utils/string_proc" }
 
 # Systems
 asset_system = { path = "systems/_asset" }
