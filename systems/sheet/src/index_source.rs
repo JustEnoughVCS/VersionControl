@@ -1,6 +1,8 @@
+use serde::{Deserialize, Serialize};
+
 /// IndexSource
 /// Points to a unique resource address in Vault
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct IndexSource {
     /// The index ID of the resource
     id: u32,

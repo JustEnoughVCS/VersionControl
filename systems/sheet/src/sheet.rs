@@ -6,6 +6,7 @@ use std::{
 };
 
 use memmap2::Mmap;
+use serde::{Deserialize, Serialize};
 use tokio::fs;
 
 use crate::{
@@ -25,7 +26,7 @@ pub mod writer;
 // Format
 pub mod v1;
 
-#[derive(Default, Debug, Clone, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Sheet {
     /// Sheet Name
     name: String,
@@ -40,7 +41,7 @@ pub struct Sheet {
 /// Full Sheet information
 ///
 /// Used to wrap as a Sheet object for editing and persistence
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SheetData {
     /// All local mappings
     mappings: HashSet<LocalMapping>,
@@ -55,7 +56,7 @@ pub struct SheetDataMmap {
 ///
 /// Stored in the Sheet, records the editing operations that **will** be performed on its SheetData
 /// The content will be cleared after the edits are applied
-#[derive(Default, Debug, Clone, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SheetEdit {
     /// Edit history
     list: Vec<SheetEditItem>,
@@ -76,7 +77,7 @@ impl SheetEdit {
     }
 }
 
-#[derive(Default, Debug, Clone, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum SheetEditItem {
     /// Do nothing, this entry is not included in checksum and audit
     #[default]

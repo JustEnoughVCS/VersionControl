@@ -1,4 +1,5 @@
 use just_fmt::fmt_path::{PathFormatConfig, fmt_path_str, fmt_path_str_custom};
+use serde::{Deserialize, Serialize};
 
 use crate::{index_source::IndexSource, mapping::error::ParseMappingError};
 
@@ -11,7 +12,7 @@ pub mod error;
 
 /// Local mapping
 /// It is stored inside a Sheet and will be exposed externally as Mapping or MappingBuf
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocalMapping {
     /// The value of the local mapping
     val: Vec<String>,
@@ -25,7 +26,7 @@ pub struct LocalMapping {
 
 /// The forward direction of the current Mapping
 /// It indicates the expected asset update method for the current Mapping
-#[derive(Default, Debug, PartialEq, Eq, Clone)]
+#[derive(Default, Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub enum LocalMappingForward {
     /// Expect the current index version to be the latest
     #[default]
@@ -51,7 +52,7 @@ pub struct Mapping<'a> {
 
 /// MappingBuf
 /// It stores complete mapping information and participates in complex mapping editing operations like storage and modification
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct MappingBuf {
     sheet_name: String,
     val: Vec<String>,

@@ -1481,6 +1481,7 @@ dependencies = [
  "hex_display",
  "just_fmt",
  "memmap2",
+ "serde",
  "sha2 0.10.9",
  "sheet_system_macros",
  "thiserror 1.0.69",
