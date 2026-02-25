@@ -208,6 +208,11 @@ impl SheetData {
         Ok(SheetDataMmap { mmap })
     }
 
+    /// Get the current SheetData's Mappings
+    pub fn mappings(&self) -> &HashSet<LocalMapping> {
+        &self.mappings
+    }
+
     /// Check if a mapping exists in SheetData
     pub fn contains_mapping(&self, value: &Vec<String>) -> bool {
         self.mappings.contains(value)
@@ -258,6 +263,11 @@ impl Sheet {
     /// Unpack Sheet into pure data
     pub fn unpack(self) -> SheetData {
         self.data
+    }
+
+    /// Get the current Sheet's Mappings
+    pub fn mappings(&self) -> &HashSet<LocalMapping> {
+        &self.data.mappings
     }
 
     /// Check if a mapping exists in this sheet (including unapplied edits)
