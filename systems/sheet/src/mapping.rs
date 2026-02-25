@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use just_fmt::fmt_path::{PathFormatConfig, fmt_path_str, fmt_path_str_custom};
 use serde::{Deserialize, Serialize};
 
@@ -624,4 +626,118 @@ impl std::borrow::Borrow<Vec<String>> for MappingBuf {
 pub fn node(str: impl Into<String>) -> Vec<String> {
     let str = just_fmt::fmt_path::fmt_path_str(str).unwrap_or_default();
     str.split("/").into_iter().map(|f| f.to_string()).collect()
+}
+
+// Implement comparison for LocalMapping
+
+impl PartialOrd for LocalMapping {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for LocalMapping {
+    fn cmp(&self, other: &Self) -> Ordering {
+        compare_vec_string(&self.val, &other.val)
+    }
+}
+
+/// Compare two `Vec<String>` according to a specific ordering:
+/// 1. ASCII symbols (excluding letters and digits)
+/// 2. Letters (Aa-Zz, case‑sensitive, uppercase before lowercase)
+/// 3. Digits (0‑9)
+/// 4. All other Unicode characters (in their natural order)
+///
+/// The comparison is lexicographic: the first differing element determines the order.
+fn compare_vec_string(a: &Vec<String>, b: &Vec<String>) -> std::cmp::Ordering {
+    use std::cmp::Ordering;
+
+    for (left, right) in a.iter().zip(b.iter()) {
+        match compare_string(left, right) {
+            Ordering::Equal => continue,
+            ord => return ord,
+        }
+    }
+    // If all compared elements are equal, the shorter vector comes first.
+    a.len().cmp(&b.len())
+}
+
+/// Compare two individual strings with the same ordering rules.
+fn compare_string(a: &str, b: &str) -> std::cmp::Ordering {
+    let mut a_chars = a.chars();
+    let mut b_chars = b.chars();
+
+    loop {
+        match (a_chars.next(), b_chars.next()) {
+            (Some(ca), Some(cb)) => {
+                let ord = compare_char(ca, cb);
+                if ord != Ordering::Equal {
+                    return ord;
+                }
+            }
+            (None, Some(_)) => return Ordering::Less,
+            (Some(_), None) => return Ordering::Greater,
+            (None, None) => return Ordering::Equal,
+        }
+    }
+}
+
+/// Compare two characters according to the ordering:
+/// 1. ASCII symbols (non‑letter, non‑digit)
+/// 2. Letters (A‑Z then a‑z)
+/// 3. Digits (0‑9)
+/// 4. Other Unicode
+fn compare_char(a: char, b: char) -> std::cmp::Ordering {
+    let group_a = char_group(a);
+    let group_b = char_group(b);
+
+    if group_a != group_b {
+        return group_a.cmp(&group_b);
+    }
+
+    // Same group: compare within the group.
+    match group_a {
+        CharGroup::AsciiSymbol => a.cmp(&b), // ASCII symbols in natural order
+        CharGroup::Letter => {
+            // Uppercase letters (A‑Z) come before lowercase (a‑z)
+            if a.is_ascii_uppercase() && b.is_ascii_lowercase() {
+                Ordering::Less
+            } else if a.is_ascii_lowercase() && b.is_ascii_uppercase() {
+                Ordering::Greater
+            } else {
+                a.cmp(&b)
+            }
+        }
+        CharGroup::Digit => a.cmp(&b), // Digits 0‑9
+        CharGroup::Other => a.cmp(&b), // Other Unicode (natural order)
+    }
+}
+
+/// Classification of a character for ordering.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum CharGroup {
+    AsciiSymbol = 0, // !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
+    Letter = 1,      // A‑Z, a‑z
+    Digit = 2,       // 0‑9
+    Other = 3,       // Other
+}
+
+fn char_group(c: char) -> CharGroup {
+    if c.is_ascii_punctuation() {
+        CharGroup::AsciiSymbol
+    } else if c.is_ascii_alphabetic() {
+        CharGroup::Letter
+    } else if c.is_ascii_digit() {
+        CharGroup::Digit
+    } else {
+        CharGroup::Other
+    }
+}
+
+#[test]
+fn test_compare_char_groups() {
+    assert!(compare_string("!", "A") == Ordering::Less);
+    assert!(compare_string("A", "a") == Ordering::Less);
+    assert!(compare_string("a", "0") == Ordering::Less);
+    assert!(compare_string("9", "你") == Ordering::Less);
 }
