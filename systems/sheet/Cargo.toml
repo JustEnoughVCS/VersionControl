@@ -10,7 +10,7 @@ constants = { path = "../_constants" }
 sheet_system_macros = { path = "macros" }
 asset_system = { path = "../_asset" }
 
-serde = "1"
+serde = { version = "1", features = ["derive"] }
 
 tokio = { version = "1.48", features = ["full"] }
 
