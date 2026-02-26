@@ -35,12 +35,22 @@ fn parse_sheet_path(input: &str) -> Result<(String, Vec<String>), String> {
     Ok((sheet, path_parts))
 }
 
-/// Parse strings in the format "id/ver"
-fn parse_id_version(input: &str) -> Result<(u32, u16), String> {
-    let parts: Vec<&str> = input.split('/').collect();
+/// Parse strings in the format "id/ver" or "~id/ver"
+/// Returns (remote, id, ver)
+fn parse_id_version(input: &str) -> Result<(bool, u32, u16), String> {
+    let trimmed = input.trim();
+
+    // Check if it starts with ~ for local
+    let (remote, id_part) = if trimmed.starts_with('~') {
+        (false, &trimmed[1..])
+    } else {
+        (true, trimmed)
+    };
+
+    let parts: Vec<&str> = id_part.split('/').collect();
     if parts.len() != 2 {
         return Err(format!(
-            "Invalid id/version syntax. Expected: id/ver, got: {}",
+            "Invalid id/version syntax. Expected: id/ver or ~id/ver, got: {}",
             input
         ));
     }
@@ -62,7 +72,7 @@ fn parse_id_version(input: &str) -> Result<(u32, u16), String> {
         .parse::<u16>()
         .map_err(|e| format!("Failed to parse version as u16: {}", e))?;
 
-    Ok((id, ver))
+    Ok((remote, id, ver))
 }
 
 /// Parse a path string into a vector of strings
@@ -113,7 +123,7 @@ pub fn mapping_buf(input: TokenStream) -> TokenStream {
         }
     };
 
-    let (id, ver) = match parse_id_version(right) {
+    let (remote, id, ver) = match parse_id_version(right) {
         Ok(result) => result,
         Err(err) => {
             return syn::Error::new(Span::call_site(), err)
@@ -133,7 +143,7 @@ pub fn mapping_buf(input: TokenStream) -> TokenStream {
         #mapping_buf_path::new(
             #sheet.to_string(),
             #path_vec_tokens,
-            #index_source_path::new(#id, #ver)
+            #index_source_path::new(#remote, #id, #ver)
         )
     };
 
@@ -176,7 +186,7 @@ pub fn mapping(input: TokenStream) -> TokenStream {
         }
     };
 
-    let (id, ver) = match parse_id_version(right) {
+    let (remote, id, ver) = match parse_id_version(right) {
         Ok(result) => result,
         Err(err) => {
             return syn::Error::new(Span::call_site(), err)
@@ -195,7 +205,7 @@ pub fn mapping(input: TokenStream) -> TokenStream {
         #mapping_path::new(
             #sheet,
             #path,
-            #index_source_path::new(#id, #ver)
+            #index_source_path::new(#remote, #id, #ver)
         )
     };
 
@@ -203,9 +213,10 @@ pub fn mapping(input: TokenStream) -> TokenStream {
 }
 
 enum LocalMappingParts {
-    Latest(String, u32, u16),
-    Version(String, u32, u16),
-    WithRef(String, u32, u16, String),
+    Latest(String, bool, u32, u16),
+    Version(String, bool, u32, u16),
+    WithRef(String, bool, u32, u16, String),
+    VersionForward(String, bool, u32, u16, u16),
 }
 
 impl LocalMappingParts {
@@ -221,13 +232,54 @@ impl LocalMappingParts {
             ));
         }
 
-        // When both "==" and "=>" appear
+        // Check for "=>" followed by "==" syntax: "path" => "id/ver" == "ver2"
+        if input_str.contains("=>") && input_str.contains("==") {
+            // Count occurrences to determine the pattern
+            let arrow_count = input_str.matches("=>").count();
+            let equal_count = input_str.matches("==").count();
+
+            if arrow_count == 1 && equal_count == 1 {
+                // Try to parse as "path" => "id/ver" == "ver2"
+                let parts: Vec<&str> = input_str.split("=>").collect();
+                if parts.len() == 2 {
+                    let left = parts[0].trim().trim_matches('"').trim();
+                    let right_part = parts[1].trim();
+
+                    // Split the right part by "=="
+                    let right_parts: Vec<&str> = right_part.split("==").collect();
+                    if right_parts.len() == 2 {
+                        let middle = right_parts[0].trim().trim_matches('"').trim();
+                        let version_str = right_parts[1].trim().trim_matches('"').trim();
+
+                        let (remote, id, ver) = parse_id_version(middle)
+                            .map_err(|err| syn::Error::new(Span::call_site(), err))?;
+
+                        let target_ver = version_str.parse::<u16>().map_err(|err| {
+                            syn::Error::new(
+                                Span::call_site(),
+                                format!("Failed to parse target version as u16: {}", err),
+                            )
+                        })?;
+
+                        return Ok(LocalMappingParts::VersionForward(
+                            left.to_string(),
+                            remote,
+                            id,
+                            ver,
+                            target_ver,
+                        ));
+                    }
+                }
+            }
+        }
+
+        // When both "==" and "=>" appear but not in the expected pattern
         // It's impossible to determine whether to match the current version or point to a Ref
         // Should report an error
         if input_str.contains("==") && input_str.contains("=>") {
             return Err(syn::Error::new(
                 Span::call_site(),
-                "Ambiguous forward direction. Use either '==' for version or '=>' for ref, not both.",
+                "Ambiguous forward direction. Use either '==' for version or '=>' for ref, or use 'path' => 'id/ver' == 'ver2' syntax.",
             ));
         }
 
@@ -243,10 +295,15 @@ impl LocalMappingParts {
             let left = parts[0].trim().trim_matches('"').trim();
             let right = parts[1].trim().trim_matches('"').trim();
 
-            let (id, ver) =
+            let (remote, id, ver) =
                 parse_id_version(right).map_err(|err| syn::Error::new(Span::call_site(), err))?;
 
-            return Ok(LocalMappingParts::Version(left.to_string(), id, ver));
+            return Ok(LocalMappingParts::Version(
+                left.to_string(),
+                remote,
+                id,
+                ver,
+            ));
         }
 
         let parts: Vec<&str> = input_str.split("=>").collect();
@@ -257,30 +314,44 @@ impl LocalMappingParts {
                 let left = parts[0].trim().trim_matches('"').trim();
                 let right = parts[1].trim().trim_matches('"').trim();
 
-                let (id, ver) = parse_id_version(right)
+                let (remote, id, ver) = parse_id_version(right)
                     .map_err(|err| syn::Error::new(Span::call_site(), err))?;
 
-                Ok(LocalMappingParts::Latest(left.to_string(), id, ver))
+                Ok(LocalMappingParts::Latest(left.to_string(), remote, id, ver))
             }
             3 => {
-                // local_mapping!("path" => "id/ver" => "ref") - Ref
+                // Check if the third part is a ref (string) or a version number (u16)
                 let left = parts[0].trim().trim_matches('"').trim();
                 let middle = parts[1].trim().trim_matches('"').trim();
                 let right = parts[2].trim().trim_matches('"').trim();
 
-                let (id, ver) = parse_id_version(middle)
+                let (remote, id, ver) = parse_id_version(middle)
                     .map_err(|err| syn::Error::new(Span::call_site(), err))?;
 
-                Ok(LocalMappingParts::WithRef(
-                    left.to_string(),
-                    id,
-                    ver,
-                    right.to_string(),
-                ))
+                // Try to parse right as u16 (version number)
+                if let Ok(target_ver) = right.parse::<u16>() {
+                    // This is "path" => "id/ver" => "ver2" syntax
+                    Ok(LocalMappingParts::VersionForward(
+                        left.to_string(),
+                        remote,
+                        id,
+                        ver,
+                        target_ver,
+                    ))
+                } else {
+                    // This is "path" => "id/ver" => "ref" syntax
+                    Ok(LocalMappingParts::WithRef(
+                        left.to_string(),
+                        remote,
+                        id,
+                        ver,
+                        right.to_string(),
+                    ))
+                }
             }
             _ => Err(syn::Error::new(
                 Span::call_site(),
-                "Invalid local_mapping syntax. Expected: local_mapping!(\"path\" => \"id/ver\") or local_mapping!(\"path\" == \"id/ver\") or local_mapping!(\"path\" => \"id/ver\" => \"ref\")",
+                "Invalid local_mapping syntax. Expected: local_mapping!(\"path\" => \"id/ver\") or local_mapping!(\"path\" == \"id/ver\") or local_mapping!(\"path\" => \"id/ver\" => \"ref\") or local_mapping!(\"path\" => \"id/ver\" => \"ver2\") or local_mapping!(\"path\" => \"id/ver\" == \"ver2\")",
             )),
         }
     }
@@ -310,6 +381,18 @@ impl LocalMappingParts {
 ///     // and expects to match the version declared in `ref`
 ///     "your_dir/your_file.suffix" => "index_id/version" => "ref"
 /// );
+///
+/// let lcoal_mapping_version_forward = local_mapping!(
+///     // Map the `version` of index `index_id`
+///     // to `your_dir/your_file.suffix`
+///     // but expects to point to a specific version `ver2`
+///     "your_dir/your_file.suffix" => "index_id/version" => "ver2"
+/// );
+///
+/// let lcoal_mapping_version_forward_alt = local_mapping!(
+///     // Alternative syntax for the same behavior
+///     "your_dir/your_file.suffix" => "index_id/version" == "ver2"
+/// );
 /// ```
 #[proc_macro]
 pub fn local_mapping(input: TokenStream) -> TokenStream {
@@ -326,46 +409,62 @@ pub fn local_mapping(input: TokenStream) -> TokenStream {
         parse_str(INDEX_SOURCE).expect("Failed to parse INDEX_SOURCE");
 
     match parts {
-        LocalMappingParts::Latest(path_str, id, ver) => {
+        LocalMappingParts::Latest(path_str, remote, id, ver) => {
             let path_vec = parse_path_string(&path_str);
             let path_vec_tokens = path_vec_to_tokens(&path_vec);
 
             let expanded = quote! {
                 #local_mapping_path::new(
                     #path_vec_tokens,
-                    #index_source_path::new(#id, #ver),
+                    #index_source_path::new(#remote, #id, #ver),
                     #local_mapping_forward_path::Latest
                 )
             };
 
             expanded.into()
         }
-        LocalMappingParts::Version(path_str, id, ver) => {
+        LocalMappingParts::Version(path_str, remote, id, ver) => {
             let path_vec = parse_path_string(&path_str);
             let path_vec_tokens = path_vec_to_tokens(&path_vec);
 
             let expanded = quote! {
                 #local_mapping_path::new(
                     #path_vec_tokens,
-                    #index_source_path::new(#id, #ver),
+                    #index_source_path::new(#remote, #id, #ver),
                     #local_mapping_forward_path::Version {
-                        version_name: #ver.to_string()
+                        version: #ver
                     }
                 )
             };
 
             expanded.into()
         }
-        LocalMappingParts::WithRef(path_str, id, ver, ref_name) => {
+        LocalMappingParts::WithRef(path_str, remote, id, ver, ref_name) => {
             let path_vec = parse_path_string(&path_str);
             let path_vec_tokens = path_vec_to_tokens(&path_vec);
 
             let expanded = quote! {
                 #local_mapping_path::new(
                     #path_vec_tokens,
-                    #index_source_path::new(#id, #ver),
+                    #index_source_path::new(#remote, #id, #ver),
                     #local_mapping_forward_path::Ref {
                         sheet_name: #ref_name.to_string()
+                    }
+                )
+            };
+
+            expanded.into()
+        }
+        LocalMappingParts::VersionForward(path_str, remote, id, ver, target_ver) => {
+            let path_vec = parse_path_string(&path_str);
+            let path_vec_tokens = path_vec_to_tokens(&path_vec);
+
+            let expanded = quote! {
+                #local_mapping_path::new(
+                    #path_vec_tokens,
+                    #index_source_path::new(#remote, #id, #ver),
+                    #local_mapping_forward_path::Version {
+                        version: #target_ver
                     }
                 )
             };

@@ -13,7 +13,7 @@ use crate::{
     index_source::IndexSource,
     mapping::{LocalMapping, LocalMappingForward, Mapping, MappingBuf},
     sheet::{
-        error::{ReadSheetDataError, SheetApplyError, SheetEditError},
+        error::{ParseSheetError, ReadSheetDataError, SheetApplyError, SheetEditError},
         reader::{read_mapping, read_sheet_data},
         writer::convert_sheet_data_to_bytes,
     },
@@ -483,6 +483,42 @@ impl SheetData {
     /// Convert SheetData to byte data for storage in the file system
     pub fn as_bytes(self) -> Vec<u8> {
         convert_sheet_data_to_bytes(self)
+    }
+}
+
+impl std::fmt::Display for SheetData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut vec = self
+            .mappings()
+            .iter()
+            .cloned()
+            .collect::<Vec<LocalMapping>>();
+        vec.sort();
+        write!(
+            f,
+            "{}",
+            vec.iter()
+                .map(|m| m.to_string())
+                .collect::<Vec<_>>()
+                .join("\n")
+        )
+    }
+}
+
+impl TryFrom<&str> for SheetData {
+    type Error = ParseSheetError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let mut sheet = SheetData::empty().pack("temp");
+        for line in value.split("\n") {
+            if line.trim().is_empty() {
+                continue;
+            }
+            let mapping = LocalMapping::try_from(line)?;
+            let _ = sheet.insert_mapping(mapping)?;
+        }
+        let _ = sheet.apply()?;
+        Ok(sheet.unpack())
     }
 }
 

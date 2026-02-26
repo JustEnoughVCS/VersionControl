@@ -44,12 +44,16 @@ pub const MAPPING_BUCKET_MIN_SIZE: usize = 0
     + 2 // INDEX_OFFSET
 ;
 
-// Index Table (6: 4 + 2)
+// Index Table (10: 4 + 2 + 1 + 3)
 //
 // [INDEX_ID: u32]
 // [INDEX_VERSION: u16]
+// [REMOTE_FLAG: u8]
+// [RESERVED: u8; 3]
 
 pub const INDEX_ENTRY_SIZE: usize = 0
     + 4 // INDEX_ID
     + 2 // INDEX_VERSION
+    + 1 // REMOTE_FLAG
+    + 3 // RESERVED
 ;

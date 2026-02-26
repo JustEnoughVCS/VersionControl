@@ -1,3 +1,5 @@
+use crate::mapping::error::ParseMappingError;
+
 #[derive(Debug, thiserror::Error)]
 pub enum SheetEditError {
     #[error("Edit Failed: Node already exists: `{0}`")]
@@ -14,6 +16,18 @@ pub enum SheetApplyError {
 
     #[error("Unexpected error: Node not found: `{0}` (Unexpected)")]
     UnexpectedNotFound(String),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum ParseSheetError {
+    #[error("Parse mapping error: {0}")]
+    ParseMappingError(#[from] ParseMappingError),
+
+    #[error("Sheet edit error: {0}")]
+    SheetEditError(#[from] SheetEditError),
+
+    #[error("Sheet apply error: {0}")]
+    SheetApplyError(#[from] SheetApplyError),
 }
 
 #[derive(Debug, thiserror::Error)]

@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 use crate::{index_source::IndexSource, mapping::error::ParseMappingError};
 
 pub mod error;
+pub mod parse;
+pub mod parse_test;
 
 // Validation rules for LocalMapping
 // LocalMapping is a key component for writing and reading SheetData
@@ -435,6 +437,14 @@ impl std::fmt::Display for LocalMapping {
                 }
             }
         }
+    }
+}
+
+impl TryFrom<String> for LocalMapping {
+    type Error = ParseMappingError;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        s.as_str().try_into()
     }
 }
 

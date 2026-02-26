@@ -257,8 +257,9 @@ fn read_index_table(
 
         let id = u32::from_le_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]);
         let ver = u16::from_le_bytes([data[pos + 4], data[pos + 5]]);
+        let remote = data[pos + 6] != 0; // 0 = local, non-zero = remote
 
-        sources.push(IndexSource::new(id, ver));
+        sources.push(IndexSource::new(remote, id, ver));
         pos += INDEX_ENTRY_SIZE;
     }
 
@@ -510,17 +511,26 @@ mod tests {
     #[test]
     fn test_read_index_table() {
         let mut data = Vec::new();
+        // First entry: local source
         data.extend_from_slice(&123u32.to_le_bytes());
         data.extend_from_slice(&456u16.to_le_bytes());
+        data.push(0); // remote flag (0 = local)
+        data.extend_from_slice(&[0u8; 3]); // reserved bytes
+
+        // Second entry: remote source
         data.extend_from_slice(&789u32.to_le_bytes());
         data.extend_from_slice(&1011u16.to_le_bytes());
+        data.push(1); // remote flag (1 = remote)
+        data.extend_from_slice(&[0u8; 3]); // reserved bytes
 
         let sources = read_index_table(&data, 0, 2).unwrap();
         assert_eq!(sources.len(), 2);
         assert_eq!(sources[0].id(), 123);
         assert_eq!(sources[0].version(), 456);
+        assert_eq!(sources[0].is_remote(), false);
         assert_eq!(sources[1].id(), 789);
         assert_eq!(sources[1].version(), 1011);
+        assert_eq!(sources[1].is_remote(), true);
     }
 
     #[test]
@@ -544,7 +554,7 @@ mod tests {
         bucket_data.extend_from_slice(path2); // KEY_BYTES
         bucket_data.extend_from_slice(&1u32.to_le_bytes()); // INDEX_OFFSET
 
-        let index_sources = vec![IndexSource::new(1, 1), IndexSource::new(2, 1)];
+        let index_sources = vec![IndexSource::new_local(1, 1), IndexSource::new_local(2, 1)];
 
         let mappings = read_bucket_data(&bucket_data, &index_sources).unwrap();
         assert_eq!(mappings.len(), 2);
@@ -574,21 +584,21 @@ mod tests {
         // Add mappings that will go to different buckets
         let mapping1 = crate::mapping::LocalMapping::new(
             vec!["aaa".to_string(), "file1.txt".to_string()],
-            crate::index_source::IndexSource::new(1, 1),
+            crate::index_source::IndexSource::new_local(1, 1),
             crate::mapping::LocalMappingForward::Latest,
         )
         .unwrap();
 
         let mapping2 = crate::mapping::LocalMapping::new(
             vec!["mmm".to_string(), "file2.txt".to_string()],
-            crate::index_source::IndexSource::new(2, 2),
+            crate::index_source::IndexSource::new_local(2, 2),
             crate::mapping::LocalMappingForward::Latest,
         )
         .unwrap();
 
         let mapping3 = crate::mapping::LocalMapping::new(
             vec!["zzz".to_string(), "file3.txt".to_string()],
-            crate::index_source::IndexSource::new(3, 3),
+            crate::index_source::IndexSource::new_local(3, 3),
             crate::mapping::LocalMappingForward::Latest,
         )
         .unwrap();

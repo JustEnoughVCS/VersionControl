@@ -17,11 +17,15 @@ pub fn convert_sheet_data_to_bytes(sheet_data: SheetData) -> Vec<u8> {
 
     for mapping in &mappings {
         let source = mapping.index_source();
-        let key = (source.id(), source.version());
+        let key = (source.is_remote(), source.id(), source.version());
         if !source_to_offset.contains_key(&key) {
             let offset = index_sources.len() as u32;
             source_to_offset.insert(key, offset);
-            index_sources.push(IndexSource::new(source.id(), source.version()));
+            index_sources.push(IndexSource::new(
+                source.is_remote(),
+                source.id(),
+                source.version(),
+            ));
         }
     }
 
@@ -86,6 +90,8 @@ pub fn convert_sheet_data_to_bytes(sheet_data: SheetData) -> Vec<u8> {
     for source in &index_sources {
         result.extend_from_slice(&source.id().to_le_bytes()); // Index ID (4 bytes)
         result.extend_from_slice(&source.version().to_le_bytes()); // Index version (2 bytes)
+        result.push(if source.is_remote() { 1 } else { 0 }); // Remote flag (1 byte)
+        result.extend_from_slice(&[0u8; 3]); // Reserved bytes (3 bytes)
     }
 
     // 8. Bucket data
@@ -110,7 +116,7 @@ pub fn calculate_path_hash(path: &[String]) -> u32 {
 fn write_mapping_bucket(
     result: &mut Vec<u8>,
     mapping: &LocalMapping,
-    source_to_offset: &HashMap<(u32, u16), u32>,
+    source_to_offset: &HashMap<(bool, u32, u16), u32>,
 ) {
     // Serialize path
     let path_bytes = serialize_path(mapping.value());
@@ -121,7 +127,7 @@ fn write_mapping_bucket(
 
     // Get index offset
     let source = mapping.index_source();
-    let key = (source.id(), source.version());
+    let key = (source.is_remote(), source.id(), source.version());
     let index_offset = source_to_offset.get(&key).unwrap();
 
     // Write mapping bucket entry
@@ -196,7 +202,7 @@ mod tests {
     fn test_calculate_mapping_bucket_size() {
         let mapping = LocalMapping::new(
             vec!["test".to_string(), "file.txt".to_string()],
-            IndexSource::new(1, 1),
+            IndexSource::new_local(1, 1),
             LocalMappingForward::Latest,
         )
         .unwrap();
@@ -228,7 +234,7 @@ mod tests {
         let mut sheet_data = SheetData::empty();
         let mapping = LocalMapping::new(
             vec!["dir".to_string(), "file.txt".to_string()],
-            IndexSource::new(1, 1),
+            IndexSource::new_local(1, 1),
             LocalMappingForward::Latest,
         )
         .unwrap();
