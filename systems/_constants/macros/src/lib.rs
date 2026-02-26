@@ -243,6 +243,7 @@ fn generate_functions_without_params(
         #[doc = "`"]
         #[doc = #value_str]
         #[doc = "`"]
+        #[inline(always)]
         pub fn #fn_ident() -> &'static str {
             #value_str
         }
