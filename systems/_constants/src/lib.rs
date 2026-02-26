@@ -49,6 +49,16 @@ pub mod server {
 /// File and directory path constants for the vault root
 #[allow(unused)]
 pub mod vault {
+    /// Others
+    #[constants_macros::constants("vault_value")]
+    pub mod values {
+        c! { INDEX_FILE_SUFFIX = "index" }
+        c! { INDEX_FILE_SUFFIX_DOT = ".index" }
+
+        c! { SHEET_FILE_SUFFIX = "sheet" }
+        c! { SHEET_FILE_SUFFIX_DOT = ".sheet" }
+    }
+
     /// File path constants
     #[constants_macros::constants("vault_file")]
     pub mod files {
