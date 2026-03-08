@@ -13,7 +13,7 @@ sha1_hash = { path = "../utils/sha1_hash" }
 just_fmt = "0.1.2"
 
 # Core dependencies
-action_system = { path = "../systems/action" }
+action_system = { path = "../legacy_systems/action" }
 vcs_data = { path = "../legacy_data" }
 
 # Error handling

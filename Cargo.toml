@@ -30,11 +30,8 @@ members = [
     "systems/_asset/test",
     "systems/_constants",
     "systems/_constants/macros",
-    "systems/action",
-    "systems/action/action_macros",
     "systems/sheet",
     "systems/sheet/macros",
-    "systems/storage",
     "utils/cfg_file",
     "utils/cfg_file/cfg_file_derive",
     "utils/cfg_file/cfg_file_test",
@@ -48,6 +45,8 @@ members = [
     "legacy_data",
     "legacy_data/tests",
     "legacy_actions",
+    "legacy_systems/action",
+    "legacy_systems/action/action_macros",
     # LEGACY AREA
 ]
 
@@ -102,10 +101,9 @@ tcp_connection = { path = "utils/tcp_connection" }
 # Systems
 asset_system = { path = "systems/_asset" }
 constants = { path = "systems/_constants" }
-action_system = { path = "systems/action" }
 sheet_system = { path = "systems/sheet" }
-storage_system = { path = "systems/storage" }
 
 # Legacy
 vcs_data = { path = "legacy_data" }
 vcs_actions = { path = "legacy_actions" }
+action_system = { path = "legacy_systems/action" }

@@ -12,7 +12,7 @@ sha1_hash = { path = "../utils/sha1_hash" }
 tcp_connection = { path = "../utils/tcp_connection" }
 
 # Core
-action_system = { path = "../systems/action" }
+action_system = { path = "../legacy_systems/action" }
 vcs_docs = { path = "../docs" }
 
 # Format
