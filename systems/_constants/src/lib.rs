@@ -8,8 +8,6 @@ macro_rules! c {
 pub const TEMP_FILE_PREFIX: &str = ".tmp_";
 pub const LOCK_FILE_PREFIX: &str = "~";
 
-pub const CURRENT_SHEET_VERSION: u8 = 0;
-
 /// File and directory path constants for the server root
 #[allow(unused)]
 pub mod server {

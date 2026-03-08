@@ -1,5 +1,3 @@
-use constants::CURRENT_SHEET_VERSION;
-
 use crate::{
     mapping::{LocalMappingForward, Mapping},
     sheet::{SheetData, error::ReadSheetDataError},
@@ -12,9 +10,9 @@ macro_rules! reader_do {
         let sheet_version = $full_sheet_data
             .first()
             .copied()
-            .unwrap_or(CURRENT_SHEET_VERSION);
+            .unwrap_or(crate::sheet::v1::constants::CURRENT_SHEET_VERSION); // CURRENT
         match sheet_version {
-            1 => crate::sheet::v1::reader::$func($($arg),*),
+            1 => crate::sheet::v1::reader::$func($($arg),*), // CURRENT
             _ => reader::$func($($arg),*),
         }
     }};

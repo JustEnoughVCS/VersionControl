@@ -10,9 +10,50 @@ fn main() {
 
     let repo_root = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
+    // Only run on nightly,
+    // because cbindgen requires nightly features
+    //
+    // For stable toolchain, you can use ./scripts/deploy/cbindgen.* to build
+    if env::var("RUSTUP_TOOLCHAIN")
+        .map(|s| s.contains("nightly"))
+        .unwrap_or(false)
+    {
+        generate_c_binding();
+    }
+
     if let Err(e) = generate_compile_info(&repo_root) {
         eprintln!("Failed to generate compile info: {}", e);
         std::process::exit(1);
+    }
+}
+
+fn generate_c_binding() {
+    // Try to run cbindgen to generate C bindings
+    // > cbindgen --config cbindgen.toml ffi --output ffi/.temp/jvlib.h --quiet
+    let output = std::process::Command::new("cbindgen")
+        .args([
+            "--config",
+            "cbindgen.toml",
+            "ffi",
+            "--output",
+            "ffi/.temp/jvlib.h",
+            "--quiet",
+        ])
+        .output();
+
+    match output {
+        Ok(output) if output.status.success() => {
+            // Successfully generated bindings
+        }
+        Ok(_) => {
+            eprintln!("cbindgen failed to generate bindings");
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            eprintln!("cbindgen not found, skipping C binding generation");
+        }
+        Err(e) => {
+            eprintln!("Failed to run cbindgen: {}", e);
+        }
     }
 }
 

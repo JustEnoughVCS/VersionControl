@@ -184,10 +184,8 @@ fn generate_functions_with_params(
     let ffi_fn_name = format!("JV_Const_{}{}", pascal_prefix, pascal_name);
     let ffi_fn_ident = Ident::new(&ffi_fn_name, const_name.span());
 
-    // Generate parameter list for FFI
-    let ffi_param_idents: Vec<Ident> = (0..params.len())
-        .map(|i| Ident::new(&format!("p{}", i), value_span))
-        .collect();
+    // Generate parameter list for FFI using original parameter names
+    let ffi_param_idents: Vec<Ident> = params.iter().map(|p| Ident::new(p, value_span)).collect();
 
     let ffi_param_decls = ffi_param_idents.iter().map(|ident| {
         quote! { #ident: *const libc::c_char }

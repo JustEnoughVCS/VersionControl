@@ -12,10 +12,10 @@ asset_system = { path = "../_asset" }
 
 serde = { version = "1", features = ["derive"] }
 
-tokio = { version = "1.48", features = ["full"] }
+tokio = { version = "1.50", features = ["full"] }
 
-thiserror = "1.0.69"
+thiserror = "2"
 just_fmt = "0.1.2"
 
 memmap2 = "0.9"
-sha2 = "0.10.8"
+sha2 = "0.10"
