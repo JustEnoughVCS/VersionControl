@@ -35,7 +35,7 @@ pub fn convert_sheet_data_to_bytes(sheet_data: SheetData) -> Vec<u8> {
     let mut buckets: BTreeMap<u32, Vec<LocalMapping>> = BTreeMap::new();
     for mapping in mappings {
         let hash = calculate_path_hash(mapping.value());
-        let bucket_key = hash >> 24; // Take high 8 bits as bucket key
+        let bucket_key = hash >> 16; // Take high 16 bits as bucket key
         buckets
             .entry(bucket_key)
             .or_insert_with(Vec::new)
@@ -57,9 +57,13 @@ pub fn convert_sheet_data_to_bytes(sheet_data: SheetData) -> Vec<u8> {
 
     // Prepare data for each bucket
     for (&bucket_key, bucket_mappings) in &buckets {
+        // Sort mappings within bucket by path for binary search
+        let mut sorted_mappings: Vec<&LocalMapping> = bucket_mappings.iter().collect();
+        sorted_mappings.sort_by(|a, b| a.value().cmp(b.value()));
+
         // Calculate bucket data size
         let mut bucket_data = Vec::new();
-        for mapping in bucket_mappings {
+        for mapping in sorted_mappings {
             write_mapping_bucket(&mut bucket_data, mapping, &source_to_offset);
         }
 

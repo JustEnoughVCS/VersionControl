@@ -176,7 +176,7 @@ pub fn read_mapping<'a>(
     // Calculate hash prefix for target node
     let node_path: Vec<String> = node.iter().map(|s| s.to_string()).collect();
     let target_hash = calculate_path_hash(&node_path);
-    let target_bucket_key = target_hash >> 24; // Take high 8 bits as bucket key
+    let target_bucket_key = target_hash >> 16; // Take high 16 bits as bucket key
 
     // Find corresponding bucket in mapping directory using binary search
     let mapping_dir_end = mapping_dir_offset + bucket_count * MAPPING_DIR_ENTRY_SIZE;
@@ -369,6 +369,105 @@ fn find_mapping_in_bucket<'a>(
     node: &[&str],
     index_sources: &[IndexSource],
 ) -> Result<Option<(Mapping<'a>, LocalMappingForward)>, ReadSheetDataError> {
+    // Build a list of entry start positions for binary search
+    let entry_positions = build_entry_positions(bucket_data)?;
+
+    if entry_positions.is_empty() {
+        return Ok(None);
+    }
+
+    // Binary search on entry positions
+    let mut left = 0;
+    let mut right = entry_positions.len();
+
+    while left < right {
+        let mid = left + (right - left) / 2;
+        let entry_start = entry_positions[mid];
+
+        // Read entry header
+        let (_, key_len, forward_type, forward_info_len) =
+            read_entry_header(bucket_data, entry_start)?;
+
+        // Read key data (path)
+        let header_end = entry_start + 3;
+        if header_end + key_len > bucket_data.len() {
+            break;
+        }
+
+        let key_bytes = &bucket_data[header_end..header_end + key_len];
+        let current_path = deserialize_path(key_bytes)?;
+
+        // Compare with target node
+        match compare_paths(&current_path, node) {
+            std::cmp::Ordering::Less => {
+                left = mid + 1;
+            }
+            std::cmp::Ordering::Greater => {
+                right = mid;
+            }
+            std::cmp::Ordering::Equal => {
+                // Found matching node
+                // Read forward info data
+                let forward_start = header_end + key_len;
+                if forward_start + forward_info_len > bucket_data.len() {
+                    break;
+                }
+
+                let forward_bytes = &bucket_data[forward_start..forward_start + forward_info_len];
+
+                // Read index offset
+                let index_offset_pos = forward_start + forward_info_len;
+                if index_offset_pos + 4 > bucket_data.len() {
+                    break;
+                }
+
+                let index_offset = u32::from_le_bytes([
+                    bucket_data[index_offset_pos],
+                    bucket_data[index_offset_pos + 1],
+                    bucket_data[index_offset_pos + 2],
+                    bucket_data[index_offset_pos + 3],
+                ]) as usize;
+
+                // Get index source
+                if index_offset >= index_sources.len() {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        format!("Invalid index offset: {}", index_offset),
+                    )
+                    .into());
+                }
+
+                let source = index_sources[index_offset];
+
+                // Build forward info
+                let forward =
+                    LocalMappingForward::pack(forward_type, forward_bytes).ok_or_else(|| {
+                        std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "Failed to unpack forward info",
+                        )
+                    })?;
+
+                // Create Mapping
+                let path_str = std::str::from_utf8(key_bytes).map_err(|e| {
+                    std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        format!("Invalid UTF-8 in path: {}", e),
+                    )
+                })?;
+                let mapping = Mapping::new("", path_str, source);
+
+                return Ok(Some((mapping, forward)));
+            }
+        }
+    }
+
+    Ok(None)
+}
+
+/// Build a list of all entry start positions in the bucket
+fn build_entry_positions(bucket_data: &[u8]) -> Result<Vec<usize>, ReadSheetDataError> {
+    let mut positions = Vec::new();
     let mut pos = 0;
 
     while pos < bucket_data.len() {
@@ -376,83 +475,56 @@ fn find_mapping_in_bucket<'a>(
             break;
         }
 
-        // Read mapping bucket entry header
+        // Record this position as an entry start
+        positions.push(pos);
+
+        // Read entry header to get entry size
         let key_len = bucket_data[pos] as usize;
-        let forward_type = bucket_data[pos + 1];
         let forward_info_len = bucket_data[pos + 2] as usize;
 
-        let header_end = pos + 3; // KEY_LEN + FORWARD_TYPE + FORWARD_INFO_LEN
+        // Calculate entry size: header(3) + key_len + forward_info_len + index_offset(4)
+        let entry_size = 3 + key_len + forward_info_len + 4;
 
-        // Check bounds
-        if header_end + key_len > bucket_data.len() {
-            break;
-        }
-
-        // Read key data (path)
-        let key_bytes = &bucket_data[header_end..header_end + key_len];
-        let current_path = deserialize_path(key_bytes)?;
-
-        // Check if matches target node
-        if paths_match(&current_path, node) {
-            // Read forward info data
-            let forward_start = header_end + key_len;
-            if forward_start + forward_info_len > bucket_data.len() {
-                break;
-            }
-
-            let forward_bytes = &bucket_data[forward_start..forward_start + forward_info_len];
-
-            // Read index offset
-            let index_offset_pos = forward_start + forward_info_len;
-            if index_offset_pos + 4 > bucket_data.len() {
-                break;
-            }
-
-            let index_offset = u32::from_le_bytes([
-                bucket_data[index_offset_pos],
-                bucket_data[index_offset_pos + 1],
-                bucket_data[index_offset_pos + 2],
-                bucket_data[index_offset_pos + 3],
-            ]) as usize;
-
-            // Get index source
-            if index_offset >= index_sources.len() {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::InvalidData,
-                    format!("Invalid index offset: {}", index_offset),
-                )
-                .into());
-            }
-
-            let source = index_sources[index_offset];
-
-            // Build forward info
-            let forward =
-                LocalMappingForward::pack(forward_type, forward_bytes).ok_or_else(|| {
-                    std::io::Error::new(
-                        std::io::ErrorKind::InvalidData,
-                        "Failed to unpack forward info",
-                    )
-                })?;
-
-            // Create Mapping
-            let path_str = std::str::from_utf8(key_bytes).map_err(|e| {
-                std::io::Error::new(
-                    std::io::ErrorKind::InvalidData,
-                    format!("Invalid UTF-8 in path: {}", e),
-                )
-            })?;
-            let mapping = Mapping::new("", path_str, source);
-
-            return Ok(Some((mapping, forward)));
-        }
-
-        // Move to next mapping entry
-        // Entry size = 3 (header) + key_len + forward_info_len + 4 (index offset)
-        pos = header_end + key_len + forward_info_len + 4;
+        // Move to next entry
+        pos += entry_size;
     }
 
-    Ok(None)
+    Ok(positions)
+}
+
+/// Read entry header at the given position
+fn read_entry_header(
+    bucket_data: &[u8],
+    pos: usize,
+) -> Result<(usize, usize, u8, usize), ReadSheetDataError> {
+    if pos + MAPPING_BUCKET_MIN_SIZE > bucket_data.len() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::UnexpectedEof,
+            "Incomplete mapping bucket entry",
+        )
+        .into());
+    }
+
+    let key_len = bucket_data[pos] as usize;
+    let forward_type = bucket_data[pos + 1];
+    let forward_info_len = bucket_data[pos + 2] as usize;
+
+    Ok((pos, key_len, forward_type, forward_info_len))
+}
+
+/// Compare two paths lexicographically
+fn compare_paths(path1: &[String], path2: &[&str]) -> std::cmp::Ordering {
+    let min_len = std::cmp::min(path1.len(), path2.len());
+
+    for i in 0..min_len {
+        match path1[i].as_str().cmp(path2[i]) {
+            std::cmp::Ordering::Equal => continue,
+            ordering => return ordering,
+        }
+    }
+
+    // If all compared segments are equal, compare lengths
+    path1.len().cmp(&path2.len())
 }
 
 /// Deserialize path
@@ -470,21 +542,6 @@ fn deserialize_path(bytes: &[u8]) -> Result<Vec<String>, ReadSheetDataError> {
 
     let segments: Vec<String> = path_str.split('/').map(|s| s.to_string()).collect();
     Ok(segments)
-}
-
-/// Check if paths match
-fn paths_match(path: &[String], node: &[&str]) -> bool {
-    if path.len() != node.len() {
-        return false;
-    }
-
-    for (i, segment) in path.iter().enumerate() {
-        if segment != node[i] {
-            return false;
-        }
-    }
-
-    true
 }
 
 #[cfg(test)]
@@ -506,6 +563,11 @@ mod tests {
 
         let node2 = &["dir", "other.txt"];
         assert!(!paths_match(&path, node2));
+    }
+
+    /// Check if paths match
+    fn paths_match(path: &[String], node: &[&str]) -> bool {
+        compare_paths(path, node) == std::cmp::Ordering::Equal
     }
 
     #[test]
