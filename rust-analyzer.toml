@@ -27,6 +27,9 @@ check.command = "clippy"
 check.extraArgs = ["--all-features"]
 
 files.watcher = "client"
+files.excludeDirs = [
+    "src/data/compile_info.rs"
+]
 
 macroExpansion.mode = "hir"
 macroExpansion.maxDepth = 32
