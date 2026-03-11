@@ -8,6 +8,9 @@ pub enum SpaceError {
 
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
+
+    #[error("Other: {0}")]
+    Other(String),
 }
 
 impl PartialEq for SpaceError {

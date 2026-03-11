@@ -2025,8 +2025,13 @@ dependencies = [
 name = "vault_system"
 version = "0.1.0"
 dependencies = [
+ "asset_system",
+ "config_system",
  "constants",
  "framework",
+ "serde",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]
@@ -2598,6 +2603,7 @@ dependencies = [
  "constants",
  "framework",
  "serde",
+ "thiserror",
  "tokio",
 ]
 

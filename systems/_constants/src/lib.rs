@@ -50,8 +50,8 @@ pub mod vault {
     /// Others
     #[constants_macros::constants("vault_value")]
     pub mod values {
-        c! { INDEX_FILE_SUFFIX = "index" }
-        c! { INDEX_FILE_SUFFIX_DOT = ".index" }
+        c! { INDEX_FILE_SUFFIX = "bidx" }
+        c! { INDEX_FILE_SUFFIX_DOT = ".bidx" }
 
         c! { SHEET_FILE_SUFFIX = "sheet" }
         c! { SHEET_FILE_SUFFIX_DOT = ".sheet" }
@@ -95,6 +95,7 @@ pub mod vault {
     #[constants_macros::constants("vault_dir")]
     pub mod dirs {
         c! { REFSHEETS = "ref/" }
+        c! { MEMBER_ROOT = "_member/" }
         c! { MEMBER = "_member/{member_name}/" }
         c! { MEMBER_SHEET_BACKUPS = "_member/{member_name}/backups/" }
         c! { IGNORE_RULES = "rules/ignore/" }

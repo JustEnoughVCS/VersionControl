@@ -1,5 +1,5 @@
 use crate::space::error::SpaceError;
-use just_fmt::fmt_path::{PathFormatConfig, PathFormatError, fmt_path, fmt_path_custom};
+use just_fmt::fmt_path::{PathFormatConfig, fmt_path, fmt_path_custom};
 use std::{
     cell::Cell,
     env::current_dir,
@@ -114,7 +114,7 @@ impl<T: SpaceRoot> Space<T> {
     /// Set the current directory explicitly.
     ///
     /// This clears any cached space directory.
-    pub fn set_current_dir(&mut self, path: PathBuf) -> Result<(), PathFormatError> {
+    pub fn set_current_dir(&mut self, path: PathBuf) -> Result<(), SpaceError> {
         self.update_space_dir(None);
         self.current_dir = Some(fmt_path(path)?);
         Ok(())

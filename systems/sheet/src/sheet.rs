@@ -5,6 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use asset_system::{RWDataTest, rw::RWData};
 use memmap2::Mmap;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
@@ -41,7 +42,7 @@ pub struct Sheet {
 /// Full Sheet information
 ///
 /// Used to wrap as a Sheet object for editing and persistence
-#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, RWDataTest)]
 pub struct SheetData {
     /// All local mappings
     mappings: HashSet<LocalMapping>,
@@ -547,5 +548,60 @@ impl TryFrom<&[u8]> for SheetData {
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         read_sheet_data(value)
+    }
+}
+
+impl RWData<SheetData> for SheetData {
+    type DataType = SheetData;
+
+    async fn read(path: &PathBuf) -> Result<Self::DataType, asset_system::error::DataReadError> {
+        let read_data = SheetData::full_read(&mut SheetData::empty(), path).await;
+        match read_data {
+            Ok(_) => {
+                let data = SheetData::full_read(&mut SheetData::empty(), path).await;
+                match data {
+                    Ok(_) => Ok(SheetData::empty()),
+                    Err(e) => Err(asset_system::error::DataReadError::IoError(
+                        std::io::Error::new(std::io::ErrorKind::Other, e.to_string()),
+                    )),
+                }
+            }
+            Err(e) => Err(asset_system::error::DataReadError::IoError(
+                std::io::Error::new(std::io::ErrorKind::Other, e.to_string()),
+            )),
+        }
+    }
+
+    async fn write(
+        data: Self::DataType,
+        path: &PathBuf,
+    ) -> Result<(), asset_system::error::DataWriteError> {
+        let write_data = tokio::fs::write(path, data.as_bytes()).await;
+        match write_data {
+            Ok(_) => Ok(()),
+            Err(e) => Err(asset_system::error::DataWriteError::IoError(
+                std::io::Error::new(std::io::ErrorKind::Other, e.to_string()),
+            )),
+        }
+    }
+
+    fn test_data() -> Self::DataType {
+        let sheet = SheetData::empty().pack("sheet");
+        let mut sheet = sheet;
+        sheet
+            .insert_mapping(
+                LocalMapping::new(
+                    vec!["Test".to_string(), "File1.png".to_string()],
+                    IndexSource::new(true, 1u32, 1u16),
+                    LocalMappingForward::Version { version: 2u16 },
+                )
+                .unwrap(),
+            )
+            .unwrap();
+        sheet.unpack()
+    }
+
+    fn verify_data(data_a: Self::DataType, data_b: Self::DataType) -> bool {
+        data_a == data_b
     }
 }
