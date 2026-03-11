@@ -374,6 +374,21 @@ pub fn find_space_root(pattern: SpaceRootFindPattern) -> Result<PathBuf, SpaceEr
 /// # use std::path::PathBuf;
 /// # use framework::space::SpaceRootFindPattern;
 /// # use framework::space::find_space_root_with;
+/// // Find the `.cargo` directory
+/// let path = find_space_root_with(
+///     current_dir().unwrap(),
+///     SpaceRootFindPattern::IncludeDotDir(
+///         ".cargo".into()
+///     )
+/// );
+/// assert!(path.is_ok());
+/// assert!(path.unwrap().join(".cargo").is_dir())
+/// ```
+/// ```rust
+/// # use std::env::current_dir;
+/// # use std::path::PathBuf;
+/// # use framework::space::SpaceRootFindPattern;
+/// # use framework::space::find_space_root_with;
 /// // Find the `Cargo.toml` file
 /// let path = find_space_root_with(
 ///     current_dir().unwrap(),
@@ -391,8 +406,13 @@ pub fn find_space_root_with(
     // Get the pattern used for matching
     let match_pattern: Box<dyn Fn(&Path) -> bool> = match pattern {
         SpaceRootFindPattern::IncludeDotDir(dot_dir_name) => Box::new(move |path| {
-            path.join(format!(".{}", dot_dir_name.to_string_lossy()))
-                .is_dir()
+            let dir_name = dot_dir_name.to_string_lossy();
+            let dir_name = if dir_name.starts_with('.') {
+                dir_name.to_string()
+            } else {
+                format!(".{}", dir_name)
+            };
+            path.join(dir_name).is_dir()
         }),
         SpaceRootFindPattern::IncludeFile(file_name) => {
             Box::new(move |path| path.join(&file_name).is_file())
