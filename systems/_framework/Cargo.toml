@@ -4,6 +4,8 @@ edition = "2024"
 version.workspace = true
 
 [dependencies]
+space_macro = { path = "space_macro" }
+
 just_fmt.workspace = true
 thiserror.workspace = true
 tokio.workspace = true

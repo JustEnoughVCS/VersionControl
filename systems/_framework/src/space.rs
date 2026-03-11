@@ -10,7 +10,7 @@ use std::{
 
 pub mod error;
 
-pub struct Space<T: SpaceContent> {
+pub struct Space<T: SpaceRoot> {
     path_format_cfg: PathFormatConfig,
 
     content: T,
@@ -18,7 +18,7 @@ pub struct Space<T: SpaceContent> {
     current_dir: Option<PathBuf>,
 }
 
-impl<T: SpaceContent> Space<T> {
+impl<T: SpaceRoot> Space<T> {
     /// Create a new `Space` instance with the given content.
     pub fn new(content: T) -> Self {
         Space {
@@ -30,6 +30,49 @@ impl<T: SpaceContent> Space<T> {
             space_dir: Cell::new(None),
             current_dir: None,
         }
+    }
+
+    /// Initialize a space at the given path.
+    ///
+    /// Checks if a space exists at the given path. If not, creates a new space
+    /// by calling `T::create_space()` at that path.
+    pub async fn init(&self, path: impl AsRef<Path>) -> Result<(), SpaceError> {
+        let path = path.as_ref();
+        let pattern = T::get_pattern();
+
+        if !find_space_root_with(path.to_path_buf(), pattern).is_ok() {
+            T::create_space(path).await?;
+        }
+        Ok(())
+    }
+
+    /// Create a new space at the given path with the specified name.
+    ///
+    /// The full path is constructed as `path/name`. Checks if a space already
+    /// exists at that location. If not, creates a new space by calling
+    /// `T::create_space()` at that path.
+    pub async fn create(&self, path: impl AsRef<Path>, name: &str) -> Result<(), SpaceError> {
+        let full_path = path.as_ref().join(name);
+        self.init(full_path).await
+    }
+
+    /// Initialize a space in the current directory.
+    ///
+    /// Checks if a space exists in the current directory. If not, creates a new space
+    /// by calling `T::create_space()` at the current directory.
+    pub async fn init_here(&self) -> Result<(), SpaceError> {
+        let current_dir = self.current_dir()?;
+        self.init(current_dir).await
+    }
+
+    /// Create a new space in the current directory with the specified name.
+    ///
+    /// The full path is constructed as `current_dir/name`. Checks if a space already
+    /// exists at that location. If not, creates a new space by calling
+    /// `T::create_space()` at that path.
+    pub async fn create_here(&self, name: &str) -> Result<(), SpaceError> {
+        let current_dir = self.current_dir()?;
+        self.create(current_dir, name).await
     }
 
     /// Consume the `Space`, returning the inner content.
@@ -101,7 +144,7 @@ impl<T: SpaceContent> Space<T> {
     }
 }
 
-impl<T: SpaceContent> Space<T> {
+impl<T: SpaceRoot> Space<T> {
     /// Convert a relative path to an absolute path within the space.
     ///
     /// The path is formatted according to the space's path format configuration.
@@ -309,27 +352,31 @@ impl<T: SpaceContent> Space<T> {
     }
 }
 
-impl<T: SpaceContent> From<T> for Space<T> {
+impl<T: SpaceRoot> From<T> for Space<T> {
     fn from(content: T) -> Self {
         Space::<T>::new(content)
     }
 }
 
-impl<T: SpaceContent> AsRef<T> for Space<T> {
+impl<T: SpaceRoot> AsRef<T> for Space<T> {
     fn as_ref(&self) -> &T {
         &self.content
     }
 }
 
-impl<T: SpaceContent> Deref for Space<T> {
+impl<T: SpaceRoot> Deref for Space<T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
         &self.as_ref()
     }
 }
 
-pub trait SpaceContent {
+pub trait SpaceRoot: Sized {
+    /// Get the pattern used to identify the space root
     fn get_pattern() -> SpaceRootFindPattern;
+
+    /// Given a non-space directory, implement logic to make it a space-recognizable directory
+    fn create_space(path: &Path) -> impl Future<Output = Result<(), SpaceError>> + Send;
 }
 
 pub enum SpaceRootFindPattern {

@@ -397,6 +397,10 @@ name = "config_system"
 version = "0.1.0"
 dependencies = [
  "serde",
+ "serde_json",
+ "serde_yaml",
+ "thiserror",
+ "toml",
 ]
 
 [[package]]
@@ -700,6 +704,7 @@ name = "framework"
 version = "0.1.0"
 dependencies = [
  "just_fmt",
+ "space_macro",
  "thiserror",
  "tokio",
 ]
@@ -1803,6 +1808,16 @@ checksum = "17129e116933cf371d018bb80ae557e889637989d8638274fb25622827b03881"
 dependencies = [
  "libc",
  "windows-sys 0.60.2",
+]
+
+[[package]]
+name = "space_macro"
+version = "0.1.0"
+dependencies = [
+ "just_fmt",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

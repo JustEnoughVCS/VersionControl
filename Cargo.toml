@@ -28,9 +28,11 @@ members = [
     "systems/_asset",
     "systems/_asset/macros",
     "systems/_asset/test",
+    "systems/_config",
     "systems/_constants",
     "systems/_constants/macros",
     "systems/_framework",
+    "systems/_framework/space_macro",
     "systems/sheet",
     "systems/sheet/macros",
     "systems/vault",
@@ -50,7 +52,6 @@ members = [
     "legacy_utils/cfg_file",
     "legacy_utils/cfg_file/cfg_file_derive",
     "legacy_utils/cfg_file/cfg_file_test",
-    "systems/_config",
     # LEGACY AREA
 ]
 
@@ -58,14 +59,26 @@ members = [
 version = "0.1.0"
 
 [workspace.dependencies]
-just_fmt = "0.1.2"
+# Macro & code gen
 proc-macro2 = "1.0"
 quote = "1.0"
-regex = "1.12"
-serde = { version = "1", features = ["derive"] }
 syn = { version = "2.0", features = ["full", "extra-traits"] }
-thiserror = "2"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+toml = "0.9"
+
+# Text processing
+just_fmt = "0.1.2"
+regex = "1.12"
+
+# Async runtime
 tokio = { version = "1.50", features = ["full"] }
+
+# Error handling
+thiserror = "2"
 
 [profile.dev]
 opt-level = 0

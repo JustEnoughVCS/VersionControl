@@ -1,5 +1,5 @@
 [package]
-name = "sheet_system_macros"
+name = "space_macro"
 version.workspace = true
 edition = "2024"
 
@@ -10,3 +10,4 @@ proc-macro = true
 syn.workspace = true
 quote.workspace = true
 proc-macro2.workspace = true
+just_fmt.workspace = true
