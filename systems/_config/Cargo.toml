@@ -1,0 +1,6 @@
+[package]
+name = "config_system"
+edition = "2024"
+version.workspace = true
+
+[dependencies]

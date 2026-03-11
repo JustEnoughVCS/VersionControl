@@ -7,7 +7,7 @@ version.workspace = true
 
 # Utils
 tcp_connection = { path = "../utils/tcp_connection" }
-cfg_file = { path = "../utils/cfg_file", features = ["default"] }
+cfg_file = { path = "../legacy_utils/cfg_file", features = ["default"] }
 sha1_hash = { path = "../utils/sha1_hash" }
 
 just_fmt = "0.1.2"

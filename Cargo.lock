@@ -393,6 +393,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3a822ea5bc7590f9d40f1ba12c0dc3c2760f3482c6984db1573ad11031420831"
 
 [[package]]
+name = "config_system"
+version = "0.1.0"
+
+[[package]]
 name = "const-oid"
 version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -972,6 +976,7 @@ dependencies = [
  "asset_system",
  "cfg_file",
  "chrono",
+ "config_system",
  "constants",
  "criterion",
  "data_struct",
@@ -986,6 +991,7 @@ dependencies = [
  "vcs_actions",
  "vcs_data",
  "vcs_docs",
+ "workspace_system",
 ]
 
 [[package]]
@@ -2583,6 +2589,18 @@ dependencies = [
  "serde_json",
  "unicode-xid",
  "wasmparser",
+]
+
+[[package]]
+name = "workspace_system"
+version = "0.1.0"
+dependencies = [
+ "asset_system",
+ "config_system",
+ "constants",
+ "framework",
+ "serde",
+ "tokio",
 ]
 
 [[package]]

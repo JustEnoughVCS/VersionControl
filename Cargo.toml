@@ -34,9 +34,7 @@ members = [
     "systems/sheet",
     "systems/sheet/macros",
     "systems/vault",
-    "utils/cfg_file",
-    "utils/cfg_file/cfg_file_derive",
-    "utils/cfg_file/cfg_file_test",
+    "systems/workspace",
     "utils/data_struct",
     "utils/hex_display",
     "utils/sha1_hash",
@@ -44,11 +42,15 @@ members = [
     "utils/tcp_connection/tcp_connection_test",
 
     # LEGACY AREA
+    "legacy_actions",
     "legacy_data",
     "legacy_data/tests",
-    "legacy_actions",
     "legacy_systems/action",
     "legacy_systems/action/action_macros",
+    "legacy_utils/cfg_file",
+    "legacy_utils/cfg_file/cfg_file_derive",
+    "legacy_utils/cfg_file/cfg_file_test",
+    "systems/_config",
     # LEGACY AREA
 ]
 
@@ -94,7 +96,7 @@ jvlib = { path = "ffi" }
 vcs_docs = { path = "docs" }
 
 # Utils
-cfg_file = { path = "utils/cfg_file" }
+cfg_file = { path = "legacy_utils/cfg_file" }
 data_struct = { path = "utils/data_struct" }
 hex_display = { path = "utils/hex_display" }
 sha1_hash = { path = "utils/sha1_hash" }
@@ -102,9 +104,11 @@ tcp_connection = { path = "utils/tcp_connection" }
 
 # Systems
 asset_system = { path = "systems/_asset" }
+config_system = { path = "systems/_config" }
 constants = { path = "systems/_constants" }
 sheet_system = { path = "systems/sheet" }
 vault_system = { path = "systems/vault" }
+workspace_system = { path = "systems/workspace" }
 
 # Legacy
 vcs_data = { path = "legacy_data" }
