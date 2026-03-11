@@ -10,12 +10,10 @@ constants = { path = "../_constants" }
 sheet_system_macros = { path = "macros" }
 asset_system = { path = "../_asset" }
 
-serde = { version = "1", features = ["derive"] }
-
-tokio = { version = "1.50", features = ["full"] }
-
-thiserror = "2"
-just_fmt = "0.1.2"
+serde.workspace = true
+tokio.workspace = true
+thiserror.workspace = true
+just_fmt.workspace = true
 
 memmap2 = "0.9"
 sha2 = "0.10"

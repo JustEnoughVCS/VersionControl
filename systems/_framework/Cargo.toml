@@ -4,7 +4,6 @@ edition = "2024"
 version.workspace = true
 
 [dependencies]
-tokio = { version = "1.50", features = ["fs"] }
-thiserror = "2"
-
-just_fmt = "0.1.2"
+just_fmt.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
