@@ -689,6 +689,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
 
 [[package]]
+name = "framework"
+version = "0.1.0"
+dependencies = [
+ "just_fmt",
+ "thiserror 2.0.17",
+ "tokio",
+]
+
+[[package]]
 name = "futures"
 version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -973,6 +982,7 @@ dependencies = [
  "tcp_connection",
  "tokio",
  "toml",
+ "vault_system",
  "vcs_actions",
  "vcs_data",
  "vcs_docs",
@@ -2005,6 +2015,14 @@ dependencies = [
  "js-sys",
  "serde",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "vault_system"
+version = "0.1.0"
+dependencies = [
+ "constants",
+ "framework",
 ]
 
 [[package]]

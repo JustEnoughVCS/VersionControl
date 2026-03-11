@@ -30,8 +30,10 @@ members = [
     "systems/_asset/test",
     "systems/_constants",
     "systems/_constants/macros",
+    "systems/_framework",
     "systems/sheet",
     "systems/sheet/macros",
+    "systems/vault",
     "utils/cfg_file",
     "utils/cfg_file/cfg_file_derive",
     "utils/cfg_file/cfg_file_test",
@@ -102,6 +104,7 @@ tcp_connection = { path = "utils/tcp_connection" }
 asset_system = { path = "systems/_asset" }
 constants = { path = "systems/_constants" }
 sheet_system = { path = "systems/sheet" }
+vault_system = { path = "systems/vault" }
 
 # Legacy
 vcs_data = { path = "legacy_data" }
