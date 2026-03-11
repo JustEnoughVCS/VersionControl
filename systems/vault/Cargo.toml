@@ -1,0 +1,14 @@
+[package]
+name = "vault_system"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
+asset_system = { path = "../_asset" }
+config_system = { path = "../_config" }
+constants = { path = "../_constants" }
+framework = { path = "../_framework" }
+
+serde.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
