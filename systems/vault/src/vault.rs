@@ -3,7 +3,7 @@ use constants::vault::{
     dirs::{vault_dir_changes, vault_dir_ignore_rules, vault_dir_member_root, vault_dir_refsheets},
     files::vault_file_config,
 };
-use framework::{SpaceRootTest, space::SpaceRoot};
+use framework::{space::SpaceRoot, space_macro::SpaceRootTest};
 use tokio::fs;
 
 use crate::vault::config::VaultConfig;

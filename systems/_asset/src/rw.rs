@@ -3,8 +3,6 @@ use std::path::PathBuf;
 use crate::error::{DataReadError, DataWriteError};
 
 pub trait RWData<DataType> {
-    type DataType;
-
     /// Implement read logic
     /// Given a path, return the specific data
     fn read(path: &PathBuf) -> impl Future<Output = Result<DataType, DataReadError>> + Send + Sync;
@@ -37,7 +35,6 @@ macro_rules! ensure_eq {
         }
     };
 }
-
 // Test Data
 pub struct FooData {
     pub age: i32,
@@ -45,8 +42,6 @@ pub struct FooData {
 }
 
 impl RWData<FooData> for FooData {
-    type DataType = FooData;
-
     async fn read(path: &PathBuf) -> Result<FooData, DataReadError> {
         let content = tokio::fs::read_to_string(path)
             .await

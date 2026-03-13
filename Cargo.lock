@@ -988,6 +988,7 @@ dependencies = [
  "constants",
  "criterion",
  "data_struct",
+ "framework",
  "hex_display",
  "jvlib",
  "sha1_hash",

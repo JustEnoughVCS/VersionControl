@@ -129,6 +129,7 @@ tcp_connection = { path = "utils/tcp_connection" }
 asset_system = { path = "systems/_asset" }
 config_system = { path = "systems/_config" }
 constants = { path = "systems/_constants" }
+framework = { path = "systems/_framework" }
 sheet_system = { path = "systems/sheet" }
 vault_system = { path = "systems/vault" }
 workspace_system = { path = "systems/workspace" }

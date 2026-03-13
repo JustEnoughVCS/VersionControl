@@ -552,9 +552,7 @@ impl TryFrom<&[u8]> for SheetData {
 }
 
 impl RWData<SheetData> for SheetData {
-    type DataType = SheetData;
-
-    async fn read(path: &PathBuf) -> Result<Self::DataType, asset_system::error::DataReadError> {
+    async fn read(path: &PathBuf) -> Result<SheetData, asset_system::error::DataReadError> {
         let read_data = SheetData::full_read(&mut SheetData::empty(), path).await;
         match read_data {
             Ok(_) => {
@@ -573,7 +571,7 @@ impl RWData<SheetData> for SheetData {
     }
 
     async fn write(
-        data: Self::DataType,
+        data: SheetData,
         path: &PathBuf,
     ) -> Result<(), asset_system::error::DataWriteError> {
         let write_data = tokio::fs::write(path, data.as_bytes()).await;
@@ -585,7 +583,7 @@ impl RWData<SheetData> for SheetData {
         }
     }
 
-    fn test_data() -> Self::DataType {
+    fn test_data() -> SheetData {
         let sheet = SheetData::empty().pack("sheet");
         let mut sheet = sheet;
         sheet
@@ -601,7 +599,7 @@ impl RWData<SheetData> for SheetData {
         sheet.unpack()
     }
 
-    fn verify_data(data_a: Self::DataType, data_b: Self::DataType) -> bool {
+    fn verify_data(data_a: SheetData, data_b: SheetData) -> bool {
         data_a == data_b
     }
 }

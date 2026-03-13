@@ -16,10 +16,6 @@ pub mod lib {
 
 #[cfg(feature = "lib")]
 pub mod system {
-    pub mod constants {
-        pub use constants::*;
-    }
-
     pub mod asset_system {
         pub use asset_system::*;
     }
@@ -32,8 +28,25 @@ pub mod system {
         pub use sheet_system::*;
     }
 
-    pub mod storage_system {
-        pub use storage_system::*;
+    pub mod config_system {
+        pub use config_system::*;
+    }
+
+    pub mod constants {
+        pub use constants::*;
+    }
+
+    pub mod space {
+        pub use framework::space::*;
+        pub use framework::space_macro::*;
+    }
+
+    pub mod workspace {
+        pub use workspace_system::*;
+    }
+
+    pub mod vault {
+        pub use vault_system::*;
     }
 }
 

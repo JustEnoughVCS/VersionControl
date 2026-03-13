@@ -1,3 +1,6 @@
 pub mod space;
-#[allow(unused_imports)]
-pub use space_macro::*;
+
+pub mod space_macro {
+    #[allow(unused_imports)]
+    pub use space_macro::*;
+}

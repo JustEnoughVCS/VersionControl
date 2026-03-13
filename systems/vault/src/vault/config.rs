@@ -6,11 +6,9 @@ use serde::{Deserialize, Serialize};
 pub struct VaultConfig {}
 
 impl RWData<VaultConfig> for VaultConfig {
-    type DataType = VaultConfig;
-
     async fn read(
         path: &std::path::PathBuf,
-    ) -> Result<Self::DataType, asset_system::error::DataReadError> {
+    ) -> Result<VaultConfig, asset_system::error::DataReadError> {
         let read_config = read_config(path).await;
         match read_config {
             Ok(config) => Ok(config),
@@ -21,7 +19,7 @@ impl RWData<VaultConfig> for VaultConfig {
     }
 
     async fn write(
-        data: Self::DataType,
+        data: VaultConfig,
         path: &std::path::PathBuf,
     ) -> Result<(), asset_system::error::DataWriteError> {
         let write_config = write_config(path, &data).await;
@@ -35,11 +33,11 @@ impl RWData<VaultConfig> for VaultConfig {
         }
     }
 
-    fn test_data() -> Self::DataType {
+    fn test_data() -> VaultConfig {
         VaultConfig::default()
     }
 
-    fn verify_data(data_a: Self::DataType, data_b: Self::DataType) -> bool {
+    fn verify_data(data_a: VaultConfig, data_b: VaultConfig) -> bool {
         &data_a == &data_b
     }
 }

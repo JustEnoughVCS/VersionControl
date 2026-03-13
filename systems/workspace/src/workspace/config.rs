@@ -85,9 +85,7 @@ impl WorkspaceConfig {
 }
 
 impl RWData<WorkspaceConfig> for WorkspaceConfig {
-    type DataType = WorkspaceConfig;
-
-    async fn read(path: &PathBuf) -> Result<Self::DataType, DataReadError> {
+    async fn read(path: &PathBuf) -> Result<WorkspaceConfig, DataReadError> {
         let read_config = read_config(path).await;
         match read_config {
             Ok(config) => Ok(config),
@@ -98,7 +96,7 @@ impl RWData<WorkspaceConfig> for WorkspaceConfig {
         }
     }
 
-    async fn write(data: Self::DataType, path: &PathBuf) -> Result<(), DataWriteError> {
+    async fn write(data: WorkspaceConfig, path: &PathBuf) -> Result<(), DataWriteError> {
         let write_config = write_config(path, &data).await;
         match write_config {
             Ok(_) => Ok(()),
@@ -111,11 +109,11 @@ impl RWData<WorkspaceConfig> for WorkspaceConfig {
         }
     }
 
-    fn test_data() -> Self::DataType {
+    fn test_data() -> WorkspaceConfig {
         WorkspaceConfig::default()
     }
 
-    fn verify_data(data_a: Self::DataType, data_b: Self::DataType) -> bool {
+    fn verify_data(data_a: WorkspaceConfig, data_b: WorkspaceConfig) -> bool {
         &data_a == &data_b
     }
 }
