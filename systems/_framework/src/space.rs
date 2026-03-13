@@ -1,11 +1,11 @@
 use crate::space::error::SpaceError;
 use just_fmt::fmt_path::{PathFormatConfig, fmt_path, fmt_path_custom};
 use std::{
-    cell::Cell,
     env::current_dir,
     ffi::OsString,
     ops::Deref,
     path::{Path, PathBuf},
+    sync::RwLock,
 };
 
 pub mod error;
@@ -14,7 +14,7 @@ pub struct Space<T: SpaceRoot> {
     path_format_cfg: PathFormatConfig,
 
     content: T,
-    space_dir: Cell<Option<PathBuf>>,
+    space_dir: RwLock<Option<PathBuf>>,
     current_dir: Option<PathBuf>,
 }
 
@@ -27,7 +27,7 @@ impl<T: SpaceRoot> Space<T> {
                 ..Default::default()
             },
             content,
-            space_dir: Cell::new(None),
+            space_dir: RwLock::new(None),
             current_dir: None,
         }
     }
@@ -85,22 +85,24 @@ impl<T: SpaceRoot> Space<T> {
     /// If the space directory has already been found, it is returned from cache.
     /// Otherwise, it is found using the pattern from `T::get_pattern()`.
     pub fn space_dir(&self, current_dir: impl Into<PathBuf>) -> Result<PathBuf, SpaceError> {
+        // First try to read from cache
+        if let Ok(lock) = self.space_dir.read() {
+            if let Some(cached_dir) = lock.as_ref() {
+                return Ok(cached_dir.clone());
+            }
+        }
+
+        // Cache miss, find the space directory
         let pattern = T::get_pattern();
-        match self.space_dir.take() {
-            Some(dir) => {
+        let result = find_space_root_with(current_dir.into(), pattern);
+
+        match result {
+            Ok(dir) => {
+                // Update cache with the found directory
                 self.update_space_dir(Some(dir.clone()));
                 Ok(dir)
             }
-            None => {
-                let result = find_space_root_with(current_dir.into(), pattern);
-                match result {
-                    Ok(r) => {
-                        self.update_space_dir(Some(r.clone()));
-                        Ok(r)
-                    }
-                    Err(e) => Err(e),
-                }
-            }
+            Err(e) => Err(e),
         }
     }
 
@@ -140,7 +142,9 @@ impl<T: SpaceRoot> Space<T> {
 
     /// Update the cached space directory.
     fn update_space_dir(&self, space_dir: Option<PathBuf>) {
-        self.space_dir.set(space_dir);
+        if let Ok(mut lock) = self.space_dir.write() {
+            *lock = space_dir;
+        }
     }
 }
 
