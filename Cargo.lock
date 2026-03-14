@@ -991,6 +991,7 @@ dependencies = [
  "framework",
  "hex_display",
  "jvlib",
+ "serde",
  "sha1_hash",
  "sheet_system",
  "tcp_connection",

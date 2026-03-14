@@ -142,3 +142,5 @@ workspace_system = { path = "systems/workspace" }
 vcs_data = { path = "legacy_data" }
 vcs_actions = { path = "legacy_actions" }
 action_system = { path = "legacy_systems/action" }
+
+serde.workspace = true
