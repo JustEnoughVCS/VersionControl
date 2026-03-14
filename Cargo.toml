@@ -111,6 +111,10 @@ criterion = "0.8"
 name = "sheet_benchmark"
 harness = false
 
+[[bench]]
+name = "sheet_tree_benchmark"
+harness = false
+
 [dependencies]
 # ffi
 jvlib = { path = "ffi" }
