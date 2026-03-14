@@ -33,7 +33,7 @@ pub struct Sheet {
     name: String,
 
     /// Data in the sheet
-    data: SheetData,
+    pub(crate) data: SheetData,
 
     /// Edit information
     edit: SheetEdit,
