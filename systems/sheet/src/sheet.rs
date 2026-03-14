@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use asset_system::{RWDataTest, rw::RWData};
+use asset_system::{RWDataTest, error::DataReadError, rw::RWData};
 use memmap2::Mmap;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
@@ -553,34 +553,20 @@ impl TryFrom<&[u8]> for SheetData {
 
 impl RWData<SheetData> for SheetData {
     async fn read(path: &PathBuf) -> Result<SheetData, asset_system::error::DataReadError> {
-        let read_data = SheetData::full_read(&mut SheetData::empty(), path).await;
-        match read_data {
-            Ok(_) => {
-                let data = SheetData::full_read(&mut SheetData::empty(), path).await;
-                match data {
-                    Ok(_) => Ok(SheetData::empty()),
-                    Err(e) => Err(asset_system::error::DataReadError::IoError(
-                        std::io::Error::new(std::io::ErrorKind::Other, e.to_string()),
-                    )),
-                }
-            }
-            Err(e) => Err(asset_system::error::DataReadError::IoError(
-                std::io::Error::new(std::io::ErrorKind::Other, e.to_string()),
-            )),
-        }
+        let mut data = SheetData::empty();
+        data.full_read(path).await.map_err(|e| match e {
+            ReadSheetDataError::IOErr(error) => DataReadError::IoError(error),
+        })?;
+        Ok(data)
     }
 
     async fn write(
         data: SheetData,
         path: &PathBuf,
     ) -> Result<(), asset_system::error::DataWriteError> {
-        let write_data = tokio::fs::write(path, data.as_bytes()).await;
-        match write_data {
-            Ok(_) => Ok(()),
-            Err(e) => Err(asset_system::error::DataWriteError::IoError(
-                std::io::Error::new(std::io::ErrorKind::Other, e.to_string()),
-            )),
-        }
+        tokio::fs::write(path, data.as_bytes())
+            .await
+            .map_err(|e| asset_system::error::DataWriteError::IoError(e.into()))
     }
 
     fn test_data() -> SheetData {
