@@ -42,6 +42,7 @@ impl<'a> From<&'a SheetData> for SheetDataTree<'a> {
 }
 
 impl<'a> SheetDataTree<'a> {
+    /// Get the root of the tree for accessing the tree
     pub fn root(&self) -> &SheetDataTreeNode<'a> {
         &self.root
     }
@@ -96,6 +97,8 @@ pub enum SheetDataTreeNode<'a> {
 }
 
 impl<'a> SheetDataTreeNode<'a> {
+    /// Returns a reference to the child node with the given name, if it exists.
+    /// Only works on directory nodes; returns `None` for mapping nodes.
     pub fn next(&self, name: &str) -> Option<&SheetDataTreeNode<'a>> {
         let SheetDataTreeNode::Directory(_, nodes) = self else {
             return None;
@@ -103,6 +106,8 @@ impl<'a> SheetDataTreeNode<'a> {
         nodes.get(name)
     }
 
+    /// Returns a reference to the `LocalMapping` if this node is a mapping node.
+    /// Returns `None` if this node is a directory node.
     pub fn mapping(&self) -> Option<&'a LocalMapping> {
         match self {
             SheetDataTreeNode::Mapping(_, mapping) => Some(mapping),
@@ -110,6 +115,8 @@ impl<'a> SheetDataTreeNode<'a> {
         }
     }
 
+    /// Returns a reference to the children hash set if this node is a directory node.
+    /// Returns `None` if this node is a mapping node.
     pub fn dir(&'a self) -> Option<&'a HashSet<SheetDataTreeNode<'a>>> {
         match self {
             SheetDataTreeNode::Directory(_, children) => Some(children),
@@ -117,6 +124,8 @@ impl<'a> SheetDataTreeNode<'a> {
         }
     }
 
+    /// Returns a reference to the `LocalMapping` if this node is a mapping node.
+    /// Panics if called on a directory node.
     pub fn unwrap_mapping(&self) -> &'a LocalMapping {
         match self {
             SheetDataTreeNode::Mapping(_, mapping) => mapping,
@@ -124,6 +133,8 @@ impl<'a> SheetDataTreeNode<'a> {
         }
     }
 
+    /// Returns a reference to the children hash set if this node is a directory node.
+    /// Panics if called on a mapping node.
     pub fn unwrap_dir(&'a self) -> &'a HashSet<SheetDataTreeNode<'a>> {
         match self {
             SheetDataTreeNode::Directory(_, children) => children,
@@ -131,6 +142,8 @@ impl<'a> SheetDataTreeNode<'a> {
         }
     }
 
+    /// Returns a reference to the `LocalMapping` if this node is a mapping node.
+    /// Returns the provided default reference if this node is a directory node.
     pub fn unwrap_mapping_or(&self, default: &'a LocalMapping) -> &'a LocalMapping {
         match self {
             SheetDataTreeNode::Mapping(_, mapping) => mapping,
@@ -138,6 +151,8 @@ impl<'a> SheetDataTreeNode<'a> {
         }
     }
 
+    /// Returns a reference to the `LocalMapping` if this node is a mapping node.
+    /// Otherwise, calls the provided closure and returns its result.
     pub fn unwrap_mapping_or_else<F>(&self, f: F) -> &'a LocalMapping
     where
         F: FnOnce() -> &'a LocalMapping,
@@ -148,6 +163,8 @@ impl<'a> SheetDataTreeNode<'a> {
         }
     }
 
+    /// Returns a reference to the children hash set if this node is a directory node.
+    /// Returns the provided default reference if this node is a mapping node.
     pub fn unwrap_dir_or(
         &'a self,
         default: &'a HashSet<SheetDataTreeNode<'a>>,
@@ -158,6 +175,8 @@ impl<'a> SheetDataTreeNode<'a> {
         }
     }
 
+    /// Returns a reference to the children hash set if this node is a directory node.
+    /// Otherwise, calls the provided closure and returns its result.
     pub fn unwrap_dir_or_else<F>(&'a self, f: F) -> &'a HashSet<SheetDataTreeNode<'a>>
     where
         F: FnOnce() -> &'a HashSet<SheetDataTreeNode<'a>>,
@@ -168,10 +187,12 @@ impl<'a> SheetDataTreeNode<'a> {
         }
     }
 
+    /// Returns `true` if this node is a mapping node.
     pub fn is_mapping(&self) -> bool {
         matches!(self, SheetDataTreeNode::Mapping(_, _))
     }
 
+    /// Returns `true` if this node is a directory node.
     pub fn is_dir(&self) -> bool {
         matches!(self, SheetDataTreeNode::Directory(_, _))
     }
