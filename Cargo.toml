@@ -115,6 +115,10 @@ harness = false
 name = "sheet_tree_benchmark"
 harness = false
 
+[[bench]]
+name = "id_alias_benchmark"
+harness = false
+
 [dependencies]
 # ffi
 jvlib = { path = "ffi" }

@@ -101,7 +101,7 @@ async fn alias_exists(aliases_dir: PathBuf, local_id: u32) -> Result<bool, IDAli
     Ok(remote_id != 0)
 }
 
-async fn convert_to_remote(aliases_dir: PathBuf, local_id: u32) -> Result<u32, IDAliasError> {
+pub async fn convert_to_remote(aliases_dir: PathBuf, local_id: u32) -> Result<u32, IDAliasError> {
     ensure_aliases_dir(&aliases_dir).await?;
 
     let (file_index, offset) = get_file_path_and_offset(local_id);
