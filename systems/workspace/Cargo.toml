@@ -8,6 +8,7 @@ asset_system = { path = "../_asset" }
 config_system = { path = "../_config" }
 constants = { path = "../_constants" }
 framework = { path = "../_framework" }
+sheet_system = { path = "../sheet" }
 
 serde.workspace = true
 thiserror.workspace = true

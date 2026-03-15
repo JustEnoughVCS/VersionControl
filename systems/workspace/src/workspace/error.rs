@@ -1,5 +1,6 @@
 use asset_system::error::{DataApplyError, DataReadError, DataWriteError, HandleLockError};
 use framework::space::error::SpaceError;
+use sheet_system::index_source::error::IDAliasError;
 
 #[derive(thiserror::Error, Debug)]
 pub enum WorkspaceOperationError {
@@ -26,6 +27,9 @@ pub enum WorkspaceOperationError {
 
     #[error("Data apply error: {0}")]
     DataApply(#[from] DataApplyError),
+
+    #[error("ID alias error: {0}")]
+    IDAliasError(#[from] IDAliasError),
 }
 
 impl From<SpaceError> for WorkspaceOperationError {

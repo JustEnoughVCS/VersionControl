@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
 
+pub mod alias;
+pub mod error;
+
 /// IndexSource
 /// Points to a unique resource address in Vault
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]

@@ -133,6 +133,7 @@ pub mod workspace {
         c! { VAULT_MIRROR = ".jv/UPSTREAM/" }
         c! { LOCAL_SHEETS = ".jv/sheets/{account}/" }
         c! { DRAFT_AREA = ".jv/drafts/{account}_{sheet}/" }
+        c! { ID_MAPPING = ".jv/idmp/" }
         c! { WORKING_AREA = "" }
     }
 }
