@@ -35,16 +35,35 @@ pub fn space_root_test_derive(input: TokenStream) -> TokenStream {
                 let mut space = Space::new(#name::default());
 
                 match #name::get_pattern() {
-                    SpaceRootFindPattern::AbsolutePath(path_buf) => space.set_override_pattern(Some(
-                        SpaceRootFindPattern::AbsolutePath(temp_dir.join(path_buf)),
-                    )),
+                    SpaceRootFindPattern::AbsolutePath(path_buf) => {
+                        let dir = temp_dir.join("root");
+                        println!("Redirect absolute path:");
+                        println!("  from: `{}`", path_buf.display());
+                        println!("    to: `{}`", dir.display());
+                        space.set_override_pattern(Some(
+                            SpaceRootFindPattern::AbsolutePath(dir.clone()),
+                        ));
+
+                        println!("Checking if {} absolute directory does not exist before initialization", stringify!(#name));
+                        assert!(!dir.exists());
+
+                        space.init_here().await.unwrap();
+
+                        println!("Checking if {} absolute directory exists after initialization", stringify!(#name));
+                        assert!(dir.exists());
+                        println!("\u{001b}[33;1mwarning\u{001b}[0m: Absolute path test completed in isolated environment, may not fully represent system runtime conditions");
+
+                        return;
+                    },
                     _ => {}
                 }
 
+                println!("Checking if {} does not exist before initialization", stringify!(#name));
                 assert!(space.space_dir_current().is_err());
 
                 space.init_here().await.unwrap();
 
+                println!("Checking if {} exists after initialization", stringify!(#name));
                 assert!(space.space_dir_current().is_ok());
             }
         }
