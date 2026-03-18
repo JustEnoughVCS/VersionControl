@@ -7,7 +7,7 @@ pub mod id_aliases;
 pub mod sheet_state;
 
 pub struct WorkspaceManager {
-    space: Space<Workspace>,
+    pub(crate) space: Space<Workspace>,
 }
 
 impl WorkspaceManager {

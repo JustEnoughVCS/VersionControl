@@ -376,6 +376,12 @@ impl<T: SpaceRoot> Space<T> {
         let path = self.local_path(relative_path)?;
         Ok(tokio::fs::write(path, contents).await?)
     }
+
+    /// Check if a file or directory exists at the given relative path within the space.
+    pub async fn exists(&self, relative_path: impl AsRef<Path>) -> Result<bool, SpaceError> {
+        let path = self.local_path(relative_path)?;
+        Ok(tokio::fs::try_exists(path).await?)
+    }
 }
 
 impl<T: SpaceRoot> From<T> for Space<T> {
