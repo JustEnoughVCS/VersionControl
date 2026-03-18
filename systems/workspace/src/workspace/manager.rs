@@ -4,6 +4,7 @@ use constants::workspace::files::workspace_file_config;
 use framework::space::Space;
 
 pub mod id_aliases;
+pub mod sheet_state;
 
 pub struct WorkspaceManager {
     space: Space<Workspace>,

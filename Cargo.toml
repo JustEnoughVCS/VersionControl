@@ -25,6 +25,7 @@ deprecated = []
 members = [
     "docs",
     "ffi",
+    "protocol",
     "systems/_asset",
     "systems/_asset/macros",
     "systems/_asset/test",
@@ -138,6 +139,7 @@ asset_system = { path = "systems/_asset" }
 config_system = { path = "systems/_config" }
 constants = { path = "systems/_constants" }
 framework = { path = "systems/_framework" }
+protocol = { path = "protocol" }
 sheet_system = { path = "systems/sheet" }
 vault_system = { path = "systems/vault" }
 workspace_system = { path = "systems/workspace" }

@@ -991,6 +991,7 @@ dependencies = [
  "framework",
  "hex_display",
  "jvlib",
+ "protocol",
  "serde",
  "sha1_hash",
  "sheet_system",
@@ -1334,6 +1335,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ee95bc4ef87b8d5ba32e8b7714ccc834865276eab0aed5c9958d00ec45f49e8"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "protocol"
+version = "0.1.0"
+dependencies = [
+ "constants",
+ "dirs",
+ "framework",
+ "serde",
+ "sheet_system",
+ "thiserror",
+ "tokio",
+ "vault_system",
+ "workspace_system",
 ]
 
 [[package]]
@@ -2604,7 +2620,9 @@ dependencies = [
  "config_system",
  "constants",
  "framework",
+ "just_fmt",
  "serde",
+ "sheet_system",
  "thiserror",
  "tokio",
 ]

@@ -10,6 +10,7 @@ constants = { path = "../_constants" }
 framework = { path = "../_framework" }
 sheet_system = { path = "../sheet" }
 
+just_fmt.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 tokio.workspace = true

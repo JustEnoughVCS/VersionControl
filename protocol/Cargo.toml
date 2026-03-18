@@ -1,0 +1,17 @@
+[package]
+name = "protocol"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
+constants = { path = "../systems/_constants" }
+framework = { path = "../systems/_framework" }
+sheet_system = { path = "../systems/sheet" }
+vault_system = { path = "../systems/vault" }
+workspace_system = { path = "../systems/workspace" }
+
+serde.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+
+dirs = "6.0.0"

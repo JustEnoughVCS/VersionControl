@@ -14,7 +14,7 @@ pub mod server {
     /// File constants
     #[constants_macros::constants("server_file")]
     pub mod files {
-        c! { CONFIG = "config.toml" }
+        c! { CONFIG = "server.toml" }
 
         // Storage location for keys and passwords
         c! { KEY = "auth/key/{member_name}.pem" }
@@ -114,10 +114,13 @@ pub mod workspace {
 
         // ### Sheets ###
         // Records the latest state of local physical files, used to calculate deviations
-        c! { LOCAL_STATUS = ".jv/sheets/{account}/{sheet}.local" }
+        c! { LOCAL_STATUS = ".jv/sheets/{sheet}.local" }
 
         // Personal sheet, represents the desired file structure, held only by the member, can be backed up to the vault
-        c! { SHEET = ".jv/sheets/{account}/{sheet}.sheet" }
+        c! { SHEET = ".jv/sheets/{sheet}.sheet" }
+
+        // Current sheet name
+        c! { CURRENT_SHEET = ".jv/sheets/CURRENT" }
 
         // Draft file, when switching to another sheet, fully records modified but untracked files
         c! { DRAFTED_FILE = ".jv/drafts/{account}_{sheet}/{mapping}" }
@@ -131,7 +134,7 @@ pub mod workspace {
     pub mod dirs {
         c! { WORKSPACE = ".jv" }
         c! { VAULT_MIRROR = ".jv/UPSTREAM/" }
-        c! { LOCAL_SHEETS = ".jv/sheets/{account}/" }
+        c! { LOCAL_SHEETS = ".jv/sheets/" }
         c! { DRAFT_AREA = ".jv/drafts/{account}_{sheet}/" }
         c! { ID_MAPPING = ".jv/idmp/" }
         c! { WORKING_AREA = "" }
@@ -141,26 +144,36 @@ pub mod workspace {
 /// File and directory path constants for the user root
 #[allow(unused)]
 pub mod user {
+    /// Others
+    #[constants_macros::constants("user_value")]
+    pub mod values {
+        c! { USER_CONFIG_NAME = "usr.toml" }
+    }
+
     /// File path constants
     #[constants_macros::constants("user_file")]
     pub mod files {
         // Upstream public key, stored after initial login, used to verify the trustworthiness of that upstream
-        c! { UPSTREAM_PUB = "upstreams/{upstream_addr}.pem" }
+        c! { JVCS_UPSTREAM_PUB = ".jvcs/upstreams/{jvcs_upstream_addr}.pem" }
 
         // Account private key, stored only locally, used for login authentication
-        c! { PRIVATE_KEY = "private/{account}.pem" }
+        c! { PRIVATE_KEY = ".jvcs/private/{account}.pem" }
 
         // Account public key, automatically generated from the private key and stored,
         // will be placed into the server's "join request list" upon initial login (if server.toml permits this action)
         // The server administrator can optionally approve this request
-        c! { PUBLIC_KEY = "public/{account}.pem" }
+        c! { PUBLIC_KEY = ".jvcs/public/{account}.pem" }
+
+        // Account configuration file
+        c! { USER_CONFIG = ".jvcs/usr.toml" }
     }
 
     /// Directory path constants
     #[constants_macros::constants("user_dir")]
     pub mod dirs {
-        c! { UPSTREAM_PUBS = "upstreams/" }
-        c! { PRIVATE_KEYS = "private/" }
-        c! { PUBLIC_KEYS = "public/" }
+        c! { ROOT = ".jvcs/" }
+        c! { UPSTREAM_PUBS = ".jvcs/upstreams/" }
+        c! { PRIVATE_KEYS = ".jvcs/private/" }
+        c! { PUBLIC_KEYS = ".jvcs/public/" }
     }
 }
