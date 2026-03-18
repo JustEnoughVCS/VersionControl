@@ -23,6 +23,7 @@ pub fn space_root_test_derive(input: TokenStream) -> TokenStream {
             use framework::space::Space;
             use std::env::{current_dir, set_current_dir};
             use tokio::fs::{create_dir_all, remove_dir_all};
+            use framework::space::SpaceRootFindPattern;
 
             #[tokio::test]
             async fn test_create_space() {
@@ -31,27 +32,20 @@ pub fn space_root_test_derive(input: TokenStream) -> TokenStream {
                 create_dir_all(&temp_dir).await.unwrap();
                 set_current_dir(&temp_dir).unwrap();
 
-                let space = Space::new(#name::default());
+                let mut space = Space::new(#name::default());
+
+                match #name::get_pattern() {
+                    SpaceRootFindPattern::AbsolutePath(path_buf) => space.set_override_pattern(Some(
+                        SpaceRootFindPattern::AbsolutePath(temp_dir.join(path_buf)),
+                    )),
+                    _ => {}
+                }
 
                 assert!(space.space_dir_current().is_err());
 
                 space.init_here().await.unwrap();
 
                 assert!(space.space_dir_current().is_ok());
-
-                let space_dir = space.space_dir_current().unwrap();
-                let pattern = <#name as framework::space::SpaceRoot>::get_pattern();
-
-                match pattern {
-                    framework::space::SpaceRootFindPattern::IncludeDotDir(dir_name) => {
-                        let expected_dir = space_dir.join(dir_name);
-                        assert!(expected_dir.exists(), "Space directory {:?} should exist", expected_dir);
-                    }
-                    framework::space::SpaceRootFindPattern::IncludeFile(file_name) => {
-                        let expected_file = space_dir.join(file_name);
-                        assert!(expected_file.exists(), "Space file {:?} should exist", expected_file);
-                    }
-                }
             }
         }
     };

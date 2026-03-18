@@ -16,6 +16,8 @@ pub struct Space<T: SpaceRoot> {
     content: T,
     space_dir: RwLock<Option<PathBuf>>,
     current_dir: Option<PathBuf>,
+
+    pub(crate) override_pattern: Option<SpaceRootFindPattern>,
 }
 
 impl<T: SpaceRoot> Space<T> {
@@ -29,6 +31,7 @@ impl<T: SpaceRoot> Space<T> {
             content,
             space_dir: RwLock::new(None),
             current_dir: None,
+            override_pattern: None,
         }
     }
 
@@ -38,10 +41,19 @@ impl<T: SpaceRoot> Space<T> {
     /// by calling `T::create_space()` at that path.
     pub async fn init(&self, path: impl AsRef<Path>) -> Result<(), SpaceError> {
         let path = path.as_ref();
-        let pattern = T::get_pattern();
+        let pattern = match &self.override_pattern {
+            Some(pattern) => pattern,
+            None => &T::get_pattern(),
+        };
 
-        if !find_space_root_with(path.to_path_buf(), pattern).is_ok() {
-            T::create_space(path).await?;
+        // If using Absolute, directly read the internal path
+        let path = match &pattern {
+            SpaceRootFindPattern::AbsolutePath(path_buf) => path_buf.clone(),
+            _ => path.to_path_buf(),
+        };
+
+        if !find_space_root_with(&path, &pattern).is_ok() {
+            T::create_space(&path).await?;
         }
         Ok(())
     }
@@ -93,7 +105,10 @@ impl<T: SpaceRoot> Space<T> {
         }
 
         // Cache miss, find the space directory
-        let pattern = T::get_pattern();
+        let pattern = match &self.override_pattern {
+            Some(pattern) => pattern,
+            None => &T::get_pattern(),
+        };
         let result = find_space_root_with(current_dir.into(), pattern);
 
         match result {
@@ -145,6 +160,13 @@ impl<T: SpaceRoot> Space<T> {
         if let Ok(mut lock) = self.space_dir.write() {
             *lock = space_dir;
         }
+    }
+
+    /// Set a custom pattern to override the default space root detection.
+    pub fn set_override_pattern(&mut self, pattern: Option<SpaceRootFindPattern>) {
+        self.override_pattern = pattern;
+        // Clear cached space directory since pattern may have changed
+        self.update_space_dir(None);
     }
 }
 
@@ -384,16 +406,22 @@ pub trait SpaceRoot: Sized {
 }
 
 pub enum SpaceRootFindPattern {
+    /// Search upward from the given current directory to find a directory containing the specified `.dir`
     IncludeDotDir(OsString),
+
+    /// Search upward from the given current directory to find a directory containing the specified file name
     IncludeFile(OsString),
+
+    /// Given a specific directory
+    AbsolutePath(PathBuf),
 }
 
 /// Find the space directory containing the current directory,
 /// Use Pattern to specify the search method
 ///
 /// For the full implementation, see `find_space_root_with`
-pub fn find_space_root(pattern: SpaceRootFindPattern) -> Result<PathBuf, SpaceError> {
-    find_space_root_with(current_dir()?, pattern)
+pub fn find_space_root(pattern: &SpaceRootFindPattern) -> Result<PathBuf, SpaceError> {
+    find_space_root_with(&current_dir()?, &pattern)
 }
 
 /// Find the space directory containing the specified directory,
@@ -413,7 +441,7 @@ pub fn find_space_root(pattern: SpaceRootFindPattern) -> Result<PathBuf, SpaceEr
 /// // Find the `.cargo` directory
 /// let path = find_space_root_with(
 ///     current_dir().unwrap(),
-///     SpaceRootFindPattern::IncludeDotDir(
+///     &SpaceRootFindPattern::IncludeDotDir(
 ///         "cargo".into()
 ///     )
 /// );
@@ -428,7 +456,7 @@ pub fn find_space_root(pattern: SpaceRootFindPattern) -> Result<PathBuf, SpaceEr
 /// // Find the `.cargo` directory
 /// let path = find_space_root_with(
 ///     current_dir().unwrap(),
-///     SpaceRootFindPattern::IncludeDotDir(
+///     &SpaceRootFindPattern::IncludeDotDir(
 ///         ".cargo".into()
 ///     )
 /// );
@@ -443,7 +471,7 @@ pub fn find_space_root(pattern: SpaceRootFindPattern) -> Result<PathBuf, SpaceEr
 /// // Find the `Cargo.toml` file
 /// let path = find_space_root_with(
 ///     current_dir().unwrap(),
-///     SpaceRootFindPattern::IncludeFile(
+///     &SpaceRootFindPattern::IncludeFile(
 ///         "Cargo.toml".into()
 ///     )
 /// );
@@ -451,8 +479,8 @@ pub fn find_space_root(pattern: SpaceRootFindPattern) -> Result<PathBuf, SpaceEr
 /// assert!(path.unwrap().join("Cargo.toml").is_file())
 /// ```
 pub fn find_space_root_with(
-    current_dir: PathBuf,
-    pattern: SpaceRootFindPattern,
+    current_dir: impl Into<PathBuf>,
+    pattern: &SpaceRootFindPattern,
 ) -> Result<PathBuf, SpaceError> {
     // Get the pattern used for matching
     let match_pattern: Box<dyn Fn(&Path) -> bool> = match pattern {
@@ -468,9 +496,20 @@ pub fn find_space_root_with(
         SpaceRootFindPattern::IncludeFile(file_name) => {
             Box::new(move |path| path.join(&file_name).is_file())
         }
+
+        // For absolute paths, return directly
+        // No search is performed
+        SpaceRootFindPattern::AbsolutePath(path) => {
+            if path.exists() && path.is_dir() {
+                return Ok(path.clone());
+            } else {
+                return Err(SpaceError::SpaceNotFound);
+            }
+        }
     };
+
     // Match parent directories
-    let mut current = current_dir;
+    let mut current = current_dir.into();
     loop {
         if match_pattern(current.as_path()) {
             return Ok(current);
