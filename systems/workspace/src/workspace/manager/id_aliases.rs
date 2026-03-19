@@ -1,5 +1,9 @@
 use constants::workspace::dirs::workspace_dir_id_mapping;
-use sheet_system::index_source::{IndexSource, alias::IndexSourceAliasesManager};
+use sheet_system::index_source::{
+    IndexSource,
+    alias::{IndexSourceAliasesManager, convert_to_remote},
+    error::IDAliasError,
+};
 
 use crate::workspace::{error::WorkspaceOperationError, manager::WorkspaceManager};
 
@@ -22,6 +26,20 @@ impl WorkspaceManager {
             Ok(index_source) => index_source,
             Err((index_source, _)) => index_source,
         })
+    }
+
+    /// Attempt to convert a local ID to a remote ID.
+    pub async fn try_convert_to_remote(
+        &self,
+        local_id: u32,
+    ) -> Result<Option<u32>, WorkspaceOperationError> {
+        let aliases_dir = self.get_space().local_path(workspace_dir_id_mapping())?;
+        match convert_to_remote(aliases_dir, local_id).await {
+            Ok(remote_id) => Ok(Some(remote_id)),
+            Err(IDAliasError::AliasNotFound(_)) => Ok(None),
+            Err(IDAliasError::Io(e)) => Err(WorkspaceOperationError::Io(e)),
+            Err(e) => Err(WorkspaceOperationError::IDAliasError(e)),
+        }
     }
 
     /// Write a alias between local and remote IDs
