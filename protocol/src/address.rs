@@ -10,6 +10,7 @@ where
     _p: PhantomData<Protocol>,
 
     /// Address of the target upstream machine
+    #[allow(dead_code)]
     target_address: String,
 }
 
