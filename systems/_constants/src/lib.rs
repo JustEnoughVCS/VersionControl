@@ -94,12 +94,12 @@ pub mod vault {
     /// Directory path constants
     #[constants_macros::constants("vault_dir")]
     pub mod dirs {
-        c! { REFSHEETS = "ref/" }
-        c! { MEMBER_ROOT = "_member/" }
-        c! { MEMBER = "_member/{member_name}/" }
-        c! { MEMBER_SHEET_BACKUPS = "_member/{member_name}/backups/" }
-        c! { IGNORE_RULES = "rules/ignore/" }
         c! { CHANGES = "changes/" }
+        c! { IGNORE_RULES = "rules/ignore/" }
+        c! { MEMBER = "_member/{member_name}/" }
+        c! { MEMBER_ROOT = "_member/" }
+        c! { MEMBER_SHEET_BACKUPS = "_member/{member_name}/backups/" }
+        c! { REFSHEETS = "ref/" }
     }
 }
 
@@ -132,12 +132,12 @@ pub mod workspace {
     /// Directory path constants
     #[constants_macros::constants("workspace_dir")]
     pub mod dirs {
-        c! { WORKSPACE = ".jv" }
-        c! { VAULT_MIRROR = ".jv/UPSTREAM/" }
-        c! { LOCAL_SHEETS = ".jv/sheets/" }
         c! { DRAFT_AREA = ".jv/drafts/{account}_{sheet}/" }
         c! { ID_MAPPING = ".jv/idmp/" }
+        c! { LOCAL_SHEETS = ".jv/sheets/" }
+        c! { VAULT_MIRROR = ".jv/UPSTREAM/" }
         c! { WORKING_AREA = "" }
+        c! { WORKSPACE = ".jv" }
     }
 }
 
@@ -171,9 +171,9 @@ pub mod user {
     /// Directory path constants
     #[constants_macros::constants("user_dir")]
     pub mod dirs {
-        c! { ROOT = ".jvcs/" }
-        c! { UPSTREAM_PUBS = ".jvcs/upstreams/" }
         c! { PRIVATE_KEYS = ".jvcs/private/" }
         c! { PUBLIC_KEYS = ".jvcs/public/" }
+        c! { ROOT = ".jvcs/" }
+        c! { UPSTREAM_PUBS = ".jvcs/upstreams/" }
     }
 }
