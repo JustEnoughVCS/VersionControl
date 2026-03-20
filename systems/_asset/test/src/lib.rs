@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use asset_system::{
     RWDataTest, ensure_eq,
@@ -13,10 +13,10 @@ pub struct FooData {
 }
 
 impl RWData<FooData> for FooData {
-    async fn read(path: &PathBuf) -> Result<FooData, DataReadError> {
+    async fn read(path: &Path) -> Result<FooData, DataReadError> {
         let content = tokio::fs::read_to_string(path)
             .await
-            .map_err(|e| DataReadError::IoError(e))?;
+            .map_err(DataReadError::IoError)?;
         let parts: Vec<&str> = content.split('=').collect();
         if parts.len() != 2 {
             return Err(DataReadError::ParseError("Invalid format".to_string()));
@@ -28,11 +28,11 @@ impl RWData<FooData> for FooData {
         Ok(FooData { age, name })
     }
 
-    async fn write(data: FooData, path: &PathBuf) -> Result<(), DataWriteError> {
+    async fn write(data: FooData, path: &Path) -> Result<(), DataWriteError> {
         let content = format!("{}={}", data.name, data.age);
         tokio::fs::write(path, content)
             .await
-            .map_err(|e| DataWriteError::IoError(e))?;
+            .map_err(DataWriteError::IoError)?;
         Ok(())
     }
 
@@ -46,6 +46,6 @@ impl RWData<FooData> for FooData {
     fn verify_data(data_a: FooData, data_b: FooData) -> bool {
         ensure_eq!(data_a.age, data_b.age);
         ensure_eq!(data_a.name, data_b.name);
-        return true;
+        true
     }
 }

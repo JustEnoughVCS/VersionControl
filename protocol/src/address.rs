@@ -47,6 +47,15 @@ where
     }
 }
 
+impl<Protocol> Default for Host<Protocol>
+where
+    Protocol: BasicProtocol,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<Protocol> Host<Protocol>
 where
     Protocol: BasicProtocol,

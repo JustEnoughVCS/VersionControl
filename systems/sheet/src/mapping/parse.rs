@@ -178,9 +178,7 @@ impl TryFrom<&str> for LocalMapping {
                 Ok(LocalMapping {
                     val,
                     source,
-                    forward: LocalMappingForward::Ref {
-                        sheet_name: sheet_name,
-                    },
+                    forward: LocalMappingForward::Ref { sheet_name },
                 })
             }
             _ => Err(ParseMappingError::InvalidMapping),

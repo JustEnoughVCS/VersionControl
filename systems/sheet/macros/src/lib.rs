@@ -41,8 +41,8 @@ fn parse_id_version(input: &str) -> Result<(bool, u32, u16), String> {
     let trimmed = input.trim();
 
     // Check if it starts with ~ for local
-    let (remote, id_part) = if trimmed.starts_with('~') {
-        (false, &trimmed[1..])
+    let (remote, id_part) = if let Some(stripped) = trimmed.strip_prefix('~') {
+        (false, stripped)
     } else {
         (true, trimmed)
     };

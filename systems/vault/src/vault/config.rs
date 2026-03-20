@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use asset_system::{RWDataTest, rw::RWData};
 use config_system::rw::{read_config, write_config};
 use serde::{Deserialize, Serialize};
@@ -6,30 +8,26 @@ use serde::{Deserialize, Serialize};
 pub struct VaultConfig {}
 
 impl RWData<VaultConfig> for VaultConfig {
-    async fn read(
-        path: &std::path::PathBuf,
-    ) -> Result<VaultConfig, asset_system::error::DataReadError> {
+    async fn read(path: &Path) -> Result<VaultConfig, asset_system::error::DataReadError> {
         let read_config = read_config(path).await;
         match read_config {
             Ok(config) => Ok(config),
             Err(e) => Err(asset_system::error::DataReadError::IoError(
-                std::io::Error::new(std::io::ErrorKind::Other, e),
+                std::io::Error::other(e),
             )),
         }
     }
 
     async fn write(
         data: VaultConfig,
-        path: &std::path::PathBuf,
+        path: &Path,
     ) -> Result<(), asset_system::error::DataWriteError> {
         let write_config = write_config(path, &data).await;
         match write_config {
             Ok(_) => Ok(()),
-            Err(e) => {
-                return Err(asset_system::error::DataWriteError::IoError(
-                    std::io::Error::new(std::io::ErrorKind::Other, e),
-                ));
-            }
+            Err(e) => Err(asset_system::error::DataWriteError::IoError(
+                std::io::Error::other(e),
+            )),
         }
     }
 
@@ -38,6 +36,6 @@ impl RWData<VaultConfig> for VaultConfig {
     }
 
     fn verify_data(data_a: VaultConfig, data_b: VaultConfig) -> bool {
-        &data_a == &data_b
+        data_a == data_b
     }
 }

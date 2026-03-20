@@ -51,7 +51,7 @@ impl WorkspaceManager {
         let aliases_dir = self.get_space().local_path(workspace_dir_id_mapping())?;
         IndexSourceAliasesManager::write_alias(aliases_dir, local_id, remote_id)
             .await
-            .map_err(|e| WorkspaceOperationError::IDAliasError(e))
+            .map_err(WorkspaceOperationError::IDAliasError)
     }
 
     /// Delete a alias between local and remote IDs
@@ -59,7 +59,7 @@ impl WorkspaceManager {
         let aliases_dir = self.get_space().local_path(workspace_dir_id_mapping())?;
         IndexSourceAliasesManager::delete_alias(aliases_dir, local_id)
             .await
-            .map_err(|e| WorkspaceOperationError::IDAliasError(e))
+            .map_err(WorkspaceOperationError::IDAliasError)
     }
 
     /// Check if a alias exists between local and remote IDs
@@ -67,6 +67,6 @@ impl WorkspaceManager {
         let aliases_dir = self.get_space().local_path(workspace_dir_id_mapping())?;
         IndexSourceAliasesManager::alias_exists(aliases_dir, local_id)
             .await
-            .map_err(|e| WorkspaceOperationError::IDAliasError(e))
+            .map_err(WorkspaceOperationError::IDAliasError)
     }
 }

@@ -104,11 +104,8 @@ pub async fn merge_share_mapping_action(
             .await
             .read::<MergeShareMappingActionResult>()
             .await?;
-        match result {
-            MergeShareMappingActionResult::Success => {
-                sign_vault_modified(true).await;
-            }
-            _ => {}
+        if let MergeShareMappingActionResult::Success = result {
+            sign_vault_modified(true).await;
         }
         return Ok(result);
     }

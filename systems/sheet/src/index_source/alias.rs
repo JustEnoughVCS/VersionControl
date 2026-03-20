@@ -139,31 +139,30 @@ async fn get_or_create_alias_file(
         .read(true)
         .write(true)
         .create(true)
+        .truncate(false)
         .open(&file_path)
         .await
-        .map_err(|e| IDAliasError::Io(e))?;
+        .map_err(IDAliasError::Io)?;
 
-    let metadata = file.metadata().await.map_err(|e| IDAliasError::Io(e))?;
+    let metadata = file.metadata().await.map_err(IDAliasError::Io)?;
     if metadata.len() != FILE_SIZE {
         drop(file);
         let file = OpenOptions::new()
             .write(true)
             .create(true)
-            .truncate(true)
+            .truncate(false)
             .open(&file_path)
             .await
-            .map_err(|e| IDAliasError::Io(e))?;
+            .map_err(IDAliasError::Io)?;
 
-        file.set_len(FILE_SIZE)
-            .await
-            .map_err(|e| IDAliasError::Io(e))?;
+        file.set_len(FILE_SIZE).await.map_err(IDAliasError::Io)?;
 
         let file = OpenOptions::new()
             .read(true)
             .write(true)
             .open(&file_path)
             .await
-            .map_err(|e| IDAliasError::Io(e))?;
+            .map_err(IDAliasError::Io)?;
 
         Ok(file)
     } else {

@@ -294,12 +294,11 @@ impl<'a> Sheet<'a> {
             }
 
             // Check for duplicate IDs
-            if let Some(id_mapping) = self.id_mapping() {
-                if id_mapping.contains_key(&metadata.id) {
+            if let Some(id_mapping) = self.id_mapping()
+                && id_mapping.contains_key(&metadata.id) {
                     conflicts.duplicate_file.push(mapping.clone());
                     continue;
                 }
-            }
         }
 
         conflicts
@@ -411,8 +410,7 @@ impl Share {
         match fs::remove_file(path).await {
             Err(err) => Err((
                 self,
-                Error::new(
-                    std::io::ErrorKind::Other,
+                Error::other(
                     format!("Failed to delete share file: {}", err),
                 ),
             )),

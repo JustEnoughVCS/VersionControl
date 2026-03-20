@@ -52,7 +52,7 @@ impl<T: SpaceRoot> Space<T> {
             _ => path.to_path_buf(),
         };
 
-        if !find_space_root_with(&path, &pattern).is_ok() {
+        if find_space_root_with(&path, pattern).is_err() {
             T::create_space(&path).await?;
         }
         Ok(())
@@ -98,10 +98,10 @@ impl<T: SpaceRoot> Space<T> {
     /// Otherwise, it is found using the pattern from `T::get_pattern()`.
     pub fn space_dir(&self, current_dir: impl Into<PathBuf>) -> Result<PathBuf, SpaceError> {
         // First try to read from cache
-        if let Ok(lock) = self.space_dir.read() {
-            if let Some(cached_dir) = lock.as_ref() {
-                return Ok(cached_dir.clone());
-            }
+        if let Ok(lock) = self.space_dir.read()
+            && let Some(cached_dir) = lock.as_ref()
+        {
+            return Ok(cached_dir.clone());
         }
 
         // Cache miss, find the space directory
@@ -399,7 +399,7 @@ impl<T: SpaceRoot> AsRef<T> for Space<T> {
 impl<T: SpaceRoot> Deref for Space<T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
-        &self.as_ref()
+        self.as_ref()
     }
 }
 
@@ -427,7 +427,7 @@ pub enum SpaceRootFindPattern {
 ///
 /// For the full implementation, see `find_space_root_with`
 pub fn find_space_root(pattern: &SpaceRootFindPattern) -> Result<PathBuf, SpaceError> {
-    find_space_root_with(&current_dir()?, &pattern)
+    find_space_root_with(&current_dir()?, pattern)
 }
 
 /// Find the space directory containing the specified directory,
@@ -500,7 +500,7 @@ pub fn find_space_root_with(
             path.join(dir_name).is_dir()
         }),
         SpaceRootFindPattern::IncludeFile(file_name) => {
-            Box::new(move |path| path.join(&file_name).is_file())
+            Box::new(move |path| path.join(file_name).is_file())
         }
 
         // For absolute paths, return directly

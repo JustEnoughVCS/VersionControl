@@ -7,7 +7,7 @@ use std::cmp::Ordering;
 /// 4. All other Unicode characters (in their natural order)
 ///
 /// The comparison is lexicographic: the first differing element determines the order.
-pub fn compare_vec_string(a: &Vec<String>, b: &Vec<String>) -> std::cmp::Ordering {
+pub fn compare_vec_string(a: &[String], b: &[String]) -> std::cmp::Ordering {
     use std::cmp::Ordering;
 
     for (left, right) in a.iter().zip(b.iter()) {

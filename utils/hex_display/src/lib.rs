@@ -76,7 +76,7 @@ fn write_ascii(result: &mut String, chunk: &[u8]) {
     result.push_str("  |");
 
     for &byte in chunk {
-        if byte >= 32 && byte <= 126 {
+        if (32..=126).contains(&byte) {
             result.push(byte as char);
         } else {
             result.push('.');

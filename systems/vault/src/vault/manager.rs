@@ -8,6 +8,12 @@ pub struct VaultManager {
     space: Space<Vault>,
 }
 
+impl Default for VaultManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl VaultManager {
     pub fn new() -> Self {
         VaultManager {

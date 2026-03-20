@@ -62,7 +62,7 @@ impl IndexSource {
 
 impl PartialEq for IndexSource {
     fn eq(&self, other: &Self) -> bool {
-        &self.remote == &other.remote && &self.id == &other.id && &self.ver == &other.ver
+        self.remote == other.remote && self.id == other.id && self.ver == other.ver
     }
 }
 
@@ -158,12 +158,6 @@ impl IndexSource {
 impl std::fmt::Display for IndexSource {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let local_symbol = if self.remote { "" } else { "~" };
-        write!(
-            f,
-            "{}{}/{}",
-            local_symbol,
-            self.id.to_string(),
-            self.ver.to_string()
-        )
+        write!(f, "{}{}/{}", local_symbol, self.id, self.ver)
     }
 }

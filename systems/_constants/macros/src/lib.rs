@@ -28,7 +28,7 @@ pub fn constants(attr: TokenStream, item: TokenStream) -> TokenStream {
                         {
                             // Process constant and generate functions
                             if let Some((rust_func, ffi_func)) =
-                                process_constant(&prefix, const_name, const_value)
+                                process_constant(&prefix, const_name, &const_value)
                             {
                                 generated_functions.push(rust_func);
                                 generated_ffi_functions.push(ffi_func);
@@ -51,12 +51,12 @@ pub fn constants(attr: TokenStream, item: TokenStream) -> TokenStream {
 }
 
 fn extract_const_name_and_value(assign: &syn::ExprAssign) -> Option<(Ident, Box<Expr>)> {
-    if let Expr::Path(path) = &*assign.left {
-        if let Some(ident) = path.path.get_ident() {
-            let const_name = ident.clone();
-            let const_value = assign.right.clone();
-            return Some((const_name, const_value));
-        }
+    if let Expr::Path(path) = &*assign.left
+        && let Some(ident) = path.path.get_ident()
+    {
+        let const_name = ident.clone();
+        let const_value = assign.right.clone();
+        return Some((const_name, const_value));
     }
     None
 }
@@ -64,12 +64,12 @@ fn extract_const_name_and_value(assign: &syn::ExprAssign) -> Option<(Ident, Box<
 fn process_constant(
     prefix: &str,
     const_name: Ident,
-    const_value: Box<Expr>,
+    const_value: &Expr,
 ) -> Option<(proc_macro2::TokenStream, proc_macro2::TokenStream)> {
     if let Expr::Lit(ExprLit {
         lit: Lit::Str(lit_str),
         ..
-    }) = *const_value
+    }) = const_value
     {
         let value_str = lit_str.value();
         let value_span = lit_str.span();
@@ -209,18 +209,16 @@ fn generate_functions_with_params(
     let ffi_func = quote! {
         #[unsafe(no_mangle)]
         #[allow(nonstandard_style)]
-        pub extern "C" fn #ffi_fn_ident(#(#ffi_param_decls),*) -> *mut libc::c_char {
-            unsafe {
-                #(#ffi_param_checks)*
+        pub unsafe extern "C" fn #ffi_fn_ident(#(#ffi_param_decls),*) -> *mut libc::c_char {
+            #(#ffi_param_checks)*
 
-                #(#ffi_param_conversions)*
+            #(#ffi_param_conversions)*
 
-                let result = format!(#format_str, #(#ffi_format_args),*);
+            let result = format!(#format_str, #(#ffi_format_args),*);
 
-                match std::ffi::CString::new(result) {
-                    Ok(c) => c.into_raw(),
-                    Err(_) => std::ptr::null_mut(),
-                }
+            match std::ffi::CString::new(result) {
+                Ok(c) => c.into_raw(),
+                Err(_) => std::ptr::null_mut(),
             }
         }
     };

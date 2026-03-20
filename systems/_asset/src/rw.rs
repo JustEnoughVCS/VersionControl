@@ -1,17 +1,17 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use crate::error::{DataReadError, DataWriteError};
 
 pub trait RWData<DataType> {
     /// Implement read logic
     /// Given a path, return the specific data
-    fn read(path: &PathBuf) -> impl Future<Output = Result<DataType, DataReadError>> + Send + Sync;
+    fn read(path: &Path) -> impl Future<Output = Result<DataType, DataReadError>> + Send + Sync;
 
     /// Implement write logic
     /// Given data and a path, write to the filesystem
     fn write(
         data: DataType,
-        path: &PathBuf,
+        path: &Path,
     ) -> impl Future<Output = Result<(), DataWriteError>> + Send + Sync;
 
     /// Provide test data
@@ -42,10 +42,10 @@ pub struct FooData {
 }
 
 impl RWData<FooData> for FooData {
-    async fn read(path: &PathBuf) -> Result<FooData, DataReadError> {
+    async fn read(path: &Path) -> Result<FooData, DataReadError> {
         let content = tokio::fs::read_to_string(path)
             .await
-            .map_err(|e| DataReadError::IoError(e))?;
+            .map_err(DataReadError::IoError)?;
         let parts: Vec<&str> = content.split('=').collect();
         if parts.len() != 2 {
             return Err(DataReadError::ParseError("Invalid format".to_string()));
@@ -57,11 +57,11 @@ impl RWData<FooData> for FooData {
         Ok(FooData { age, name })
     }
 
-    async fn write(data: FooData, path: &PathBuf) -> Result<(), DataWriteError> {
+    async fn write(data: FooData, path: &Path) -> Result<(), DataWriteError> {
         let content = format!("{}={}", data.name, data.age);
         tokio::fs::write(path, content)
             .await
-            .map_err(|e| DataWriteError::IoError(e))?;
+            .map_err(DataWriteError::IoError)?;
         Ok(())
     }
 
@@ -75,6 +75,6 @@ impl RWData<FooData> for FooData {
     fn verify_data(data_a: FooData, data_b: FooData) -> bool {
         crate::ensure_eq!(data_a.age, data_b.age);
         crate::ensure_eq!(data_a.name, data_b.name);
-        return true;
+        true
     }
 }

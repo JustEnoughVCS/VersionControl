@@ -171,7 +171,7 @@ impl LocalMapping {
 
     /// Clone and generate a MappingBuf from LocalMapping
     pub fn to_mapping_buf_cloned(&self, sheet_name: impl Into<String>) -> MappingBuf {
-        MappingBuf::new(sheet_name.into(), self.val.clone(), self.source.clone())
+        MappingBuf::new(sheet_name.into(), self.val.clone(), self.source)
     }
 
     /// Generate a MappingBuf from LocalMapping
@@ -235,7 +235,7 @@ impl MappingBuf {
     ///
     /// Additionally, if the length of the given forward value exceeds `u8::MAX`, it will also return None
     pub fn to_local_mapping_cloned(&self, forward: &LocalMappingForward) -> Option<LocalMapping> {
-        LocalMapping::new(self.val.clone(), self.source.clone(), forward.clone())
+        LocalMapping::new(self.val.clone(), self.source, forward.clone())
     }
 
     /// Generate a LocalMapping from MappingBuf
@@ -262,7 +262,7 @@ impl<'a> Mapping<'a> {
 
     /// Get the sheet name of Mapping
     pub fn sheet_name(&self) -> &str {
-        &self.sheet_name
+        self.sheet_name
     }
 
     /// Build a Vec of Mapping values from the stored address
@@ -276,7 +276,7 @@ impl<'a> Mapping<'a> {
 
     /// Get the value str of Mapping
     pub fn value_str(&self) -> &str {
-        &self.val
+        self.val
     }
 
     /// Get the IndexSource of Mapping
@@ -301,7 +301,6 @@ impl<'a> Mapping<'a> {
             fmt_path_str(self.val)
                 .unwrap_or_default()
                 .split('/')
-                .into_iter()
                 .map(|s| s.to_string())
                 .collect(),
             self.source,
@@ -320,7 +319,6 @@ impl<'a> Mapping<'a> {
             fmt_path_str(self.val)
                 .unwrap_or_default()
                 .split("/")
-                .into_iter()
                 .map(|s| s.to_string())
                 .collect(),
             self.source,
@@ -404,36 +402,26 @@ impl std::fmt::Display for LocalMapping {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.forward {
             LocalMappingForward::Latest => {
-                write!(
-                    f,
-                    "\"{}\" => \"{}\"",
-                    self.val.join("/"),
-                    self.source.to_string()
-                )
+                write!(f, "\"{}\" => \"{}\"", self.val.join("/"), self.source)
             }
             LocalMappingForward::Ref { sheet_name } => {
                 write!(
                     f,
                     "\"{}\" => \"{}\" => \"{}\"",
                     self.val.join("/"),
-                    self.source.to_string(),
+                    self.source,
                     sheet_name
                 )
             }
             LocalMappingForward::Version { version } => {
                 if &self.mapped_version() == version {
-                    write!(
-                        f,
-                        "\"{}\" == \"{}\"",
-                        self.val.join("/"),
-                        self.source.to_string(),
-                    )
+                    write!(f, "\"{}\" == \"{}\"", self.val.join("/"), self.source,)
                 } else {
                     write!(
                         f,
                         "\"{}\" => \"{}\" == \"{}\"",
                         self.val.join("/"),
-                        self.source.to_string(),
+                        self.source,
                         version
                     )
                 }
@@ -556,7 +544,7 @@ fn join_helper(nodes: String, mut mapping_buf_val: Vec<String>) -> Vec<String> {
         }
     }
 
-    return mapping_buf_val;
+    mapping_buf_val
 }
 
 // Implement mutual comparison for MappingBuf and Mapping
@@ -637,7 +625,7 @@ impl std::borrow::Borrow<Vec<String>> for MappingBuf {
 /// ```
 pub fn node(str: impl Into<String>) -> Vec<String> {
     let str = just_fmt::fmt_path::fmt_path_str(str).unwrap_or_default();
-    str.split("/").into_iter().map(|f| f.to_string()).collect()
+    str.split("/").map(|f| f.to_string()).collect()
 }
 
 // Implement comparison for LocalMapping

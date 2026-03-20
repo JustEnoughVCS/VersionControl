@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 #[cfg(feature = "derive")]
 extern crate cfg_file_derive;
 

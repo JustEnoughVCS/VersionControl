@@ -1,7 +1,6 @@
 use std::{
     collections::HashSet,
     fs::File,
-    mem::replace,
     path::{Path, PathBuf},
 };
 
@@ -139,14 +138,14 @@ impl std::fmt::Display for SheetEditItem {
                 write!(f, "erase \"{}\"", display_node_helper(node),)
             }
             SheetEditItem::InsertMapping { mapping } => {
-                write!(f, "Insert {}", mapping.to_string())
+                write!(f, "Insert {}", mapping)
             }
             SheetEditItem::ReplaceSource { node, source } => {
                 write!(
                     f,
                     "Replace \"{}\" => \"{}\"",
                     display_node_helper(node),
-                    source.to_string()
+                    source
                 )
             }
             SheetEditItem::UpdateForward { node, forward } => match forward {
@@ -177,7 +176,7 @@ impl std::fmt::Display for SheetEditItem {
 }
 
 #[inline(always)]
-fn display_node_helper(n: &Vec<String>) -> String {
+fn display_node_helper(n: &[String]) -> String {
     n.join("/")
 }
 
@@ -201,7 +200,7 @@ impl SheetData {
     }
 
     /// Load MMAP from a Sheet file
-    pub fn mmap<'a>(sheet_file: impl AsRef<Path>) -> std::io::Result<SheetDataMmap> {
+    pub fn mmap(sheet_file: impl AsRef<Path>) -> std::io::Result<SheetDataMmap> {
         let file = File::open(sheet_file.as_ref())?;
 
         // SAFETY: The file has been successfully opened and is managed by the SheetDataMmap wrapper
@@ -244,7 +243,7 @@ impl SheetDataMmap {
     }
 
     /// Load mapping information from Sheet file at high speed and copy into LocalMapping
-    pub fn mp_c<'a>(&self, node: &[&str]) -> Result<Option<LocalMapping>, ReadSheetDataError> {
+    pub fn mp_c(&self, node: &[&str]) -> Result<Option<LocalMapping>, ReadSheetDataError> {
         match self.mp(node)? {
             Some((mapping, forward)) => {
                 // Note:
@@ -291,10 +290,8 @@ impl Sheet {
 
     /// Read from Sheet data and clone into MappingBuf
     pub fn read_mapping_buf(&self, value: &Vec<String>) -> Option<MappingBuf> {
-        match self.read_local_mapping(value) {
-            Some(v) => Some(v.to_mapping_buf_cloned(&self.name)),
-            None => None,
-        }
+        self.read_local_mapping(value)
+            .map(|v| v.to_mapping_buf_cloned(&self.name))
     }
 
     /// Insert mapping move
@@ -410,7 +407,7 @@ impl Sheet {
 
     /// Apply changes
     pub fn apply(&mut self) -> Result<(), SheetApplyError> {
-        let items = replace(&mut self.edit.list, Vec::new());
+        let items = std::mem::take(&mut self.edit.list);
         for item in items {
             match item {
                 SheetEditItem::DoNothing => continue,
@@ -516,9 +513,9 @@ impl TryFrom<&str> for SheetData {
                 continue;
             }
             let mapping = LocalMapping::try_from(line)?;
-            let _ = sheet.insert_mapping(mapping)?;
+            sheet.insert_mapping(mapping)?;
         }
-        let _ = sheet.apply()?;
+        sheet.apply()?;
         Ok(sheet.unpack())
     }
 }
@@ -552,7 +549,7 @@ impl TryFrom<&[u8]> for SheetData {
 }
 
 impl RWData<SheetData> for SheetData {
-    async fn read(path: &PathBuf) -> Result<SheetData, asset_system::error::DataReadError> {
+    async fn read(path: &Path) -> Result<SheetData, asset_system::error::DataReadError> {
         let mut data = SheetData::empty();
         data.full_read(path).await.map_err(|e| match e {
             ReadSheetDataError::IOErr(error) => DataReadError::IoError(error),
@@ -562,11 +559,11 @@ impl RWData<SheetData> for SheetData {
 
     async fn write(
         data: SheetData,
-        path: &PathBuf,
+        path: &Path,
     ) -> Result<(), asset_system::error::DataWriteError> {
         tokio::fs::write(path, data.as_bytes())
             .await
-            .map_err(|e| asset_system::error::DataWriteError::IoError(e.into()))
+            .map_err(asset_system::error::DataWriteError::IoError)
     }
 
     fn test_data() -> SheetData {

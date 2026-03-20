@@ -10,6 +10,12 @@ pub struct WorkspaceManager {
     pub(crate) space: Space<Workspace>,
 }
 
+impl Default for WorkspaceManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl WorkspaceManager {
     pub fn new() -> Self {
         WorkspaceManager {

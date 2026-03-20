@@ -74,7 +74,7 @@ pub trait BasicProtocol {
     /// Transfer indexes
     ///
     /// - `index_transfer` and `storage` represent the index file and
-    /// the corresponding block storage path, respectively.
+    ///   the corresponding block storage path, respectively.
     /// - If `vault` is Some, send block information from the Vault.
     /// - If `workspace` is Some, send block information from the Workspace.
     ///

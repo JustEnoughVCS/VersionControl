@@ -1,4 +1,4 @@
-use std::{io::Error, path::PathBuf};
+use std::{io::Error, path::Path};
 
 use asset_system::{
     RWDataTest,
@@ -85,27 +85,19 @@ impl WorkspaceConfig {
 }
 
 impl RWData<WorkspaceConfig> for WorkspaceConfig {
-    async fn read(path: &PathBuf) -> Result<WorkspaceConfig, DataReadError> {
+    async fn read(path: &Path) -> Result<WorkspaceConfig, DataReadError> {
         let read_config = read_config(path).await;
         match read_config {
             Ok(config) => Ok(config),
-            Err(e) => Err(DataReadError::IoError(Error::new(
-                std::io::ErrorKind::Other,
-                e,
-            ))),
+            Err(e) => Err(DataReadError::IoError(Error::other(e))),
         }
     }
 
-    async fn write(data: WorkspaceConfig, path: &PathBuf) -> Result<(), DataWriteError> {
+    async fn write(data: WorkspaceConfig, path: &Path) -> Result<(), DataWriteError> {
         let write_config = write_config(path, &data).await;
         match write_config {
             Ok(_) => Ok(()),
-            Err(e) => {
-                return Err(DataWriteError::IoError(Error::new(
-                    std::io::ErrorKind::Other,
-                    e,
-                )));
-            }
+            Err(e) => Err(DataWriteError::IoError(Error::other(e))),
         }
     }
 
@@ -114,6 +106,6 @@ impl RWData<WorkspaceConfig> for WorkspaceConfig {
     }
 
     fn verify_data(data_a: WorkspaceConfig, data_b: WorkspaceConfig) -> bool {
-        &data_a == &data_b
+        data_a == data_b
     }
 }

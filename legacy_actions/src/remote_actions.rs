@@ -108,24 +108,22 @@ pub async fn auth_member(
                     Err(TcpTargetError::Authentication(
                         "Authenticate failed.".to_string(),
                     ))
-                } else {
-                    if using_host_mode {
-                        if vault.config().vault_host_list().contains(&member_id) {
-                            // Using Host mode authentication, and is indeed an administrator
-                            mut_instance.write(true).await?;
-                            Ok((member_id, true))
-                        } else {
-                            // Using Host mode authentication, but not an administrator
-                            mut_instance.write(false).await?;
-                            Err(TcpTargetError::Authentication(
-                                "Authenticate failed.".to_string(),
-                            ))
-                        }
-                    } else {
-                        // Not using Host mode authentication
+                } else if using_host_mode {
+                    if vault.config().vault_host_list().contains(&member_id) {
+                        // Using Host mode authentication, and is indeed an administrator
                         mut_instance.write(true).await?;
-                        Ok((member_id, false))
+                        Ok((member_id, true))
+                    } else {
+                        // Using Host mode authentication, but not an administrator
+                        mut_instance.write(false).await?;
+                        Err(TcpTargetError::Authentication(
+                            "Authenticate failed.".to_string(),
+                        ))
                     }
+                } else {
+                    // Not using Host mode authentication
+                    mut_instance.write(true).await?;
+                    Ok((member_id, false))
                 }
             }
             Err(e) => Err(e),

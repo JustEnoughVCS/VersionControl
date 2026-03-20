@@ -106,7 +106,7 @@ impl ConnectionInstance {
         rand::TryRng::try_fill_bytes(&mut rng, &mut challenge).map_err(|e| {
             TcpTargetError::Crypto(format!("Failed to generate random challenge: {}", e))
         })?;
-        return Ok(challenge);
+        Ok(challenge)
     }
 
     /// Accepts a challenge from the target machine to verify connection security

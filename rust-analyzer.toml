@@ -1,20 +1,12 @@
-[package]
-proc-macro.enable = true
-
-[cargo]
-allFeatures = true
-loadOutDirsFromCheck = true
-runBuildScripts = true
-
 [rust-analyzer]
-procMacro.enable = true
-procMacro.attributes.enable = true
+proc-macro.enable = true
+proc-macro.attributes.enable = true
 
 diagnostics.disabled = ["unresolved-proc-macro"]
 
-inlayHints.typeHints = true
-inlayHints.parameterHints = true
-inlayHints.chainingHints = true
+inlay-hints.type-hints = true
+inlay-hints.parameter-hints = true
+inlay-hints.chaining-hints = true
 
 completion.autoimport.enable = true
 completion.postfix.enable = true
@@ -31,9 +23,10 @@ files.excludeDirs = [
     "src/data/compile_info.rs"
 ]
 
-macroExpansion.mode = "hir"
-macroExpansion.maxDepth = 32
-macroExpansion.engines = { hir = true, tt = true }
+macro-expansion.mode = "hir"
+macro-expansion.max-depth = 32
+macro-expansion.engines.hir = true
+macro-expansion.engines.tt = true
 
 workspace.symbol.search.scope = "workspace"
 

@@ -99,21 +99,17 @@ where
             .open(&lock_path)
             .await
         {
-            Ok(_) => {
-                return Ok(Handle {
-                    _data_type: PhantomData,
-                    writed: false,
-                    asset_path: self.path.clone(),
-                    lock_path,
-                    temp_path,
-                });
-            }
+            Ok(_) => Ok(Handle {
+                _data_type: PhantomData,
+                writed: false,
+                asset_path: self.path.clone(),
+                lock_path,
+                temp_path,
+            }),
             Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
-                return Err(HandleLockError::AssetLocked);
+                Err(HandleLockError::AssetLocked)
             }
-            Err(e) => {
-                return Err(HandleLockError::IoError(e));
-            }
+            Err(e) => Err(HandleLockError::IoError(e)),
         }
     }
 
@@ -231,7 +227,7 @@ where
         if self.writed {
             tokio::fs::rename(&from, &to)
                 .await
-                .map_err(|e| DataApplyError::IoError(e))?;
+                .map_err(DataApplyError::IoError)?;
         }
         Ok(())
     }
@@ -350,18 +346,15 @@ async fn check_asset_path<D>(handle: &Handle<D>) -> Result<(), PrecheckFailed>
 where
     D: RWData<D>,
 {
-    if let Some(file_name) = handle.asset_path.file_name() {
-        if check_path(file_name).is_ok() {
-            return Ok(());
-        }
+    if let Some(file_name) = handle.asset_path.file_name()
+        && check_path(file_name).is_ok()
+    {
+        return Ok(());
     }
     Err(PrecheckFailed::AssetPathInvalid)
 }
 
-async fn check_handle_is_cross_directory(
-    from: &PathBuf,
-    to: &PathBuf,
-) -> Result<(), PrecheckFailed> {
+async fn check_handle_is_cross_directory(from: &Path, to: &Path) -> Result<(), PrecheckFailed> {
     let from_parent = from.parent();
     let to_parent = to.parent();
 

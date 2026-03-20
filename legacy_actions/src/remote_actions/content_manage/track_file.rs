@@ -437,7 +437,7 @@ async fn proc_create_tasks_local(
     let mut mut_instance = instance.lock().await;
     let mut local_sheet = workspace.local_sheet(member_id, sheet_name).await?;
 
-    if print_infos && relative_paths.len() > 0 {
+    if print_infos && !relative_paths.is_empty() {
         local_println!(local_output, "Creating {} files...", relative_paths.len());
     }
 
@@ -585,7 +585,7 @@ async fn proc_update_tasks_local(
 
     let mut success = Vec::new();
 
-    if print_infos && relative_paths.len() > 0 {
+    if print_infos && !relative_paths.is_empty() {
         local_println!(local_output, "Updating {} files...", relative_paths.len());
     }
 
@@ -826,7 +826,7 @@ async fn proc_sync_tasks_local(
     let mut mut_instance = instance.lock().await;
     let mut success: Vec<PathBuf> = Vec::new();
 
-    if print_infos && relative_paths.len() > 0 {
+    if print_infos && !relative_paths.is_empty() {
         local_println!(local_output, "Syncing {} files...", relative_paths.len());
     }
 
@@ -902,7 +902,7 @@ async fn proc_sync_tasks_local(
                 // First download
                 let mut data = LocalMappingMetadata::default();
                 data.set_mapping_vfid(vfid);
-                if let Err(_) = local_sheet.add_mapping(&path, data) {
+                if local_sheet.add_mapping(&path, data).is_err() {
                     continue;
                 }
                 match local_sheet.mapping_data_mut(&path) {

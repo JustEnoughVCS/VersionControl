@@ -180,8 +180,8 @@ impl<'a> AnalyzeResult<'a> {
         // Files that exist locally but not in remote
         let mut erased_files: HashSet<PathBuf> = HashSet::new();
 
-        if let Some(cached_data) = &analyze_ctx.cached_sheet_data {
-            if let Some(local_sheet) = &analyze_ctx.local_sheet {
+        if let Some(cached_data) = &analyze_ctx.cached_sheet_data
+            && let Some(local_sheet) = &analyze_ctx.local_sheet {
                 let cached_sheet_mapping = cached_data.mapping();
                 let local_sheet_mapping = &local_sheet.data.mapping;
 
@@ -192,7 +192,6 @@ impl<'a> AnalyzeResult<'a> {
                     }
                 }
             }
-        }
 
         // Files that exist in the local sheet but not in reality are considered lost
         let mut lost_files: HashSet<&PathBuf> = local_sheet_paths

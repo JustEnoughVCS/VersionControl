@@ -47,7 +47,7 @@ impl WorkspaceManager {
         if sheet_path.exists() {
             // If reading fails, treat it as if the sheet does not exist and return `None`
             sheet_data.full_read(sheet_path).await.ok()?;
-            return Some(sheet_data.pack(sheet_name));
+            Some(sheet_data.pack(sheet_name))
         } else {
             None
         }
@@ -72,7 +72,7 @@ impl WorkspaceManager {
     pub fn get_sheet_path(&self, sheet_name: impl AsRef<str>) -> PathBuf {
         let sheet_name = sheet_name.as_ref();
         self.space
-            .local_path(workspace_file_sheet(&sheet_name))
+            .local_path(workspace_file_sheet(sheet_name))
             // The `local_path` only produces path formatting errors.
             // If the path cannot be guaranteed to be correct,
             //   execution should not continue, so we unwrap()
@@ -85,12 +85,11 @@ impl WorkspaceManager {
         if let Ok(mut read_dir) = self.space.read_dir(workspace_dir_local_sheets()).await {
             while let Some(entry) = read_dir.next_entry().await.ok().flatten() {
                 let path = entry.path();
-                if path.is_file() {
-                    if let Some(file_name) = path.file_stem() {
-                        if let Some(name_str) = file_name.to_str() {
-                            sheet_names.push(name_str.to_string());
-                        }
-                    }
+                if path.is_file()
+                    && let Some(file_name) = path.file_stem()
+                    && let Some(name_str) = file_name.to_str()
+                {
+                    sheet_names.push(name_str.to_string());
                 }
             }
         }

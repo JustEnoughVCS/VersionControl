@@ -52,18 +52,18 @@ pub enum BehaviourEnabled {
     No,
 }
 
-impl Into<bool> for ServiceEnabled {
-    fn into(self) -> bool {
-        match self {
+impl From<ServiceEnabled> for bool {
+    fn from(val: ServiceEnabled) -> Self {
+        match val {
             ServiceEnabled::Enable => true,
             ServiceEnabled::Disable => false,
         }
     }
 }
 
-impl Into<bool> for BehaviourEnabled {
-    fn into(self) -> bool {
-        match self {
+impl From<BehaviourEnabled> for bool {
+    fn from(val: BehaviourEnabled) -> Self {
+        match val {
             BehaviourEnabled::Yes => true,
             BehaviourEnabled::No => false,
         }

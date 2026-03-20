@@ -1,5 +1,5 @@
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 const COMPILE_INFO_RS: &str = "./src/data/compile_info.rs";
@@ -58,7 +58,7 @@ fn generate_c_binding() {
 }
 
 /// Generate compile info
-fn generate_compile_info(repo_root: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+fn generate_compile_info(repo_root: &Path) -> Result<(), Box<dyn std::error::Error>> {
     // Read the template code
     let template_code = std::fs::read_to_string(repo_root.join(COMPILE_INFO_RS_TEMPLATE))?;
 
@@ -135,14 +135,12 @@ fn get_version() -> String {
         Err(_) => return "unknown".to_string(),
     };
 
-    if let Some(workspace) = cargo_toml.get("workspace") {
-        if let Some(package) = workspace.get("package") {
-            if let Some(version) = package.get("version") {
-                if let Some(version_str) = version.as_str() {
-                    return version_str.to_string();
-                }
-            }
-        }
+    if let Some(workspace) = cargo_toml.get("workspace")
+        && let Some(package) = workspace.get("package")
+        && let Some(version) = package.get("version")
+        && let Some(version_str) = version.as_str()
+    {
+        return version_str.to_string();
     }
 
     "unknown".to_string()

@@ -18,9 +18,9 @@ pub fn convert_sheet_data_to_bytes(sheet_data: SheetData) -> Vec<u8> {
     for mapping in &mappings {
         let source = mapping.index_source();
         let key = (source.is_remote(), source.id(), source.version());
-        if !source_to_offset.contains_key(&key) {
+        if let std::collections::hash_map::Entry::Vacant(e) = source_to_offset.entry(key) {
             let offset = index_sources.len() as u32;
-            source_to_offset.insert(key, offset);
+            e.insert(offset);
             index_sources.push(IndexSource::new(
                 source.is_remote(),
                 source.id(),
@@ -36,10 +36,7 @@ pub fn convert_sheet_data_to_bytes(sheet_data: SheetData) -> Vec<u8> {
     for mapping in mappings {
         let hash = calculate_path_hash(mapping.value());
         let bucket_key = hash >> 16; // Take high 16 bits as bucket key
-        buckets
-            .entry(bucket_key)
-            .or_insert_with(Vec::new)
-            .push(mapping);
+        buckets.entry(bucket_key).or_default().push(mapping);
     }
 
     let bucket_count = buckets.len() as u16;

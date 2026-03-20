@@ -80,8 +80,8 @@ pub async fn update_to_latest_info_action(
 
             for sheet in vault.sheets().await? {
                 // Build share parts
-                if let Some(holder) = sheet.holder() {
-                    if holder == &member_id || holder == VAULT_HOST_NAME {
+                if let Some(holder) = sheet.holder()
+                    && (holder == &member_id || holder == VAULT_HOST_NAME) {
                         let mut sheet_shares: HashMap<SheetShareId, Share> = HashMap::new();
                         for share in sheet.get_shares().await? {
                             // Get SharePath
@@ -99,11 +99,10 @@ pub async fn update_to_latest_info_action(
                         }
                         shares_in_my_sheets.insert(sheet.name().clone(), sheet_shares);
                     }
-                }
 
                 // Build sheet parts
                 let holder_is_host =
-                    sheet.holder().unwrap_or(&String::default()) == &VAULT_HOST_NAME;
+                    sheet.holder().unwrap_or(&String::default()) == VAULT_HOST_NAME;
                 if sheet.holder().is_some()
                     && (sheet.holder().unwrap() == &member_id || holder_is_host)
                 {
@@ -129,7 +128,7 @@ pub async fn update_to_latest_info_action(
             latest_info.ref_sheet_content = ref_sheet_data.clone();
             latest_info.ref_sheet_vfs_mapping = ref_sheet_data
                 .mapping()
-                .into_iter()
+                .iter()
                 .map(|(path, file)| (file.id.clone(), path.clone()))
                 .collect::<HashMap<VirtualFileId, SheetPathBuf>>();
             latest_info.reference_sheets = ref_sheets;

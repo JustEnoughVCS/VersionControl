@@ -7,8 +7,7 @@
 // [OFFSET_INDEX_TABLE: u32]
 
 pub const CURRENT_SHEET_VERSION: u8 = 1;
-pub const HEADER_SIZE: usize = 0
-    + 1 // SHEET_VERSION
+pub const HEADER_SIZE: usize = 1 // SHEET_VERSION
     + 2 // MAPPING_BUCKET_COUNT
     + 4 // INDEX_COUNT
     + 4 // OFFSET_MAPPING_DIR
@@ -21,8 +20,7 @@ pub const HEADER_SIZE: usize = 0
 // [BUCKET_OFFSET: u32]
 // [BUCKET_LENGTH: u32]
 
-pub const MAPPING_DIR_ENTRY_SIZE: usize = 0
-    + 4 // BUCKET_HASH_PREFIX
+pub const MAPPING_DIR_ENTRY_SIZE: usize = 4 // BUCKET_HASH_PREFIX
     + 4 // BUCKET_OFFSET
     + 4 // BUCKET_LENGTH
 ;
@@ -36,8 +34,7 @@ pub const MAPPING_DIR_ENTRY_SIZE: usize = 0
 // [FORWARD_INFO_BYTES: ?]
 // [INDEX_OFFSET: u32]
 
-pub const MAPPING_BUCKET_MIN_SIZE: usize = 0
-    + 1 // KEY_LEN
+pub const MAPPING_BUCKET_MIN_SIZE: usize = 1 // KEY_LEN
     + 1 // FORWARD_TYPE
     + 1 // FORWARD_INFO_LEN
     + 2 // KEY_BYTES (MIN:1) + FORWARD_INFO_BYTES (MIN:1)
@@ -51,8 +48,7 @@ pub const MAPPING_BUCKET_MIN_SIZE: usize = 0
 // [REMOTE_FLAG: u8]
 // [RESERVED: u8; 3]
 
-pub const INDEX_ENTRY_SIZE: usize = 0
-    + 4 // INDEX_ID
+pub const INDEX_ENTRY_SIZE: usize = 4 // INDEX_ID
     + 2 // INDEX_VERSION
     + 1 // REMOTE_FLAG
     + 3 // RESERVED
