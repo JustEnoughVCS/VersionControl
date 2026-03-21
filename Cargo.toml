@@ -43,17 +43,6 @@ members = [
     "utils/sha1_hash",
     "utils/tcp_connection",
     "utils/tcp_connection/tcp_connection_test",
-
-    # LEGACY AREA
-    "legacy_actions",
-    "legacy_data",
-    "legacy_data/tests",
-    "legacy_systems/action",
-    "legacy_systems/action/action_macros",
-    "legacy_utils/cfg_file",
-    "legacy_utils/cfg_file/cfg_file_derive",
-    "legacy_utils/cfg_file/cfg_file_test",
-    # LEGACY AREA
 ]
 
 [workspace.package]
@@ -128,7 +117,6 @@ jvlib = { path = "ffi" }
 vcs_docs = { path = "docs" }
 
 # Utils
-cfg_file = { path = "legacy_utils/cfg_file" }
 data_struct = { path = "utils/data_struct" }
 hex_display = { path = "utils/hex_display" }
 sha1_hash = { path = "utils/sha1_hash" }
@@ -143,10 +131,5 @@ protocol = { path = "protocol" }
 sheet_system = { path = "systems/sheet" }
 vault_system = { path = "systems/vault" }
 workspace_system = { path = "systems/workspace" }
-
-# Legacy
-vcs_data = { path = "legacy_data" }
-vcs_actions = { path = "legacy_actions" }
-action_system = { path = "legacy_systems/action" }
 
 serde.workspace = true
