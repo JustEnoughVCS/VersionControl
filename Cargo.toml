@@ -5,21 +5,14 @@ license-file = "LICENSE-MIT"
 authors = ["Weicao-CatilGrass (GitHub)"]
 
 [features]
+default = ["lib"]
 all = ["utils", "lib"]
-utils = [
-    "cfg_file",
-    "data_struct",
-    "hex_display",
-    "sha1_hash",
-    "tcp_connection",
-]
-cfg_file = []
+utils = ["data_struct", "hex_display", "sha1_hash", "tcp_connection"]
 data_struct = []
 hex_display = []
 sha1_hash = []
 tcp_connection = []
 lib = []
-deprecated = []
 
 [workspace]
 members = [

@@ -3,25 +3,9 @@ pub mod data;
 
 // Feature `lib`
 #[cfg(feature = "lib")]
-pub mod lib {
-    pub extern crate vcs_data;
-    pub use vcs_data::*;
-
-    pub extern crate vcs_actions;
-    pub use vcs_actions::*;
-
-    pub extern crate vcs_docs;
-    pub use vcs_docs::*;
-}
-
-#[cfg(feature = "lib")]
 pub mod system {
     pub mod asset_system {
         pub use asset_system::*;
-    }
-
-    pub mod action_system {
-        pub use action_system::*;
     }
 
     pub mod sheet_system {
@@ -51,13 +35,6 @@ pub mod system {
 }
 
 pub mod utils {
-    // Feature `cfg_file`
-    #[cfg(feature = "cfg_file")]
-    pub mod cfg_file {
-        extern crate cfg_file;
-        pub use cfg_file::*;
-    }
-
     // Feature `data_struct`
     #[cfg(feature = "data_struct")]
     pub mod data_struct {
