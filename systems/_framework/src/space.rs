@@ -162,6 +162,13 @@ impl<T: SpaceRoot> Space<T> {
         }
     }
 
+    /// Tamper with space directory
+    ///
+    /// Forcefully modify the current Space's directory path
+    pub fn tamper_space_dir(&self, space_dir: Option<PathBuf>) {
+        self.update_space_dir(space_dir);
+    }
+
     /// Set a custom pattern to override the default space root detection.
     pub fn set_override_pattern(&mut self, pattern: Option<SpaceRootFindPattern>) {
         self.override_pattern = pattern;
