@@ -106,6 +106,12 @@ pub mod vault {
 /// File and directory path constants for the workspace root
 #[allow(unused)]
 pub mod workspace {
+    /// Others
+    #[constants_macros::constants("workspace_value")]
+    pub mod values {
+        c! { CURRENT_SHEET_FILE_NAME = "CURRENT" }
+    }
+
     /// File path constants
     #[constants_macros::constants("workspace_file")]
     pub mod files {

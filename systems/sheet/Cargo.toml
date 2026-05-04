@@ -16,4 +16,4 @@ thiserror.workspace = true
 just_fmt.workspace = true
 
 memmap2 = "0.9"
-sha2 = "0.10"
+sha2 = "0.11"

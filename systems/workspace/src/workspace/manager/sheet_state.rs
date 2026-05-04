@@ -5,6 +5,7 @@ use asset_system::asset::ReadOnlyAsset;
 use constants::workspace::{
     dirs::workspace_dir_local_sheets,
     files::{workspace_file_current_sheet, workspace_file_sheet},
+    values::workspace_value_current_sheet_file_name,
 };
 use framework::space::error::SpaceError;
 use just_fmt::snake_case;
@@ -88,6 +89,7 @@ impl WorkspaceManager {
                 if path.is_file()
                     && let Some(file_name) = path.file_stem()
                     && let Some(name_str) = file_name.to_str()
+                    && name_str != workspace_value_current_sheet_file_name()
                 {
                     sheet_names.push(name_str.to_string());
                 }

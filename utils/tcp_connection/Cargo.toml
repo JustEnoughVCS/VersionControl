@@ -18,8 +18,8 @@ thiserror = "2.0.17"
 uuid = "1.18.1"
 
 # Crypto
+ed25519-dalek = "2.2.0"
 rsa = { version = "0.9", features = ["pkcs5", "sha2"] }
-ed25519-dalek = "3.0.0-pre.1"
 ring = "0.17"
 rand = "0.10"
 base64 = "0.22"

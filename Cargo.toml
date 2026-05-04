@@ -58,7 +58,7 @@ just_fmt = "0.1.2"
 regex = "1.12"
 
 # Async runtime
-tokio = { version = "1.50", features = ["full"] }
+tokio = { version = "1.52", features = ["full"] }
 
 # Error handling
 thiserror = "2"
